@@ -1,7 +1,8 @@
 {
   "sections": [
     { "id": "viandes-laitiers", "name": "Viandes & Produits Laitiers", "icon": "🥩" },
-    { "id": "feculents", "name": "Féculents", "icon": "🥔" }
+    { "id": "feculents", "name": "Féculents", "icon": "🥔" },
+    { "id": "legumes", "name": "Légumes", "icon": "🥬" }
   ],
   "categories": [
     {
@@ -138,6 +139,97 @@
         { "name": "Yaourt grec", "density": 70, "nutrients": "Protéine, Calcium, B12, Probiotiques" },
         { "name": "Fromage cottage", "density": 65, "nutrients": "Caséine, Calcium, B12, Phosphore" },
         { "name": "Fromage", "density": 60, "nutrients": "Calcium, B12, Protéine, Zinc, Vit A" }
+      ]
+    },
+    {
+      "id": "legumes-verts-fonces",
+      "name": "Verts Foncés",
+      "icon": "🥬",
+      "section": "legumes",
+      "type": "select",
+      "weekly_min": 21,
+      "weekly_max": 21,
+      "foods": [
+        { "name": "Kale", "density": 95, "nutrients": "Vit K, A, C, Mn, Ca, Antioxydants" },
+        { "name": "Brocoli", "density": 88, "nutrients": "Vit C, K, Folate, Sulforaphane, Fibres" },
+        { "name": "Épinards", "density": 90, "nutrients": "Fer, Vit K, A, C, Folate, Mg" },
+        { "name": "Cresson", "density": 85, "nutrients": "Vit K, C, A, Ca, Antioxydants" },
+        { "name": "Feuilles de moutarde", "density": 82, "nutrients": "Vit K, A, C, Glucosinolates" },
+        { "name": "Haricots verts", "density": 65, "nutrients": "Vit K, C, Mn, Fibres, Folates" },
+        { "name": "Asperges", "density": 75, "nutrients": "Folates, Vit K, A, Inuline, Glutathion" },
+        { "name": "Pois", "density": 68, "nutrients": "Protéine, Vit K, C, Thiamine, Fibres" },
+        { "name": "Courgettes", "density": 55, "nutrients": "Vit C, A, K, K, Fibres" },
+        { "name": "Concombre", "density": 45, "nutrients": "Vit K, C, K, Hydratation, Cucurbitacines" },
+        { "name": "Laitue", "density": 50, "nutrients": "Vit A, K, C, Folates, Faible calorie" },
+        { "name": "Navet (fanes)", "density": 70, "nutrients": "Vit K, A, C, Ca, Glucosinolates" }
+      ]
+    },
+    {
+      "id": "legumes-jaune-orange",
+      "name": "Jaune / Orange",
+      "icon": "🥕",
+      "section": "legumes",
+      "type": "select",
+      "weekly_min": 14,
+      "weekly_max": 14,
+      "foods": [
+        { "name": "Carottes", "density": 80, "nutrients": "β-carotène, Vit A, K, B6, Fibres" },
+        { "name": "Courge butternut", "density": 72, "nutrients": "Vit A, C, Mg, K, Fibres" },
+        { "name": "Poivrons orange", "density": 75, "nutrients": "Vit C, A, B6, Antioxydants" },
+        { "name": "Maïs", "density": 60, "nutrients": "Lutéine, Zéaxanthine, Fibres, B-vitamines" },
+        { "name": "Rutabaga", "density": 55, "nutrients": "Vit C, K, Fibres, K, Mn" },
+        { "name": "Citrouille", "density": 70, "nutrients": "Vit A, C, E, K, Antioxydants" }
+      ]
+    },
+    {
+      "id": "legumes-rouges",
+      "name": "Rouges",
+      "icon": "🍅",
+      "section": "legumes",
+      "type": "select",
+      "weekly_min": 14,
+      "weekly_max": 14,
+      "foods": [
+        { "name": "Tomates", "density": 78, "nutrients": "Lycopène, Vit C, K, Potassium" },
+        { "name": "Poivrons rouges", "density": 85, "nutrients": "Vit C, A, B6, Antioxydants" },
+        { "name": "Betteraves", "density": 75, "nutrients": "Nitrates, Folates, K, Mn, Bétalaïnes" },
+        { "name": "Chou rouge", "density": 70, "nutrients": "Vit C, K, Anthocyanes, Fibres" },
+        { "name": "Radis", "density": 50, "nutrients": "Vit C, K, Glucosinolates, Hydratation" }
+      ]
+    },
+    {
+      "id": "legumes-blancs",
+      "name": "Blancs",
+      "icon": "🧄",
+      "section": "legumes",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Ail", "density": 92, "nutrients": "Allicine, Mn, B6, Vit C, Antioxydants" },
+        { "name": "Oignons", "density": 65, "nutrients": "Quercétine, Vit C, B6, Fibres" },
+        { "name": "Chou-fleur", "density": 70, "nutrients": "Vit C, K, Folates, Sulforaphane" },
+        { "name": "Champignons", "density": 68, "nutrients": "Sélénium, B2, B3, Cu, β-glucanes" },
+        { "name": "Poireaux", "density": 62, "nutrients": "Vit K, A, C, Folates, Inuline" },
+        { "name": "Panais", "density": 58, "nutrients": "Folates, Vit C, K, Fibres" },
+        { "name": "Céleri-rave", "density": 52, "nutrients": "Vit K, C, P, Fibres" },
+        { "name": "Cœur de palmier", "density": 55, "nutrients": "Fibres, Cu, Fer, Vit C" }
+      ]
+    },
+    {
+      "id": "legumes-mauves",
+      "name": "Mauves",
+      "icon": "🍆",
+      "section": "legumes",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Aubergines", "density": 65, "nutrients": "Nasunine, Fibres, Mn, Antioxydants" },
+        { "name": "Chou violet", "density": 72, "nutrients": "Anthocyanes, Vit C, K, Fibres" },
+        { "name": "Chou-fleur mauve", "density": 70, "nutrients": "Anthocyanes, Vit C, Sulforaphane" },
+        { "name": "Carottes mauves", "density": 75, "nutrients": "Anthocyanes, α-carotène, Vit A" },
+        { "name": "Radis noir", "density": 68, "nutrients": "Glucosinolates, Vit C, K, K" }
       ]
     },
     {

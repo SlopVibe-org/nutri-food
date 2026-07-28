@@ -81,6 +81,13 @@ Les onglets affichent aussi un point coloré indiquant le statut global de chaqu
 - Bons choix — riz brun/noir/rouge, pâtes complètes, pain au levain... (7/sem)
 - Tubercules — patates douces, pommes de terre, topinambours (4/sem)
 
+### 🥬 Légumes
+- Verts foncés — kale, brocoli, épinards, asperges... (21/sem)
+- Jaune/Orange — carottes, courge, maïs, citrouille... (14/sem)
+- Rouges — tomates, betteraves, poivrons rouges, chou rouge... (14/sem)
+- Blancs — ail, oignons, chou-fleur, champignons, poireaux... (7/sem)
+- Mauves — aubergines, chou violet, carottes mauves... (7/sem)
+
 ## Déploiement
 
 ### Serveur web statique
@@ -103,7 +110,7 @@ Créer un endpoint `save-selections.php` qui reçoit les sélections en POST JSO
 ## Roadmap
 
 - [ ] Sessions utilisateur
-- [ ] Sections: Légumes, Fruits, Huiles & Condiments
+- [ ] Sections: Fruits, Huiles & Condiments
 - [ ] Génération de liste d'épicerie
 - [ ] Calcul automatique des apports nutritionnels
 - [ ] Export/import des sélections

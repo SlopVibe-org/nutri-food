@@ -2,7 +2,9 @@
   "sections": [
     { "id": "viandes-laitiers", "name": "Viandes & Produits Laitiers", "icon": "🥩" },
     { "id": "feculents", "name": "Féculents", "icon": "🥔" },
-    { "id": "legumes", "name": "Légumes", "icon": "🥬" }
+    { "id": "legumes", "name": "Légumes", "icon": "🥬" },
+    { "id": "fruits", "name": "Fruits", "icon": "🍎" },
+    { "id": "habitudes", "name": "Habitudes", "icon": "🌱" }
   ],
   "categories": [
     {
@@ -233,6 +235,69 @@
       ]
     },
     {
+      "id": "fruits-petits",
+      "name": "Petits Fruits",
+      "icon": "🫐",
+      "section": "fruits",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Camerises", "density": 85, "nutrients": "Vit C, K, Antioxydants, Polyphénols" },
+        { "name": "Bleuets", "density": 82, "nutrients": "Anthocyanes, Vit C, K, Mn, Fibres" },
+        { "name": "Mûres", "density": 80, "nutrients": "Anthocyanes, Vit C, K, Folates, Fibres" },
+        { "name": "Framboises", "density": 78, "nutrients": "Vit C, Mn, Fibres, Xylitol, Ellagitannins" },
+        { "name": "Groseilles noires", "density": 88, "nutrients": "Vit C, Anthocyanes, Ω-3, Antioxydants" },
+        { "name": "Canneberges", "density": 70, "nutrients": "Proanthocyanidines, Vit C, Mn, Fibres" },
+        { "name": "Fraises", "density": 75, "nutrients": "Vit C, Mn, Folates, Anthocyanes, Fibres" }
+      ]
+    },
+    {
+      "id": "fruits-protecteurs",
+      "name": "Protecteurs (Vit C)",
+      "icon": "🍊",
+      "section": "fruits",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Argousier", "density": 95, "nutrients": "Vit C (extrême), Vit E, Ω-7, β-carotène" },
+        { "name": "Cassis", "density": 90, "nutrients": "Vit C, Anthocyanes, Ω-3, γ-linolénique" },
+        { "name": "Goyave", "density": 85, "nutrients": "Vit C, A, Folates, Fibres, Lycopène" },
+        { "name": "Kiwi", "density": 80, "nutrients": "Vit C, K, E, Folates, K, Actinidine" },
+        { "name": "Pamplemousse", "density": 72, "nutrients": "Vit C, A, Lycopène, Naringénine, Fibres" },
+        { "name": "Orange", "density": 75, "nutrients": "Vit C, A, B9, Ca, Hespéridine" },
+        { "name": "Grenade", "density": 82, "nutrients": "Punicalagines, Vit C, K, Folates" },
+        { "name": "Mandarine", "density": 68, "nutrients": "Vit C, A, Fibres, Hespéridine" },
+        { "name": "Clémentine", "density": 65, "nutrients": "Vit C, A, B9, Fibres" },
+        { "name": "Citron", "density": 78, "nutrients": "Vit C, Acide citrique, Hespéridine, D-limonène" },
+        { "name": "Lime", "density": 70, "nutrients": "Vit C, Antioxydants, D-limonène, Flavonoïdes" }
+      ]
+    },
+    {
+      "id": "fruits-autres",
+      "name": "Autres Fruits",
+      "icon": "🍎",
+      "section": "fruits",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Avocat", "density": 88, "nutrients": "Lipides sains, K, Vit E, Folates, Fibres" },
+        { "name": "Mangue", "density": 72, "nutrients": "Vit A, C, Folates, Fibres, Caroténoïdes" },
+        { "name": "Fruit de la passion", "density": 75, "nutrients": "Vit C, A, Fibres, Fer, K" },
+        { "name": "Pomme", "density": 60, "nutrients": "Pectine, Vit C, K, Quercétine, Fibres" },
+        { "name": "Poire", "density": 58, "nutrients": "Fibres, Vit C, K, Cu" },
+        { "name": "Abricot", "density": 65, "nutrients": "Vit A, C, E, K, Fibres, β-carotène" },
+        { "name": "Banane", "density": 62, "nutrients": "K, B6, Vit C, Résistant, Mg" },
+        { "name": "Pêche", "density": 55, "nutrients": "Vit A, C, Niacine, Fibres" },
+        { "name": "Nectarine", "density": 55, "nutrients": "Vit C, A, K, Fibres, Antioxydants" },
+        { "name": "Prune", "density": 60, "nutrients": "Vit K, C, Sorbitol, Fibres, Anthocyanes" },
+        { "name": "Litchi", "density": 68, "nutrients": "Vit C, Cu, B6, Oligonol" },
+        { "name": "Noix de coco fraîche", "density": 65, "nutrients": "MCT, Mn, Cu, Sélenium, Fibres" }
+      ]
+    },
+    {
       "id": "feculents-tres-bons",
       "name": "Très Bons Choix",
       "icon": "⭐",
@@ -283,6 +348,84 @@
         { "name": "Patates douces", "density": 78, "nutrients": "β-carotène, Vit A, Vit C, K, Fibres" },
         { "name": "Pommes de terre", "density": 65, "nutrients": "K, Vit C, B6, Fibres, Résistant" },
         { "name": "Topinambours", "density": 70, "nutrients": "Inuline, K, Fer, Fibres prébiotiques" }
+      ]
+    },
+    {
+      "id": "habitudes-bons-gras",
+      "name": "Bons Gras",
+      "icon": "🥑",
+      "section": "habitudes",
+      "type": "select",
+      "weekly_min": 14,
+      "weekly_max": 28,
+      "foods": [
+        { "name": "Huile d'olive extra vierge", "density": 92, "nutrients": "Acide oléique, Polyphénols, Vit E, Ω-9" },
+        { "name": "Avocat", "density": 88, "nutrients": "Lipides mono-insaturés, K, Vit E, Folates, Fibres" },
+        { "name": "Olives", "density": 75, "nutrients": "Acide oléique, Vit E, Fer, Cu, Antioxydants" },
+        { "name": "Beurre de noix", "density": 80, "nutrients": "Protéine, Mg, Vit E, Ω-3, Gras sains" },
+        { "name": "Huile de lin", "density": 85, "nutrients": "Ω-3 (ALA), Lignanes, Vit E" },
+        { "name": "Ghee / Beurre clarifié", "density": 65, "nutrients": "Vit A, D, E, K2, Acides gras à chaîne courte" },
+        { "name": "Pâte de sésame (tahini)", "density": 70, "nutrients": "Ca, Mg, Fer, Zn, Lignanes" }
+      ]
+    },
+    {
+      "id": "habitudes-fermentes",
+      "name": "Aliments Fermentés",
+      "icon": "🫙",
+      "section": "habitudes",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Kéfir", "density": 85, "nutrients": "Probiotiques, Protéine, Ca, B12, Biotine" },
+        { "name": "Yaourt nature", "density": 75, "nutrients": "Probiotiques, Ca, Protéine, B12" },
+        { "name": "Choucroute (non pasteurisée)", "density": 80, "nutrients": "Probiotiques, Vit C, K, Fibres, Glucosinolates" },
+        { "name": "Kimchi", "density": 82, "nutrients": "Probiotiques, Vit A, C, B2, β-carotène" },
+        { "name": "Kombucha", "density": 60, "nutrients": "Probiotiques, Antioxydants, Acides organiques" },
+        { "name": "Miso", "density": 72, "nutrients": "Probiotiques, Protéine, Mn, Vit K2" },
+        { "name": "Tempeh", "density": 78, "nutrients": "Protéine, Fer, Mg, Probiotiques, Ca" },
+        { "name": "Pain au levain", "density": 55, "nutrients": "Probiotiques, Fibres, Fer biodisponible" }
+      ]
+    },
+    {
+      "id": "habitudes-herbes-epices",
+      "name": "Herbes & Épices",
+      "icon": "🌿",
+      "section": "habitudes",
+      "type": "checkbox",
+      "weekly_min": 7,
+      "weekly_max": 21,
+      "foods": [
+        { "name": "Persil", "density": 85, "nutrients": "Vit K, C, A, Flavonoïdes, Apigénine" },
+        { "name": "Coriandre", "density": 80, "nutrients": "Vit K, C, Chélation métaux lourds" },
+        { "name": "Basilic", "density": 78, "nutrients": "Vit K, A, C, Eugénol, Antioxydants" },
+        { "name": "Romarin", "density": 82, "nutrients": "Acide rosmarinique, Fer, Ca, Antioxydants" },
+        { "name": "Thym", "density": 80, "nutrients": "Vit C, A, Fer, Thymol, Antiseptique" },
+        { "name": "Curcuma", "density": 92, "nutrients": "Curcumine, Fer, Mn, Anti-inflammatoire" },
+        { "name": "Gingembre", "density": 85, "nutrients": "Gingérol, Mg, K, Anti-nauséeux" },
+        { "name": "Cannelle", "density": 88, "nutrients": "Antioxydants, Mn, Ca, Régulation glycémie" },
+        { "name": "Ail", "density": 90, "nutrients": "Allicine, Mn, B6, Vit C, Cardiovasculaire" },
+        { "name": "Origan", "density": 82, "nutrients": "Vit K, Fer, Carvacrol, Antioxydants" },
+        { "name": "Menthe", "density": 75, "nutrients": "Vit A, C, Menthol, Digestif" },
+        { "name": "Cumin", "density": 78, "nutrients": "Fer, Mg, Ca, Digestif" }
+      ]
+    },
+    {
+      "id": "habitudes-boissons",
+      "name": "Boissons",
+      "icon": "☕",
+      "section": "habitudes",
+      "type": "select",
+      "daily": true,
+      "weekly_min": 10,
+      "weekly_max": 14,
+      "foods": [
+        { "name": "Eau", "density": 100, "nutrients": "Hydratation, Élimination, Thermorégulation" },
+        { "name": "Thé vert", "density": 90, "nutrients": "EGCG, L-théanine, Polyphénols, Vit C" },
+        { "name": "Thé noir", "density": 75, "nutrients": "Théaflavines, Flavonoïdes, Mn" },
+        { "name": "Tisanes", "density": 70, "nutrients": "Antioxydants, Digestif, Sans caféine" },
+        { "name": "Lait", "density": 65, "nutrients": "Ca, Vit D, Protéine, B12, K" },
+        { "name": "Café", "density": 72, "nutrients": "Antioxydants, Mn, Mg, Caféine" }
       ]
     }
   ]

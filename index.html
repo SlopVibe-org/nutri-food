@@ -323,7 +323,8 @@ function renderCounter(cat, count) {
   const min = cat.weekly_min, max = cat.weekly_max;
   const target = min === max ? `${min}` : `${min}-${max}`;
   const cls = count < min ? 'under' : (count > max ? 'over' : 'in-range');
-  return `<span class="counter-badge ${count > 0 ? cls : ''}">${count} / ${target} sem.</span>`;
+  const suffix = cat.daily ? 'jour.' : 'sem.';
+  return `<span class="counter-badge ${count > 0 ? cls : ''}">${count} / ${target} ${suffix}</span>`;
 }
 
 function renderSelect(cat) {
@@ -431,7 +432,7 @@ function refreshCard(catId) {
   if (badge) {
     const min = cat.weekly_min, max = cat.weekly_max;
     const target = min === max ? `${min}` : `${min}-${max}`;
-    badge.textContent = `${totalCount} / ${target} sem.`;
+    badge.textContent = `${totalCount} / ${target} ${cat.daily ? 'jour.' : 'sem.'}`;
     badge.className = 'counter-badge ' + (totalCount === 0 ? '' : (totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range')));
   }
   const chipsContainer = card.querySelector(`#chips-${catId}`);

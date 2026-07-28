@@ -110,7 +110,17 @@ Créer un endpoint `save-selections.php` qui reçoit les sélections en POST JSO
 ## Roadmap
 
 - [ ] Sessions utilisateur
-- [ ] Sections: Fruits, Huiles & Condiments
+### 🍎 Fruits
+- Petits fruits — bleuets, framboises, camerises, canneberges... (7/sem)
+- Protecteurs (Vit C) — argousier, cassis, kiwi, agrumes, grenade... (7/sem)
+- Autres fruits — avocat, mangue, pommes, bananes, litchi... (7/sem)
+
+### 🌱 Habitudes
+- Bons gras — huile d'olive, avocat, olives, beurre de noix... (14-28/sem)
+- Aliments fermentés — kéfir, yaourt, choucroute, kimchi, miso... (7/sem)
+- Herbes & épices — persil, curcuma, gingembre, cannelle, ail... (7-21/sem)
+- Boissons — eau, thé vert, thé noir, tisanes, lait... (suivi quotidien)
+- [ ] Sessions utilisateur (backend Docker + SQLite)
 - [ ] Génération de liste d'épicerie
 - [ ] Calcul automatique des apports nutritionnels
 - [ ] Export/import des sélections

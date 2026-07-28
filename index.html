@@ -6,34 +6,20 @@
 <title>NutriFood — Densité Nutritionnelle</title>
 <style>
   :root {
-    --bg: #0f1117;
-    --card: #1a1d27;
-    --accent: #4ade80;
-    --accent-dim: #22c55e;
-    --accent-red: #f87171;
-    --accent-amber: #fbbf24;
-    --text: #e4e4e7;
-    --text-dim: #94a3b8;
-    --border: #2a2d3a;
-    --radius: 12px;
+    --bg: #0f1117; --card: #1a1d27; --accent: #4ade80; --accent-dim: #22c55e;
+    --accent-red: #f87171; --accent-amber: #fbbf24;
+    --text: #e4e4e7; --text-dim: #94a3b8; --border: #2a2d3a; --radius: 12px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 20px;
-    max-width: 900px;
-    margin: 0 auto;
-    padding-bottom: 100px;
+    background: var(--bg); color: var(--text); padding: 20px;
+    max-width: 900px; margin: 0 auto; padding-bottom: 100px;
   }
   h1 {
-    font-size: 1.8rem;
-    margin-bottom: 4px;
+    font-size: 1.8rem; margin-bottom: 4px;
     background: linear-gradient(135deg, var(--accent), #38bdf8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
   .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
@@ -41,63 +27,51 @@
   .user-name { font-size: 0.9rem; color: var(--text-dim); }
   .auth-btn {
     padding: 6px 14px; background: var(--accent-dim); color: #0f1117;
-    border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
-    cursor: pointer; transition: background 0.2s;
+    border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
   }
   .auth-btn:hover { background: var(--accent); }
   .auth-btn.outline { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); }
   .auth-btn.outline:hover { background: rgba(74,222,128,0.1); }
 
-  /* Auth modal */
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    display: flex; align-items: center; justify-content: center;
-    z-index: 200; backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px);
   }
   .modal-overlay.hidden { display: none; }
   .modal {
     background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 28px;
-    width: 100%; max-width: 360px;
+    border-radius: var(--radius); padding: 28px; width: 100%; max-width: 360px;
   }
   .modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
   .modal .field { margin-bottom: 12px; }
   .modal label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
   .modal input {
-    width: 100%; padding: 10px 12px; background: #12141c;
-    color: var(--text); border: 1px solid var(--border);
-    border-radius: 8px; font-size: 0.95rem;
+    width: 100%; padding: 10px 12px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
   }
   .modal input:focus { outline: none; border-color: var(--accent); }
-  .modal .error-msg { color: var(--accent-red); font-size: 0.85rem; margin-bottom: 8px; }
+  .modal .error-msg { color: var(--accent-red); font-size: 0.85rem; margin-bottom: 8px; min-height: 1.2em; }
   .modal .submit-btn {
-    width: 100%; padding: 12px; background: var(--accent-dim);
-    color: #0f1117; border: none; border-radius: 8px;
-    font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px;
+    width: 100%; padding: 12px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px;
   }
   .modal .submit-btn:hover { background: var(--accent); }
   .modal .switch-link { text-align: center; margin-top: 12px; font-size: 0.85rem; color: var(--text-dim); }
   .modal .switch-link a { color: var(--accent); cursor: pointer; text-decoration: none; }
 
-  /* Tabs */
   .tabs {
     display: flex; gap: 4px; margin-bottom: 20px;
-    border-bottom: 2px solid var(--border); overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    border-bottom: 2px solid var(--border); flex-wrap: wrap;
   }
   .tab {
-    padding: 10px 16px; background: none; border: none;
-    color: var(--text-dim); font-size: 0.95rem; cursor: pointer;
-    white-space: nowrap; border-bottom: 3px solid transparent;
-    margin-bottom: -2px; transition: all 0.2s;
+    padding: 10px 16px; background: none; border: none; color: var(--text-dim);
+    font-size: 0.95rem; cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
     display: flex; align-items: center; gap: 6px; font-weight: 600;
   }
   .tab:hover { color: var(--text); }
   .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-  .tab-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--border); flex-shrink: 0;
-  }
+  .tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
   .tab-dot.under { background: var(--accent-red); }
   .tab-dot.in-range { background: var(--accent); }
   .tab-dot.over { background: var(--accent-amber); }
@@ -105,27 +79,15 @@
   .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-  .grid {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
-  }
-  .card {
-    background: var(--card); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 16px; transition: border-color 0.2s;
-  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: border-color 0.2s; }
   .card:hover { border-color: var(--accent-dim); }
-  .card-header {
-    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
-  }
-  .cat-label {
-    font-size: 0.85rem; color: var(--text-dim); font-weight: 600;
-    text-transform: uppercase; letter-spacing: 0.5px;
-  }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cat-label { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
   .icon { font-size: 1.3rem; margin-right: 6px; }
   .counter-badge {
-    font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
-    border-radius: 20px; white-space: nowrap;
-    border: 1px solid var(--border); background: #12141c; color: var(--text-dim);
-    transition: all 0.2s;
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+    border: 1px solid var(--border); background: #12141c; color: var(--text-dim); transition: all 0.2s;
   }
   .counter-badge.under { color: var(--accent-red); border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
   .counter-badge.in-range { color: var(--accent); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.1); }
@@ -133,78 +95,71 @@
 
   select {
     width: 100%; padding: 10px 12px; background: #12141c; color: var(--text);
-    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
-    cursor: pointer; appearance: none;
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; cursor: pointer; appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234ade80' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat; background-position: right 12px center;
-    padding-right: 36px; margin-bottom: 8px;
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; margin-bottom: 8px;
   }
   select:focus { outline: none; border-color: var(--accent); }
   select option { background: var(--card); color: var(--text); padding: 8px; }
 
   .checkbox-add {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; background: #12141c;
-    border: 1px solid var(--border); border-radius: 8px;
-    cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #12141c;
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s; margin-bottom: 8px;
   }
   .checkbox-add:hover { border-color: var(--accent-dim); }
   .checkbox-add input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
 
   .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 4px; }
   .chip {
-    display: inline-flex; align-items: center; gap: 4px;
-    padding: 5px 6px 5px 10px;
+    display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 10px;
     background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.35);
-    border-radius: 20px; font-size: 0.85rem; color: var(--text);
-    animation: chipIn 0.2s ease;
+    border-radius: 20px; font-size: 0.85rem; color: var(--text); animation: chipIn 0.2s ease;
   }
   .chip .density-tag { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
   .chip .qty-controls { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
   .chip .qty-btn {
-    background: rgba(74,222,128,0.2); border: none; color: var(--accent);
-    cursor: pointer; font-size: 0.8rem; line-height: 1;
-    width: 20px; height: 20px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
+    background: rgba(74,222,128,0.2); border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem;
+    line-height: 1; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
     transition: background 0.15s; font-weight: 700;
   }
   .chip .qty-btn:hover { background: rgba(74,222,128,0.4); }
   .chip .qty-num { font-weight: 700; color: var(--text); min-width: 16px; text-align: center; font-size: 0.85rem; }
   .chip .remove-btn {
-    background: none; border: none; color: var(--accent-red);
-    cursor: pointer; font-size: 1.1rem; line-height: 1;
-    padding: 0; margin-left: 2px; opacity: 0.7; transition: opacity 0.15s;
+    background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 1.1rem;
+    line-height: 1; padding: 0; margin-left: 2px; opacity: 0.7; transition: opacity 0.15s;
   }
   .chip .remove-btn:hover { opacity: 1; }
   @keyframes chipIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
   .chip[title] { cursor: help; }
 
   #save-bar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--card); border-top: 1px solid var(--border);
-    padding: 12px 20px; display: flex;
-    justify-content: space-between; align-items: center;
-    z-index: 100; transform: translateY(100%); transition: transform 0.3s ease;
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100;
+    transform: translateY(100%); transition: transform 0.3s ease;
   }
   #save-bar.visible { transform: translateY(0); }
   #save-bar .save-info { font-size: 0.85rem; color: var(--text-dim); }
   #save-btn {
-    padding: 10px 24px; background: var(--accent-dim); color: #0f1117;
-    border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700;
-    cursor: pointer; transition: background 0.2s;
+    padding: 10px 24px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
   }
   #save-btn:hover { background: var(--accent); }
   #save-btn:disabled { opacity: 0.4; cursor: default; }
   #save-btn.dirty { background: var(--accent-amber); animation: pulse 2s infinite; }
-  @keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
-    50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
-  }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); } 50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); } }
   .loading { text-align: center; padding: 40px; color: var(--text-dim); }
-  @media (max-width: 600px) {
-    .grid { grid-template-columns: 1fr; }
-    #save-bar { flex-direction: column; gap: 8px; text-align: center; }
-  }
+
+  /* Welcome screen */
+  .welcome { text-align: center; padding: 60px 20px; }
+  .welcome h2 { font-size: 1.8rem; margin-bottom: 8px; color: var(--text); }
+  .welcome p { color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem; }
+  .welcome .features { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 32px; }
+  .welcome .feature { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; font-size: 0.9rem; color: var(--text-dim); }
+  .welcome .feature strong { color: var(--accent); }
+  .welcome .login-cta { padding: 14px 36px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .welcome .login-cta:hover { background: var(--accent); }
+
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } #save-bar { flex-direction: column; gap: 8px; text-align: center; } }
 </style>
 </head>
 <body>
@@ -217,27 +172,26 @@
   <div class="user-area" id="user-area"></div>
 </div>
 
-<!-- Auth Modal -->
 <div class="modal-overlay hidden" id="auth-modal">
   <div class="modal">
     <h2 id="auth-title">Connexion</h2>
     <div class="error-msg" id="auth-error"></div>
     <div class="field" id="name-field" style="display:none;">
       <label>Nom</label>
-      <input type="text" id="auth-name" placeholder="Votre nom">
+      <input type="text" id="auth-name" autocomplete="name">
     </div>
     <div class="field">
-      <label>Email</label>
-      <input type="email" id="auth-email" placeholder="vous@example.com">
+      <label>Email ou nom d'usager</label>
+      <input type="text" id="auth-email" autocomplete="username">
     </div>
     <div class="field">
       <label>Mot de passe</label>
-      <input type="password" id="auth-password" placeholder="••••••">
+      <input type="password" id="auth-password" autocomplete="current-password">
     </div>
-    <button class="submit-btn" id="auth-submit" onclick="submitAuth()">Connexion</button>
+    <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
     <div class="switch-link">
       <span id="auth-switch-text">Pas de compte? </span>
-      <a id="auth-switch-link" onclick="toggleAuthMode()">S'inscrire</a>
+      <a id="auth-switch-link">S'inscrire</a>
     </div>
   </div>
 </div>
@@ -246,11 +200,16 @@
 
 <div id="save-bar">
   <span class="save-info" id="save-info">Chargement…</span>
-  <button id="save-btn" disabled onclick="saveSelections()">💾 Sauvegarder</button>
+  <button id="save-btn" disabled>Sauvegarder</button>
 </div>
 
 <script>
+'use strict';
+
 const API = '/nutri-food/api';
+const TOKEN_KEY = 'nutrifood_token';
+const USER_KEY = 'nutrifood_user';
+
 let DATA = null;
 let selections = {};
 let savedSnapshot = '{}';
@@ -258,20 +217,23 @@ let activeTab = null;
 let currentUser = null;
 let authMode = 'login';
 
-const TOKEN_KEY = '***';
-const USER_KEY = '***';
+// ─── DOM helpers ───
+function $(id) { return document.getElementById(id); }
 
-// ─── Auth ───
-function getToken() { return localStorage.getItem(TOKEN_KEY); }
+// ─── Token helpers ───
+function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { return null; } }
+
 function setAuth(token, user) {
-  localStorage.setItem(TOKEN_KEY, token);
-  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch(e) { console.error('[NutriFood] localStorage error:', e); }
   currentUser = user;
   renderUserArea();
 }
+
 function clearAuth() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
+  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) {}
   currentUser = null;
   selections = {};
   savedSnapshot = '{}';
@@ -281,278 +243,321 @@ function clearAuth() {
 }
 
 function renderUserArea() {
-  const area = document.getElementById('user-area');
+  const area = $('user-area');
+  if (!area) return;
   if (currentUser) {
-    area.innerHTML = `
-      <span class="user-name">👤 ${currentUser.name}</span>
-      <button class="auth-btn outline" onclick="clearAuth()">Déconnexion</button>
-    `;
+    area.innerHTML = '<span class="user-name">👤 ' + currentUser.name + '</span><button class="auth-btn outline" id="logout-btn">Déconnexion</button>';
+    $('logout-btn').addEventListener('click', clearAuth);
   } else {
-    area.innerHTML = `<button class="auth-btn" onclick="showAuth('login')">Connexion</button>`;
+    area.innerHTML = '<button class="auth-btn" id="login-btn">Connexion</button>';
+    $('login-btn').addEventListener('click', function() { showAuth('login'); });
   }
 }
 
+// ─── Auth modal ───
 function showAuth(mode) {
   authMode = mode;
-  document.getElementById('auth-error').textContent = '';
-  document.getElementById('auth-modal').classList.remove('hidden');
-  document.getElementById('name-field').style.display = mode === 'register' ? 'block' : 'none';
-  document.getElementById('auth-title').textContent = mode === 'register' ? 'Créer un compte' : 'Connexion';
-  document.getElementById('auth-submit').textContent = mode === 'register' ? "S'inscrire" : 'Connexion';
-  document.getElementById('auth-switch-text').textContent = mode === 'register' ? 'Déjà inscrit? ' : 'Pas de compte? ';
-  document.getElementById('auth-switch-link').textContent = mode === 'register' ? 'Connexion' : "S'inscrire";
+  $('auth-error').textContent = '';
+  $('auth-modal').classList.remove('hidden');
+  $('name-field').style.display = mode === 'register' ? 'block' : 'none';
+  $('auth-title').textContent = mode === 'register' ? 'Créer un compte' : 'Connexion';
+  $('auth-submit').textContent = mode === 'register' ? "S'inscrire" : 'Connexion';
+  $('auth-switch-text').textContent = mode === 'register' ? 'Déjà inscrit? ' : 'Pas de compte? ';
+  $('auth-switch-link').textContent = mode === 'register' ? 'Connexion' : "S'inscrire";
+  $('auth-email').focus();
 }
 
-function toggleAuthMode() {
-  showAuth(authMode === 'login' ? 'register' : 'login');
-}
+function toggleAuthMode() { showAuth(authMode === 'login' ? 'register' : 'login'); }
 
 async function submitAuth() {
-  const email = document.getElementById('auth-email').value.trim().toLowerCase();
-  const password = document.getElementById('auth-password').value;
-  const name = document.getElementById('auth-name').value.trim();
-  const errEl = document.getElementById('auth-error');
+  var email = $('auth-email').value.trim();
+  var password = $('auth-password').value;
+  var name = $('auth-name').value.trim();
+  var errEl = $('auth-error');
   errEl.textContent = '';
 
-  if (!email || !password) {
-    errEl.textContent = 'Email et mot de passe requis';
-    return;
-  }
-  if (authMode === 'register' && !name) {
-    errEl.textContent = 'Nom requis';
-    return;
-  }
+  if (!email || !password) { errEl.textContent = 'Identifiant et mot de passe requis'; return; }
+  if (authMode === 'register' && !name) { errEl.textContent = 'Nom requis'; return; }
 
-  const endpoint = authMode === 'register' ? '/register' : '/login';
+  var endpoint = authMode === 'register' ? '/register' : '/login';
+  var body = authMode === 'register' ? { email: email.toLowerCase(), name: name, password: password } : { email: email.toLowerCase(), password: password };
+
+  errEl.textContent = 'Connexion…';
+
   try {
-    const res = await fetch(API + endpoint, {
+    var res = await fetch(API + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(authMode === 'register' ? { email, name, password } : { email, password })
+      body: JSON.stringify(body)
     });
-    const data = await res.json();
-    if (!res.ok) {
-      errEl.textContent = data.error || 'Erreur';
-      return;
-    }
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; return; }
+
+    // Success - save and reload
     setAuth(data.token, data.user);
-    document.getElementById('auth-modal').classList.add('hidden');
-    document.getElementById('auth-email').value = '';
-    document.getElementById('auth-password').value = '';
-    document.getElementById('auth-name').value = '';
-    await loadSelectionsFromServer();
-    render();
-    updateSaveBar();
+    $('auth-modal').classList.add('hidden');
+    // Reload to reinitialize with saved session
+    window.location.reload();
   } catch(e) {
-    errEl.textContent = 'Erreur de connexion au serveur';
+    console.error('[NutriFood] Auth error:', e);
+    errEl.textContent = 'Erreur de connexion au serveur: ' + e.message;
   }
+}
+
+// Wire up auth modal events (no inline onclick)
+function initAuthEvents() {
+  $('auth-submit').addEventListener('click', function(e) { e.preventDefault(); submitAuth(); });
+  $('auth-switch-link').addEventListener('click', function(e) { e.preventDefault(); toggleAuthMode(); });
+  $('auth-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
+  $('auth-email').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
+  // Close modal on overlay click
+  $('auth-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
 }
 
 // ─── Server selections ───
 async function loadSelectionsFromServer() {
-  const token = getToken();
+  var token = getToken();
   if (!token) return;
   try {
-    const res = await fetch(API + '/selections', {
-      headers: { 'Authorization': 'Bearer ' + token }
-    });
-    if (res.status === 401) { clearAuth(); return; }
-    const data = await res.json();
+    var res = await fetch(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
+    var data = await res.json();
     selections = data.selections || {};
-    Object.values(selections).forEach(arr => arr.forEach(item => { if (!item.qty) item.qty = 1; }));
+    Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
     savedSnapshot = JSON.stringify(selections);
-  } catch(e) {}
+  } catch(e) { console.error('[NutriFood] Load selections error:', e); }
 }
 
 // ─── Init ───
 async function init() {
   try {
-    const res = await fetch('foods.json');
+    var res = await fetch('foods.json');
     DATA = await res.json();
     activeTab = DATA.sections[0].id;
 
+    // Wire up events
+    initAuthEvents();
+
     // Restore session
-    const savedUser = localStorage.getItem(USER_KEY);
+    var savedUser = null;
+    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) {}
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
-      // Verify token still valid
-      try {
-        const meRes = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + getToken() } });
-        if (meRes.ok) {
-          renderUserArea();
-          await loadSelectionsFromServer();
-        } else {
-          clearAuth();
-        }
-      } catch(e) { clearAuth(); }
+      var token = getToken();
+      if (token) {
+        try {
+          var meRes = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } });
+          if (meRes.ok) {
+            renderUserArea();
+            await loadSelectionsFromServer();
+          } else {
+            console.warn('[NutriFood] Token invalid, clearing');
+            clearAuth();
+          }
+        } catch(e) { console.error('[NutriFood] Session check failed:', e); clearAuth(); }
+      } else { clearAuth(); }
     }
 
-    render();
     renderUserArea();
-    updateSaveBar();
+
+    if (currentUser) {
+      // Logged in: show the app
+      render();
+      updateSaveBar();
+    } else {
+      // Not logged in: show welcome screen
+      renderWelcome();
+    }
   } catch (e) {
-    document.getElementById('app').innerHTML = '<p class="loading">Erreur de chargement</p>';
+    console.error('[NutriFood] Init error:', e);
+    $('app').innerHTML = '<p class="loading">Erreur de chargement</p>';
   }
+}
+
+function renderWelcome() {
+  $('app').innerHTML = `
+    <div class="welcome">
+      <h2>🍎 NutriFood</h2>
+      <p>Planifiez votre semaine nutritionnelle — aliments classés par densité nutritionnelle.</p>
+      <div class="features">
+        <div class="feature">🥩 <strong>Viandes & Laitiers</strong></div>
+        <div class="feature">🥔 <strong>Féculents</strong></div>
+        <div class="feature">🥬 <strong>Légumes</strong></div>
+        <div class="feature">🍎 <strong>Fruits</strong></div>
+        <div class="feature">🌱 <strong>Habitudes</strong></div>
+      </div>
+      <button class="login-cta" id="welcome-login">Connexion / Inscription</button>
+    </div>
+  `;
+  $('save-bar').classList.remove('visible');
+  $('welcome-login').addEventListener('click', function() { showAuth('login'); });
 }
 
 // ─── Render ───
 function render() {
-  const app = document.getElementById('app');
-  let html = '<div class="tabs">';
-  DATA.sections.forEach(sec => {
-    const dotClass = getSectionDotClass(sec.id);
-    html += `<button class="tab ${sec.id === activeTab ? 'active' : ''}" onclick="switchTab('${sec.id}')">
-      <span class="tab-dot ${dotClass}"></span>${sec.icon} ${sec.name}
-    </button>`;
+  var app = $('app');
+  var html = '<div class="tabs">';
+  DATA.sections.forEach(function(sec) {
+    html += '<button class="tab ' + (sec.id === activeTab ? 'active' : '') + '" data-tab="' + sec.id + '"><span class="tab-dot ' + getSectionDotClass(sec.id) + '"></span>' + sec.icon + ' ' + sec.name + '</button>';
   });
   html += '</div>';
-  DATA.sections.forEach(sec => {
-    const cats = DATA.categories.filter(c => c.section === sec.id);
-    html += `<div class="tab-content ${sec.id === activeTab ? 'active' : ''}" id="tab-${sec.id}"><div class="grid">`;
-    cats.forEach(cat => {
-      const sorted = [...cat.foods].sort((a, b) => b.density - a.density);
-      html += renderCard({ ...cat, foods: sorted });
+  DATA.sections.forEach(function(sec) {
+    var cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
+    html += '<div class="tab-content ' + (sec.id === activeTab ? 'active' : '') + '" id="tab-' + sec.id + '"><div class="grid">';
+    cats.forEach(function(cat) {
+      var sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
+      html += renderCard(Object.assign({}, cat, { foods: sorted }));
     });
     html += '</div></div>';
   });
   app.innerHTML = html;
+
+  // Wire up tabs
+  app.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { activeTab = tab.dataset.tab; render(); });
+  });
+  // Wire up selects and checkboxes
+  app.querySelectorAll('select[id^="sel-"]').forEach(function(sel) {
+    sel.addEventListener('change', function() { addFromSelect(sel.dataset.cat || sel.id.replace('sel-', ''), sel); });
+  });
 }
 
 function getSectionDotClass(sectionId) {
-  const cats = DATA.categories.filter(c => c.section === sectionId);
-  let totalSelected = 0, totalMin = 0, totalMax = 0;
-  cats.forEach(cat => {
-    const sel = (selections[cat.id] || []);
-    totalSelected += sel.reduce((s, i) => s + i.qty, 0);
-    totalMin += cat.weekly_min;
-    totalMax += cat.weekly_max;
+  var cats = DATA.categories.filter(function(c) { return c.section === sectionId; });
+  var totalSelected = 0, totalMin = 0, totalMax = 0;
+  cats.forEach(function(cat) {
+    var sel = selections[cat.id] || [];
+    totalSelected += sel.reduce(function(s, i) { return s + i.qty; }, 0);
+    totalMin += cat.weekly_min; totalMax += cat.weekly_max;
   });
-  if (totalSelected === 0) return 'under';
-  if (totalSelected < totalMin) return 'under';
+  if (totalSelected === 0 || totalSelected < totalMin) return 'under';
   if (totalSelected > totalMax) return 'over';
   return 'in-range';
 }
 
-function switchTab(tabId) {
-  activeTab = tabId;
-  render();
-}
-
 function renderCard(cat) {
-  const selected = selections[cat.id] || [];
-  const totalCount = selected.reduce((s, i) => s + i.qty, 0);
-  return `
-    <div class="card" data-cat="${cat.id}">
-      <div class="card-header">
-        <span class="cat-label"><span class="icon">${cat.icon}</span>${cat.name}</span>
-        ${renderCounter(cat, totalCount)}
-      </div>
-      ${cat.type === 'checkbox' ? renderCheckboxAdd(cat, selected) : renderSelect(cat)}
-      <div class="chips" id="chips-${cat.id}">${renderChips(cat.id, selected)}</div>
-    </div>`;
-}
+  var selected = selections[cat.id] || [];
+  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  var suffix = cat.daily ? 'jour.' : 'sem.';
+  var min = cat.weekly_min, max = cat.weekly_max;
+  var target = min === max ? '' + min : min + '-' + max;
+  var cls = totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range');
 
-function renderCounter(cat, count) {
-  const min = cat.weekly_min, max = cat.weekly_max;
-  const target = min === max ? `${min}` : `${min}-${max}`;
-  const cls = count < min ? 'under' : (count > max ? 'over' : 'in-range');
-  const suffix = cat.daily ? 'jour.' : 'sem.';
-  return `<span class="counter-badge ${count > 0 ? cls : ''}">${count} / ${target} ${suffix}</span>`;
-}
+  var html = '<div class="card" data-cat="' + cat.id + '">';
+  html += '<div class="card-header">';
+  html += '<span class="cat-label"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
+  html += '<span class="counter-badge ' + (totalCount > 0 ? cls : '') + '">' + totalCount + ' / ' + target + ' ' + suffix + '</span>';
+  html += '</div>';
 
-function renderSelect(cat) {
-  const opts = cat.foods.map(f =>
-    `<option value="${f.name}" data-density="${f.density}" data-nutrients="${f.nutrients}">${f.name} — ${f.density}% (${f.nutrients})</option>`
-  ).join('');
-  return `<select id="sel-${cat.id}" onchange="addFromSelect('${cat.id}', this)"><option value="">+ Ajouter…</option>${opts}</select>`;
-}
+  if (cat.type === 'checkbox') {
+    cat.foods.forEach(function(f) {
+      var isChecked = selected.some(function(s) { return s.name === f.name; });
+      html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span></label>';
+    });
+  } else {
+    html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
+    cat.foods.forEach(function(f) {
+      html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
+    });
+    html += '</select>';
+  }
 
-function renderCheckboxAdd(cat, selected) {
-  return cat.foods.map(f => {
-    const isChecked = selected.some(s => s.name === f.name);
-    return `<label class="checkbox-add">
-      <input type="checkbox" ${isChecked ? 'checked' : ''}
-        onchange="toggleCheckbox('${cat.id}', '${f.name.replace(/'/g, "\\'")}', ${f.density}, '${f.nutrients.replace(/'/g, "\\'")}', this.checked)"
-      ><span>+ ${f.name} (${f.density}%)</span>
-    </label>`;
-  }).join('');
+  html += '<div class="chips" id="chips-' + cat.id + '">' + renderChips(cat.id, selected) + '</div>';
+  html += '</div>';
+  return html;
 }
 
 function renderChips(catId, selected) {
-  return [...selected].sort((a, b) => b.density - a.density).map(item => {
-    const qtyControls = item.qty > 1 ? `
-      <span class="qty-controls">
-        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', -1)">−</button>
-        <span class="qty-num">×${item.qty}</span>
-        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)">+</button>
-      </span>` : `
-      <span class="qty-controls">
-        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)">+</button>
-      </span>`;
-    return `<span class="chip" title="${item.nutrients}">${item.name}<span class="density-tag">${item.density}%</span>${qtyControls}<button class="remove-btn" onclick="removeItem('${catId}', '${item.name.replace(/'/g, "\\'")}')" title="Retirer">×</button></span>`;
+  return selected.slice().sort(function(a, b) { return b.density - a.density; }).map(function(item) {
+    var qtyControls = item.qty > 1
+      ? '<span class="qty-controls"><button class="qty-btn" data-action="dec" data-cat="' + catId + '" data-name="' + esc(item.name) + '">−</button><span class="qty-num">×' + item.qty + '</span><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>'
+      : '<span class="qty-controls"><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>';
+    return '<span class="chip" title="' + esc(item.nutrients) + '">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
   }).join('');
 }
 
+function esc(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+
+// ─── Event delegation for dynamic content ───
+document.addEventListener('click', function(e) {
+  var btn = e.target.closest('[data-action]');
+  if (!btn) return;
+  var catId = btn.dataset.cat;
+  var name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  var action = btn.dataset.action;
+  if (action === 'inc') changeQty(catId, name, 1);
+  else if (action === 'dec') changeQty(catId, name, -1);
+  else if (action === 'remove') removeItem(catId, name);
+});
+
+document.addEventListener('change', function(e) {
+  // Select changes
+  if (e.target.tagName === 'SELECT' && e.target.dataset.cat) {
+    if (e.target.value) {
+      var opt = e.target.selectedOptions[0];
+      addItem(e.target.dataset.cat, { name: e.target.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
+      e.target.value = '';
+    }
+  }
+  // Checkbox changes
+  if (e.target.type === 'checkbox' && e.target.dataset.cat) {
+    var name = e.target.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
+    else removeItem(e.target.dataset.cat, name);
+  }
+});
+
 // ─── Actions ───
-function addFromSelect(catId, selectEl) {
-  if (!selectEl.value) return;
-  const opt = selectEl.options[selectEl.selectedIndex];
-  addItem(catId, { name: opt.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
-  selectEl.value = '';
-}
 function addItem(catId, item) {
   if (!selections[catId]) selections[catId] = [];
-  const existing = selections[catId].find(s => s.name === item.name);
-  if (existing) { existing.qty = (existing.qty || 1) + 1; }
-  else { selections[catId].push({ ...item, qty: 1 }); }
+  var existing = selections[catId].find(function(s) { return s.name === item.name; });
+  if (existing) existing.qty = (existing.qty || 1) + 1;
+  else selections[catId].push(Object.assign({}, item, { qty: 1 }));
   refreshCard(catId); updateTabDots(); updateSaveBar();
 }
+
 function removeItem(catId, name) {
   if (!selections[catId]) return;
-  selections[catId] = selections[catId].filter(s => s.name !== name);
+  selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
   if (selections[catId].length === 0) delete selections[catId];
-  const card = document.querySelector(`[data-cat="${catId}"]`);
-  if (card) card.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-    const span = cb.parentElement.querySelector('span');
-    if (span && span.textContent.includes(name)) cb.checked = false;
-  });
+  // Uncheck checkbox if visible
+  var cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
+  if (cb) cb.checked = false;
   refreshCard(catId); updateTabDots(); updateSaveBar();
 }
+
 function changeQty(catId, name, delta) {
   if (!selections[catId]) return;
-  const item = selections[catId].find(s => s.name === name);
+  var item = selections[catId].find(function(s) { return s.name === name; });
   if (!item) return;
   item.qty = (item.qty || 1) + delta;
-  if (item.qty <= 0) { removeItem(catId, name); }
+  if (item.qty <= 0) removeItem(catId, name);
   else { refreshCard(catId); updateTabDots(); updateSaveBar(); }
 }
-function toggleCheckbox(catId, name, density, nutrients, checked) {
-  if (checked) addItem(catId, { name, density, nutrients });
-  else removeItem(catId, name);
-}
+
 function refreshCard(catId) {
-  const card = document.querySelector(`[data-cat="${catId}"]`);
+  var card = document.querySelector('[data-cat="' + catId + '"]');
   if (!card) return;
-  const cat = DATA.categories.find(c => c.id === catId);
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
-  const selected = selections[catId] || [];
-  const totalCount = selected.reduce((s, i) => s + i.qty, 0);
-  const badge = card.querySelector('.counter-badge');
+  var selected = selections[catId] || [];
+  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  var badge = card.querySelector('.counter-badge');
   if (badge) {
-    const min = cat.weekly_min, max = cat.weekly_max;
-    const target = min === max ? `${min}` : `${min}-${max}`;
-    badge.textContent = `${totalCount} / ${target} ${cat.daily ? 'jour.' : 'sem.'}`;
+    var min = cat.weekly_min, max = cat.weekly_max;
+    var target = min === max ? '' + min : min + '-' + max;
+    badge.textContent = totalCount + ' / ' + target + ' ' + (cat.daily ? 'jour.' : 'sem.');
     badge.className = 'counter-badge ' + (totalCount === 0 ? '' : (totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range')));
   }
-  const chipsContainer = card.querySelector(`#chips-${catId}`);
+  var chipsContainer = card.querySelector('#chips-' + catId);
   if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
 }
+
 function updateTabDots() {
-  DATA.sections.forEach(sec => {
-    const dotClass = getSectionDotClass(sec.id);
-    const idx = DATA.sections.findIndex(s => s.id === sec.id);
-    const tabs = document.querySelectorAll('.tab');
-    if (tabs[idx]) { const dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
+  DATA.sections.forEach(function(sec, idx) {
+    var dotClass = getSectionDotClass(sec.id);
+    var tabs = document.querySelectorAll('.tab');
+    if (tabs[idx]) { var dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
   });
 }
 
@@ -560,43 +565,45 @@ function updateTabDots() {
 function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
 
 function updateSaveBar() {
-  const bar = document.getElementById('save-bar');
-  const btn = document.getElementById('save-btn');
-  const info = document.getElementById('save-info');
-  const total = Object.values(selections).reduce((sum, arr) => sum + arr.reduce((s, i) => s + i.qty, 0), 0);
+  var bar = $('save-bar');
+  var btn = $('save-btn');
+  var info = $('save-info');
+  var total = Object.values(selections).reduce(function(sum, arr) { return sum + arr.reduce(function(s, i) { return s + i.qty; }, 0); }, 0);
+
+  // Rewire save button
+  btn.onclick = saveSelections;
+
   if (isDirty()) {
     bar.classList.add('visible'); btn.classList.add('dirty'); btn.disabled = false;
-    info.textContent = `${total} aliment(s) — modifications non sauvegardées`;
+    info.textContent = total + ' aliment(s) — modifications non sauvegardées';
   } else {
     btn.classList.remove('dirty'); btn.disabled = true;
-    if (total > 0) { bar.classList.add('visible'); info.textContent = `${total} aliment(s) sélectionné(s) — sauvegardé ✓`; }
+    if (total > 0) { bar.classList.add('visible'); info.textContent = total + ' aliment(s) sélectionné(s) — sauvegardé ✓'; }
     else { bar.classList.remove('visible'); }
   }
 }
 
 async function saveSelections() {
-  const btn = document.getElementById('save-btn');
+  var btn = $('save-btn');
   btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
-  const token = getToken();
+  var token = getToken();
   if (token) {
     try {
-      const res = await fetch(API + '/selections', {
+      var res = await fetch(API + '/selections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-        body: JSON.stringify({ selections })
+        body: JSON.stringify({ selections: selections })
       });
-      if (res.ok) { savedSnapshot = JSON.stringify(selections); }
-    } catch(e) {}
+      if (res.ok) savedSnapshot = JSON.stringify(selections);
+    } catch(e) { console.error('[NutriFood] Save error:', e); }
   }
-  btn.textContent = '💾 Sauvegarder'; updateSaveBar();
+  btn.textContent = '💾 Sauvegarder';
+  updateSaveBar();
 }
 
-// Close modal on overlay click
-document.getElementById('auth-modal').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
-});
-
+// Start
 init();
+
 </script>
 </body>
 </html>

@@ -6,6 +6,9 @@ import hashlib
 import secrets
 import time
 import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -20,6 +23,48 @@ CORS(app, origins=[
 DB_PATH = os.environ.get('DB_PATH', '/data/nutrifood.db')
 JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
 JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))  # 90 days default
+
+# Email config
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.fastmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
+SMTP_USER = os.environ.get('SMTP_USER', 'ai@slopvibe.org')
+SMTP_PASS = os.environ.get('SMTP_PASS', '3q6q6a76769d6r5c')
+MAIL_FROM = os.environ.get('MAIL_FROM', 'ai@slopvibe.org')
+APP_URL = os.environ.get('APP_URL', 'https://slopvibe.org/nutri-food/')
+
+# ─── Email ───
+
+def send_welcome_email(to_email, name):
+    msg = MIMEMultipart('alternative')
+    msg['From'] = 'NutriFood <ai@slopvibe.org>'
+    msg['To'] = to_email
+    msg['Subject'] = 'Bienvenue sur NutriFood! 🍎'
+
+    html = f'''\
+<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 500px; margin: 0 auto; background: #0f1117; color: #e4e4e7; padding: 32px; border-radius: 12px;">
+  <h1 style="color: #4ade80; margin-bottom: 8px;">🍎 Bienvenue sur NutriFood!</h1>
+  <p style="color: #94a3b8; font-size: 1.05rem;">Bonjour {name},</p>
+  <p style="color: #e4e4e7;">Votre compte a été créé avec succès. Vous pouvez maintenant planifier votre semaine nutritionnelle.</p>
+  <div style="margin: 24px 0;">
+    <a href="{APP_URL}" style="display: inline-block; padding: 12px 28px; background: #22c55e; color: #0f1117; text-decoration: none; border-radius: 8px; font-weight: 700;">Commencer →</a>
+  </div>
+  <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 24px;">NutriFood — slopvibe.org</p>
+</div>'''
+
+    text = f"Bienvenue sur NutriFood!\n\nBonjour {name},\n\nVotre compte a été créé avec succès.\n\nCommencez ici: {APP_URL}\n\nNutriFood — slopvibe.org"
+
+    msg.attach(MIMEText(text, 'plain'))
+    msg.attach(MIMEText(html, 'html'))
+
+    try:
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
+            server.login(SMTP_USER, SMTP_PASS)
+            server.sendmail(MAIL_FROM, to_email, msg.as_string())
+        print(f'[NutriFood] Welcome email sent to {to_email}')
+        return True
+    except Exception as e:
+        print(f'[NutriFood] Email error: {e}')
+        return False
 
 # ─── Database ───
 
@@ -149,6 +194,9 @@ def register():
     db.execute('INSERT INTO selections (user_id, data) VALUES (?, ?)', (cursor.lastrowid, '{}'))
     db.commit()
 
+    # Send welcome email (async-safe: just log on failure)
+    send_welcome_email(email, name)
+
     token = make_token(cursor.lastrowid, email)
     return jsonify({
         'token': token,
@@ -158,14 +206,15 @@ def register():
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json() or {}
-    email = (data.get('email') or '').strip().lower()
+    identifier = (data.get('email') or data.get('identifier') or '').strip()
     password = data.get('password') or ''
 
-    if not email or not password:
-        return jsonify({'error': 'Email et mot de passe requis'}), 400
+    if not identifier or not password:
+        return jsonify({'error': 'Identifiant et mot de passe requis'}), 400
 
     db = get_db()
-    user = db.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
+    # Login by email or by name (case-insensitive)
+    user = db.execute('SELECT * FROM users WHERE email = ? OR LOWER(name) = ?', (identifier.lower(), identifier.lower())).fetchone()
     if not user:
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 

@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NutriFood — Densité Nutritionnelle</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --card: #1a1d27;
+    --accent: #4ade80;
+    --accent-dim: #22c55e;
+    --accent-red: #f87171;
+    --accent-amber: #fbbf24;
+    --text: #e4e4e7;
+    --text-dim: #94a3b8;
+    --border: #2a2d3a;
+    --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 20px;
+    max-width: 900px;
+    margin: 0 auto;
+    padding-bottom: 100px;
+  }
+  h1 {
+    font-size: 1.8rem;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), #38bdf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--border);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab {
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    cursor: pointer;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .tab-dot.under { background: var(--accent-red); }
+  .tab-dot.in-range { background: var(--accent); }
+  .tab-dot.over { background: var(--accent-amber); }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--accent-dim); }
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .cat-label {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .icon { font-size: 1.3rem; margin-right: 6px; }
+
+  .counter-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 20px;
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: #12141c;
+    color: var(--text-dim);
+    transition: all 0.2s;
+  }
+  .counter-badge.under { color: var(--accent-red); border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
+  .counter-badge.in-range { color: var(--accent); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.1); }
+  .counter-badge.over { color: var(--accent-amber); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.1); }
+
+  select {
+    width: 100%;
+    padding: 10px 12px;
+    background: #12141c;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234ade80' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    margin-bottom: 8px;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+  select option { background: var(--card); color: var(--text); padding: 8px; }
+
+  .checkbox-add {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; background: #12141c;
+    border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s;
+    margin-bottom: 8px;
+  }
+  .checkbox-add:hover { border-color: var(--accent-dim); }
+  .checkbox-add input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 5px 6px 5px 10px;
+    background: rgba(74,222,128,0.12);
+    border: 1px solid rgba(74,222,128,0.35);
+    border-radius: 20px; font-size: 0.85rem; color: var(--text);
+    animation: chipIn 0.2s ease;
+  }
+  .chip .density-tag { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+  .chip .qty-controls { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
+  .chip .qty-btn {
+    background: rgba(74,222,128,0.2); border: none; color: var(--accent);
+    cursor: pointer; font-size: 0.8rem; line-height: 1;
+    width: 20px; height: 20px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; font-weight: 700;
+  }
+  .chip .qty-btn:hover { background: rgba(74,222,128,0.4); }
+  .chip .qty-num { font-weight: 700; color: var(--text); min-width: 16px; text-align: center; font-size: 0.85rem; }
+  .chip .remove-btn {
+    background: none; border: none; color: var(--accent-red);
+    cursor: pointer; font-size: 1.1rem; line-height: 1;
+    padding: 0; margin-left: 2px; opacity: 0.7; transition: opacity 0.15s;
+  }
+  .chip .remove-btn:hover { opacity: 1; }
+  @keyframes chipIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+  .chip[title] { cursor: help; }
+
+  #save-bar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: var(--card); border-top: 1px solid var(--border);
+    padding: 12px 20px; display: flex;
+    justify-content: space-between; align-items: center;
+    z-index: 100; transform: translateY(100%); transition: transform 0.3s ease;
+  }
+  #save-bar.visible { transform: translateY(0); }
+  #save-bar .save-info { font-size: 0.85rem; color: var(--text-dim); }
+  #save-btn {
+    padding: 10px 24px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  #save-btn:hover { background: var(--accent); }
+  #save-btn:disabled { opacity: 0.4; cursor: default; }
+  #save-btn.dirty { background: var(--accent-amber); animation: pulse 2s infinite; }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+    50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); }
+  }
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+  @media (max-width: 600px) {
+    .grid { grid-template-columns: 1fr; }
+    #save-bar { flex-direction: column; gap: 8px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<h1>🍎 NutriFood</h1>
+<p class="subtitle">Aliments classés par densité nutritionnelle — du plus dense au moins dense</p>
+
+<div id="app"><p class="loading">Chargement…</p></div>
+
+<div id="save-bar">
+  <span class="save-info" id="save-info">Chargement…</span>
+  <button id="save-btn" disabled onclick="saveSelections()">💾 Sauvegarder</button>
+</div>
+
+<script>
+let DATA = null;
+let selections = {};
+let savedSnapshot = '{}';
+let activeTab = null;
+const STORAGE_KEY = 'nutrif…ions';
+
+async function init() {
+  try {
+    const res = await fetch('foods.json');
+    DATA = await res.json();
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) selections = JSON.parse(stored);
+    try {
+      const serverRes = await fetch('user-selections.json');
+      if (serverRes.ok) {
+        const serverData = await serverRes.json();
+        if (serverData && Object.keys(serverData).length > 0) selections = serverData;
+      }
+    } catch(e) {}
+    Object.values(selections).forEach(arr => arr.forEach(item => { if (!item.qty) item.qty = 1; }));
+    savedSnapshot = JSON.stringify(selections);
+    activeTab = DATA.sections[0].id;
+    render();
+    updateSaveBar();
+  } catch (e) {
+    document.getElementById('app').innerHTML = '<p class="loading">Erreur de chargement</p>';
+  }
+}
+
+function render() {
+  const app = document.getElementById('app');
+
+  // Tabs
+  let html = '<div class="tabs">';
+  DATA.sections.forEach(sec => {
+    const dotClass = getSectionDotClass(sec.id);
+    html += `<button class="tab ${sec.id === activeTab ? 'active' : ''}" onclick="switchTab('${sec.id}')">
+      <span class="tab-dot ${dotClass}"></span>
+      ${sec.icon} ${sec.name}
+    </button>`;
+  });
+  html += '</div>';
+
+  // Tab contents
+  DATA.sections.forEach(sec => {
+    const cats = DATA.categories.filter(c => c.section === sec.id);
+    html += `<div class="tab-content ${sec.id === activeTab ? 'active' : ''}" id="tab-${sec.id}">`;
+    html += '<div class="grid">';
+    cats.forEach(cat => {
+      const sorted = [...cat.foods].sort((a, b) => b.density - a.density);
+      html += renderCard({ ...cat, foods: sorted });
+    });
+    html += '</div></div>';
+  });
+
+  app.innerHTML = html;
+}
+
+function getSectionDotClass(sectionId) {
+  const cats = DATA.categories.filter(c => c.section === sectionId);
+  let totalSelected = 0, totalMin = 0, totalMax = 0;
+  cats.forEach(cat => {
+    const sel = (selections[cat.id] || []);
+    totalSelected += sel.reduce((s, i) => s + i.qty, 0);
+    totalMin += cat.weekly_min;
+    totalMax += cat.weekly_max;
+  });
+  if (totalSelected === 0) return 'under';
+  if (totalSelected < totalMin) return 'under';
+  if (totalSelected > totalMax) return 'over';
+  return 'in-range';
+}
+
+function switchTab(tabId) {
+  activeTab = tabId;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  // Re-render to update dots
+  render();
+}
+
+function renderCard(cat) {
+  const selected = selections[cat.id] || [];
+  const totalCount = selected.reduce((s, i) => s + i.qty, 0);
+  return `
+    <div class="card" data-cat="${cat.id}">
+      <div class="card-header">
+        <span class="cat-label"><span class="icon">${cat.icon}</span>${cat.name}</span>
+        ${renderCounter(cat, totalCount)}
+      </div>
+      ${cat.type === 'checkbox' ? renderCheckboxAdd(cat, selected) : renderSelect(cat)}
+      <div class="chips" id="chips-${cat.id}">${renderChips(cat.id, selected)}</div>
+    </div>`;
+}
+
+function renderCounter(cat, count) {
+  const min = cat.weekly_min, max = cat.weekly_max;
+  const target = min === max ? `${min}` : `${min}-${max}`;
+  const cls = count < min ? 'under' : (count > max ? 'over' : 'in-range');
+  return `<span class="counter-badge ${count > 0 ? cls : ''}">${count} / ${target} sem.</span>`;
+}
+
+function renderSelect(cat) {
+  const opts = cat.foods.map(f =>
+    `<option value="${f.name}" data-density="${f.density}" data-nutrients="${f.nutrients}">${f.name} — ${f.density}% (${f.nutrients})</option>`
+  ).join('');
+  return `<select id="sel-${cat.id}" onchange="addFromSelect('${cat.id}', this)">
+    <option value="">+ Ajouter…</option>
+    ${opts}
+  </select>`;
+}
+
+function renderCheckboxAdd(cat, selected) {
+  return cat.foods.map(f => {
+    const isChecked = selected.some(s => s.name === f.name);
+    return `<label class="checkbox-add">
+      <input type="checkbox" ${isChecked ? 'checked' : ''}
+        onchange="toggleCheckbox('${cat.id}', '${f.name.replace(/'/g, "\\'")}', ${f.density}, '${f.nutrients.replace(/'/g, "\\'")}', this.checked)"
+      >
+      <span>+ ${f.name} (${f.density}%)</span>
+    </label>`;
+  }).join('');
+}
+
+function renderChips(catId, selected) {
+  return [...selected]
+    .sort((a, b) => b.density - a.density)
+    .map(item => {
+      const qtyControls = item.qty > 1 ? `
+        <span class="qty-controls">
+          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', -1)" title="Réduire">−</button>
+          <span class="qty-num">×${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)" title="Augmenter">+</button>
+        </span>` : `
+        <span class="qty-controls">
+          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)" title="Augmenter">+</button>
+        </span>`;
+      return `<span class="chip" title="${item.nutrients}">
+        ${item.name}
+        <span class="density-tag">${item.density}%</span>
+        ${qtyControls}
+        <button class="remove-btn" onclick="removeItem('${catId}', '${item.name.replace(/'/g, "\\'")}')" title="Retirer">×</button>
+      </span>`;
+    }).join('');
+}
+
+// ─── Actions ───
+function addFromSelect(catId, selectEl) {
+  if (!selectEl.value) return;
+  const opt = selectEl.options[selectEl.selectedIndex];
+  addItem(catId, { name: opt.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
+  selectEl.value = '';
+}
+
+function addItem(catId, item) {
+  if (!selections[catId]) selections[catId] = [];
+  const existing = selections[catId].find(s => s.name === item.name);
+  if (existing) { existing.qty = (existing.qty || 1) + 1; }
+  else { selections[catId].push({ ...item, qty: 1 }); }
+  refreshCard(catId);
+  updateTabDots();
+  persistLocal();
+  updateSaveBar();
+}
+
+function removeItem(catId, name) {
+  if (!selections[catId]) return;
+  selections[catId] = selections[catId].filter(s => s.name !== name);
+  if (selections[catId].length === 0) delete selections[catId];
+  const card = document.querySelector(`[data-cat="${catId}"]`);
+  if (card) {
+    card.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+      const span = cb.parentElement.querySelector('span');
+      if (span && span.textContent.includes(name)) cb.checked = false;
+    });
+  }
+  refreshCard(catId);
+  updateTabDots();
+  persistLocal();
+  updateSaveBar();
+}
+
+function changeQty(catId, name, delta) {
+  if (!selections[catId]) return;
+  const item = selections[catId].find(s => s.name === name);
+  if (!item) return;
+  item.qty = (item.qty || 1) + delta;
+  if (item.qty <= 0) { removeItem(catId, name); }
+  else { refreshCard(catId); updateTabDots(); persistLocal(); updateSaveBar(); }
+}
+
+function toggleCheckbox(catId, name, density, nutrients, checked) {
+  if (checked) addItem(catId, { name, density, nutrients });
+  else removeItem(catId, name);
+}
+
+function refreshCard(catId) {
+  const card = document.querySelector(`[data-cat="${catId}"]`);
+  if (!card) return;
+  const cat = DATA.categories.find(c => c.id === catId);
+  if (!cat) return;
+  const selected = selections[catId] || [];
+  const totalCount = selected.reduce((s, i) => s + i.qty, 0);
+  const badge = card.querySelector('.counter-badge');
+  if (badge) {
+    const min = cat.weekly_min, max = cat.weekly_max;
+    const target = min === max ? `${min}` : `${min}-${max}`;
+    badge.textContent = `${totalCount} / ${target} sem.`;
+    badge.className = 'counter-badge ' + (totalCount === 0 ? '' : (totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range')));
+  }
+  const chipsContainer = card.querySelector(`#chips-${catId}`);
+  if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
+}
+
+function updateTabDots() {
+  DATA.sections.forEach(sec => {
+    const dotClass = getSectionDotClass(sec.id);
+    const idx = DATA.sections.findIndex(s => s.id === sec.id);
+    const tabs = document.querySelectorAll('.tab');
+    if (tabs[idx]) {
+      const dot = tabs[idx].querySelector('.tab-dot');
+      if (dot) dot.className = 'tab-dot ' + dotClass;
+    }
+  });
+}
+
+// ─── Persistence ───
+function persistLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(selections)); }
+function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
+
+function updateSaveBar() {
+  const bar = document.getElementById('save-bar');
+  const btn = document.getElementById('save-btn');
+  const info = document.getElementById('save-info');
+  const total = Object.values(selections).reduce((sum, arr) => sum + arr.reduce((s, i) => s + i.qty, 0), 0);
+  if (isDirty()) {
+    bar.classList.add('visible'); btn.classList.add('dirty'); btn.disabled = false;
+    info.textContent = `${total} aliment(s) — modifications non sauvegardées`;
+  } else {
+    btn.classList.remove('dirty'); btn.disabled = true;
+    if (total > 0) { bar.classList.add('visible'); info.textContent = `${total} aliment(s) sélectionné(s) — sauvegardé ✓`; }
+    else { bar.classList.remove('visible'); }
+  }
+}
+
+async function saveSelections() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
+  try {
+    const res = await fetch('save-selections.php', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(selections)
+    });
+    if (res.ok) { savedSnapshot = JSON.stringify(selections); persistLocal(); }
+    else { persistLocal(); savedSnapshot = JSON.stringify(selections); }
+  } catch(e) { persistLocal(); savedSnapshot = JSON.stringify(selections); }
+  btn.textContent = '💾 Sauvegarder'; updateSaveBar();
+}
+
+init();
+</script>
+</body>
+</html>

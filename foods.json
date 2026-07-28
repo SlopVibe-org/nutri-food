@@ -1,0 +1,197 @@
+{
+  "sections": [
+    { "id": "viandes-laitiers", "name": "Viandes & Produits Laitiers", "icon": "🥩" },
+    { "id": "feculents", "name": "Féculents", "icon": "🥔" }
+  ],
+  "categories": [
+    {
+      "id": "poissons-gras",
+      "name": "Poissons Gras",
+      "icon": "🐟",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 2,
+      "weekly_max": 4,
+      "foods": [
+        { "name": "Sardines", "density": 100, "nutrients": "Ω-3, B12, D, Calcium" },
+        { "name": "Saumon", "density": 92, "nutrients": "Ω-3, B12, D, Sélénium" },
+        { "name": "Maquereau", "density": 88, "nutrients": "Ω-3, B12, D, Sélénium" },
+        { "name": "Truite", "density": 80, "nutrients": "Ω-3, B12, B6, Niacine" }
+      ]
+    },
+    {
+      "id": "poissons-blancs",
+      "name": "Poissons Blancs",
+      "icon": "🐠",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 2,
+      "weekly_max": 3,
+      "foods": [
+        { "name": "Thon pâle", "density": 85, "nutrients": "Protéine, B3, B12, Sélénium" },
+        { "name": "Morue", "density": 72, "nutrients": "Protéine, B12, Iode, Phosphore" },
+        { "name": "Flétan", "density": 68, "nutrients": "Protéine, B12, Magnésium" },
+        { "name": "Aiglefin", "density": 65, "nutrients": "B12, B6, Sélénium" },
+        { "name": "Sole", "density": 55, "nutrients": "Protéine, B12, Iode" }
+      ]
+    },
+    {
+      "id": "fruits-mer",
+      "name": "Fruits de Mer",
+      "icon": "🦪",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 1,
+      "weekly_max": 2,
+      "foods": [
+        { "name": "Huîtres", "density": 95, "nutrients": "Zinc, B12, Fer, Cuivre, Ω-3" },
+        { "name": "Pétoncles", "density": 78, "nutrients": "B12, Magnésium, Zinc, Iode" },
+        { "name": "Crevettes", "density": 70, "nutrients": "Protéine, Iode, B12, Astaxanthine" }
+      ]
+    },
+    {
+      "id": "poulet",
+      "name": "Poulet",
+      "icon": "🐔",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 2,
+      "weekly_max": 3,
+      "foods": [
+        { "name": "Blanc de poulet", "density": 75, "nutrients": "Protéine, B3, B6, Phosphore" },
+        { "name": "Cuisse de poulet", "density": 60, "nutrients": "Fer, Zinc, B2, B12" },
+        { "name": "Aile de poulet", "density": 55, "nutrients": "Collagène, Fer, Zinc" }
+      ]
+    },
+    {
+      "id": "oeufs",
+      "name": "Œufs",
+      "icon": "🥚",
+      "section": "viandes-laitiers",
+      "type": "checkbox",
+      "weekly_min": 3,
+      "weekly_max": 6,
+      "foods": [
+        { "name": "Œufs entiers", "density": 82, "nutrients": "Choline, B12, D, Lutéine, Protéine" }
+      ]
+    },
+    {
+      "id": "viande-rouge",
+      "name": "Viande Rouge",
+      "icon": "🥩",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 1,
+      "weekly_max": 1,
+      "foods": [
+        { "name": "Foie de bœuf", "density": 98, "nutrients": "Fer, B12, A, Folate, Cuivre" },
+        { "name": "Bœuf maigre", "density": 80, "nutrients": "Fer, B12, Zinc, Protéine" },
+        { "name": "Bifteck de surlonge", "density": 72, "nutrients": "Protéine, Fer, B12" },
+        { "name": "Veau", "density": 68, "nutrients": "Protéine, B12, Zinc" },
+        { "name": "Agneau", "density": 65, "nutrients": "Fer, B12, Zinc, Protéine" }
+      ]
+    },
+    {
+      "id": "legumineuses",
+      "name": "Légumineuses",
+      "icon": "🫘",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 2,
+      "weekly_max": 4,
+      "foods": [
+        { "name": "Lentilles", "density": 78, "nutrients": "Fer, Folate, Fibres, Protéine, Mg" },
+        { "name": "Pois chiches", "density": 72, "nutrients": "Folate, Fer, Fibres, Cuivre" },
+        { "name": "Haricots", "density": 68, "nutrients": "Fibres, Fer, Folate, Potassium" },
+        { "name": "Pois cassés", "density": 65, "nutrients": "Protéine, Fibres, Folate, Thiamine" }
+      ]
+    },
+    {
+      "id": "noix-graines",
+      "name": "Noix & Graines",
+      "icon": "🥜",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 4,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Graines de chanvre", "density": 90, "nutrients": "Protéine, Ω-3, Mg, Fer, Zn" },
+        { "name": "Graines de chia", "density": 88, "nutrients": "Ω-3, Fibres, Ca, Mg" },
+        { "name": "Graines de lin", "density": 86, "nutrients": "Ω-3, Lignanes, Fibres" },
+        { "name": "Graines de citrouille", "density": 85, "nutrients": "Mg, Zn, Fer, Ω-3" },
+        { "name": "Amandes", "density": 82, "nutrients": "Vit E, Mg, Fibres, Protéine" },
+        { "name": "Noix de Grenoble", "density": 78, "nutrients": "Ω-3, Vit E, Mg, Antioxydants" },
+        { "name": "Pistaches", "density": 75, "nutrients": "B6, Potassium, Protéine, Antioxydants" },
+        { "name": "Noisettes", "density": 72, "nutrients": "Vit E, Mg, Fibres, Acide folique" },
+        { "name": "Noix de cajou", "density": 70, "nutrients": "Mg, Fer, Zn, Cuivre" }
+      ]
+    },
+    {
+      "id": "lait",
+      "name": "Lait & Produits Laitiers",
+      "icon": "🥛",
+      "section": "viandes-laitiers",
+      "type": "select",
+      "weekly_min": 10,
+      "weekly_max": 10,
+      "foods": [
+        { "name": "Yaourt grec", "density": 70, "nutrients": "Protéine, Calcium, B12, Probiotiques" },
+        { "name": "Fromage cottage", "density": 65, "nutrients": "Caséine, Calcium, B12, Phosphore" },
+        { "name": "Fromage", "density": 60, "nutrients": "Calcium, B12, Protéine, Zinc, Vit A" }
+      ]
+    },
+    {
+      "id": "feculents-tres-bons",
+      "name": "Très Bons Choix",
+      "icon": "⭐",
+      "section": "feculents",
+      "type": "select",
+      "weekly_min": 16,
+      "weekly_max": 16,
+      "foods": [
+        { "name": "Quinoa", "density": 85, "nutrients": "Protéine complète, Fer, Mg, Fibres, Folate" },
+        { "name": "Sarrasin", "density": 82, "nutrients": "Rutine, Mg, Fibres, Mn, Protéine" },
+        { "name": "Avoine complète", "density": 80, "nutrients": "β-glucanes, Fibres, Mn, Fe, Zn" },
+        { "name": "Orge mondé", "density": 75, "nutrients": "Fibres β-glucanes, Sélenium, Cu, Mn" },
+        { "name": "Riz sauvage", "density": 78, "nutrients": "Protéine, Mg, Zn, Mn, Antioxydants" },
+        { "name": "Épeautre complet", "density": 72, "nutrients": "Protéine, Fer, Mg, Niacine" },
+        { "name": "Boulgour complet", "density": 70, "nutrients": "Fibres, Fer, Mn, B6, Mg" },
+        { "name": "Millet", "density": 68, "nutrients": "Mg, P, Cu, Mn, Antioxydants" },
+        { "name": "Amarante", "density": 82, "nutrients": "Protéine complète, Fer, Ca, Mg, Fibres" }
+      ]
+    },
+    {
+      "id": "feculents-bons",
+      "name": "Bons Choix",
+      "icon": "✅",
+      "section": "feculents",
+      "type": "select",
+      "weekly_min": 7,
+      "weekly_max": 7,
+      "foods": [
+        { "name": "Riz brun", "density": 65, "nutrients": "Mn, Mg, B-vitamines, Fibres" },
+        { "name": "Riz noir", "density": 70, "nutrients": "Anthocyanes, Fer, Vit E, Fibres" },
+        { "name": "Riz rouge", "density": 68, "nutrients": "Antioxydants, Fer, Zn, Mg" },
+        { "name": "Pâtes de blé entier", "density": 60, "nutrients": "Fibres, Mn, Cu, B3" },
+        { "name": "Nouilles soba", "density": 62, "nutrients": "Rutine, Mg, Mn, Protéine" },
+        { "name": "Nouilles de sarrasin", "density": 62, "nutrients": "Rutine, Mg, Protéine, Fibres" },
+        { "name": "Pain intégral au levain", "density": 58, "nutrients": "Fibres, Fer, B-vitamines, Probiotiques" },
+        { "name": "Tortillas de grain entier", "density": 55, "nutrients": "Fibres, Ca, Fer, B-vitamines" }
+      ]
+    },
+    {
+      "id": "feculents-tubercules",
+      "name": "Tubercules",
+      "icon": "🥔",
+      "section": "feculents",
+      "type": "select",
+      "weekly_min": 4,
+      "weekly_max": 4,
+      "foods": [
+        { "name": "Patates douces", "density": 78, "nutrients": "β-carotène, Vit A, Vit C, K, Fibres" },
+        { "name": "Pommes de terre", "density": 65, "nutrients": "K, Vit C, B6, Fibres, Résistant" },
+        { "name": "Topinambours", "density": 70, "nutrients": "Inuline, K, Fer, Fibres prébiotiques" }
+      ]
+    }
+  ]
+}

@@ -36,89 +36,95 @@
     background-clip: text;
   }
   .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+  .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+  .user-area { display: flex; align-items: center; gap: 10px; }
+  .user-name { font-size: 0.9rem; color: var(--text-dim); }
+  .auth-btn {
+    padding: 6px 14px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .auth-btn:hover { background: var(--accent); }
+  .auth-btn.outline { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); }
+  .auth-btn.outline:hover { background: rgba(74,222,128,0.1); }
+
+  /* Auth modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+    width: 100%; max-width: 360px;
+  }
+  .modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
+  .modal .field { margin-bottom: 12px; }
+  .modal label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+  .modal input {
+    width: 100%; padding: 10px 12px; background: #12141c;
+    color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; font-size: 0.95rem;
+  }
+  .modal input:focus { outline: none; border-color: var(--accent); }
+  .modal .error-msg { color: var(--accent-red); font-size: 0.85rem; margin-bottom: 8px; }
+  .modal .submit-btn {
+    width: 100%; padding: 12px; background: var(--accent-dim);
+    color: #0f1117; border: none; border-radius: 8px;
+    font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px;
+  }
+  .modal .submit-btn:hover { background: var(--accent); }
+  .modal .switch-link { text-align: center; margin-top: 12px; font-size: 0.85rem; color: var(--text-dim); }
+  .modal .switch-link a { color: var(--accent); cursor: pointer; text-decoration: none; }
 
   /* Tabs */
   .tabs {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid var(--border);
-    overflow-x: auto;
+    display: flex; gap: 4px; margin-bottom: 20px;
+    border-bottom: 2px solid var(--border); overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
   .tab {
-    padding: 10px 16px;
-    background: none;
-    border: none;
-    color: var(--text-dim);
-    font-size: 0.95rem;
-    cursor: pointer;
-    white-space: nowrap;
-    border-bottom: 3px solid transparent;
-    margin-bottom: -2px;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
+    padding: 10px 16px; background: none; border: none;
+    color: var(--text-dim); font-size: 0.95rem; cursor: pointer;
+    white-space: nowrap; border-bottom: 3px solid transparent;
+    margin-bottom: -2px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px; font-weight: 600;
   }
   .tab:hover { color: var(--text); }
-  .tab.active {
-    color: var(--accent);
-    border-bottom-color: var(--accent);
-  }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--border);
-    flex-shrink: 0;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--border); flex-shrink: 0;
   }
   .tab-dot.under { background: var(--accent-red); }
   .tab-dot.in-range { background: var(--accent); }
   .tab-dot.over { background: var(--accent-amber); }
-
   .tab-content { display: none; }
   .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
   .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px;
   }
   .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    transition: border-color 0.2s;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px; transition: border-color 0.2s;
   }
   .card:hover { border-color: var(--accent-dim); }
   .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
   }
   .cat-label {
-    font-size: 0.85rem;
-    color: var(--text-dim);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-size: 0.85rem; color: var(--text-dim); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.5px;
   }
   .icon { font-size: 1.3rem; margin-right: 6px; }
-
   .counter-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 20px;
-    white-space: nowrap;
-    border: 1px solid var(--border);
-    background: #12141c;
-    color: var(--text-dim);
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; white-space: nowrap;
+    border: 1px solid var(--border); background: #12141c; color: var(--text-dim);
     transition: all 0.2s;
   }
   .counter-badge.under { color: var(--accent-red); border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
@@ -126,20 +132,12 @@
   .counter-badge.over { color: var(--accent-amber); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.1); }
 
   select {
-    width: 100%;
-    padding: 10px 12px;
-    background: #12141c;
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    cursor: pointer;
-    appearance: none;
+    width: 100%; padding: 10px 12px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+    cursor: pointer; appearance: none;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234ade80' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 36px;
-    margin-bottom: 8px;
+    background-repeat: no-repeat; background-position: right 12px center;
+    padding-right: 36px; margin-bottom: 8px;
   }
   select:focus { outline: none; border-color: var(--accent); }
   select option { background: var(--card); color: var(--text); padding: 8px; }
@@ -148,8 +146,7 @@
     display: flex; align-items: center; gap: 8px;
     padding: 10px 12px; background: #12141c;
     border: 1px solid var(--border); border-radius: 8px;
-    cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s;
-    margin-bottom: 8px;
+    cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s; margin-bottom: 8px;
   }
   .checkbox-add:hover { border-color: var(--accent-dim); }
   .checkbox-add input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
@@ -158,8 +155,7 @@
   .chip {
     display: inline-flex; align-items: center; gap: 4px;
     padding: 5px 6px 5px 10px;
-    background: rgba(74,222,128,0.12);
-    border: 1px solid rgba(74,222,128,0.35);
+    background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.35);
     border-radius: 20px; font-size: 0.85rem; color: var(--text);
     animation: chipIn 0.2s ease;
   }
@@ -213,8 +209,38 @@
 </head>
 <body>
 
-<h1>🍎 NutriFood</h1>
-<p class="subtitle">Aliments classés par densité nutritionnelle — du plus dense au moins dense</p>
+<div class="header-row">
+  <div>
+    <h1>🍎 NutriFood</h1>
+    <p class="subtitle">Aliments classés par densité nutritionnelle</p>
+  </div>
+  <div class="user-area" id="user-area"></div>
+</div>
+
+<!-- Auth Modal -->
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <h2 id="auth-title">Connexion</h2>
+    <div class="error-msg" id="auth-error"></div>
+    <div class="field" id="name-field" style="display:none;">
+      <label>Nom</label>
+      <input type="text" id="auth-name" placeholder="Votre nom">
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="auth-email" placeholder="vous@example.com">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="auth-password" placeholder="••••••">
+    </div>
+    <button class="submit-btn" id="auth-submit" onclick="submitAuth()">Connexion</button>
+    <div class="switch-link">
+      <span id="auth-switch-text">Pas de compte? </span>
+      <a id="auth-switch-link" onclick="toggleAuthMode()">S'inscrire</a>
+    </div>
+  </div>
+</div>
 
 <div id="app"><p class="loading">Chargement…</p></div>
 
@@ -224,61 +250,171 @@
 </div>
 
 <script>
+const API = '/nutri-food/api';
 let DATA = null;
 let selections = {};
 let savedSnapshot = '{}';
 let activeTab = null;
-const STORAGE_KEY = 'nutrif…ions';
+let currentUser = null;
+let authMode = 'login';
 
+const TOKEN_KEY = '***';
+const USER_KEY = '***';
+
+// ─── Auth ───
+function getToken() { return localStorage.getItem(TOKEN_KEY); }
+function setAuth(token, user) {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  currentUser = user;
+  renderUserArea();
+}
+function clearAuth() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  currentUser = null;
+  selections = {};
+  savedSnapshot = '{}';
+  renderUserArea();
+  render();
+  updateSaveBar();
+}
+
+function renderUserArea() {
+  const area = document.getElementById('user-area');
+  if (currentUser) {
+    area.innerHTML = `
+      <span class="user-name">👤 ${currentUser.name}</span>
+      <button class="auth-btn outline" onclick="clearAuth()">Déconnexion</button>
+    `;
+  } else {
+    area.innerHTML = `<button class="auth-btn" onclick="showAuth('login')">Connexion</button>`;
+  }
+}
+
+function showAuth(mode) {
+  authMode = mode;
+  document.getElementById('auth-error').textContent = '';
+  document.getElementById('auth-modal').classList.remove('hidden');
+  document.getElementById('name-field').style.display = mode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-title').textContent = mode === 'register' ? 'Créer un compte' : 'Connexion';
+  document.getElementById('auth-submit').textContent = mode === 'register' ? "S'inscrire" : 'Connexion';
+  document.getElementById('auth-switch-text').textContent = mode === 'register' ? 'Déjà inscrit? ' : 'Pas de compte? ';
+  document.getElementById('auth-switch-link').textContent = mode === 'register' ? 'Connexion' : "S'inscrire";
+}
+
+function toggleAuthMode() {
+  showAuth(authMode === 'login' ? 'register' : 'login');
+}
+
+async function submitAuth() {
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const password = document.getElementById('auth-password').value;
+  const name = document.getElementById('auth-name').value.trim();
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+
+  if (!email || !password) {
+    errEl.textContent = 'Email et mot de passe requis';
+    return;
+  }
+  if (authMode === 'register' && !name) {
+    errEl.textContent = 'Nom requis';
+    return;
+  }
+
+  const endpoint = authMode === 'register' ? '/register' : '/login';
+  try {
+    const res = await fetch(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(authMode === 'register' ? { email, name, password } : { email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      errEl.textContent = data.error || 'Erreur';
+      return;
+    }
+    setAuth(data.token, data.user);
+    document.getElementById('auth-modal').classList.add('hidden');
+    document.getElementById('auth-email').value = '';
+    document.getElementById('auth-password').value = '';
+    document.getElementById('auth-name').value = '';
+    await loadSelectionsFromServer();
+    render();
+    updateSaveBar();
+  } catch(e) {
+    errEl.textContent = 'Erreur de connexion au serveur';
+  }
+}
+
+// ─── Server selections ───
+async function loadSelectionsFromServer() {
+  const token = getToken();
+  if (!token) return;
+  try {
+    const res = await fetch(API + '/selections', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.status === 401) { clearAuth(); return; }
+    const data = await res.json();
+    selections = data.selections || {};
+    Object.values(selections).forEach(arr => arr.forEach(item => { if (!item.qty) item.qty = 1; }));
+    savedSnapshot = JSON.stringify(selections);
+  } catch(e) {}
+}
+
+// ─── Init ───
 async function init() {
   try {
     const res = await fetch('foods.json');
     DATA = await res.json();
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) selections = JSON.parse(stored);
-    try {
-      const serverRes = await fetch('user-selections.json');
-      if (serverRes.ok) {
-        const serverData = await serverRes.json();
-        if (serverData && Object.keys(serverData).length > 0) selections = serverData;
-      }
-    } catch(e) {}
-    Object.values(selections).forEach(arr => arr.forEach(item => { if (!item.qty) item.qty = 1; }));
-    savedSnapshot = JSON.stringify(selections);
     activeTab = DATA.sections[0].id;
+
+    // Restore session
+    const savedUser = localStorage.getItem(USER_KEY);
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      // Verify token still valid
+      try {
+        const meRes = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + getToken() } });
+        if (meRes.ok) {
+          renderUserArea();
+          await loadSelectionsFromServer();
+        } else {
+          clearAuth();
+        }
+      } catch(e) { clearAuth(); }
+    }
+
     render();
+    renderUserArea();
     updateSaveBar();
   } catch (e) {
     document.getElementById('app').innerHTML = '<p class="loading">Erreur de chargement</p>';
   }
 }
 
+// ─── Render ───
 function render() {
   const app = document.getElementById('app');
-
-  // Tabs
   let html = '<div class="tabs">';
   DATA.sections.forEach(sec => {
     const dotClass = getSectionDotClass(sec.id);
     html += `<button class="tab ${sec.id === activeTab ? 'active' : ''}" onclick="switchTab('${sec.id}')">
-      <span class="tab-dot ${dotClass}"></span>
-      ${sec.icon} ${sec.name}
+      <span class="tab-dot ${dotClass}"></span>${sec.icon} ${sec.name}
     </button>`;
   });
   html += '</div>';
-
-  // Tab contents
   DATA.sections.forEach(sec => {
     const cats = DATA.categories.filter(c => c.section === sec.id);
-    html += `<div class="tab-content ${sec.id === activeTab ? 'active' : ''}" id="tab-${sec.id}">`;
-    html += '<div class="grid">';
+    html += `<div class="tab-content ${sec.id === activeTab ? 'active' : ''}" id="tab-${sec.id}"><div class="grid">`;
     cats.forEach(cat => {
       const sorted = [...cat.foods].sort((a, b) => b.density - a.density);
       html += renderCard({ ...cat, foods: sorted });
     });
     html += '</div></div>';
   });
-
   app.innerHTML = html;
 }
 
@@ -299,9 +435,6 @@ function getSectionDotClass(sectionId) {
 
 function switchTab(tabId) {
   activeTab = tabId;
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  // Re-render to update dots
   render();
 }
 
@@ -331,10 +464,7 @@ function renderSelect(cat) {
   const opts = cat.foods.map(f =>
     `<option value="${f.name}" data-density="${f.density}" data-nutrients="${f.nutrients}">${f.name} — ${f.density}% (${f.nutrients})</option>`
   ).join('');
-  return `<select id="sel-${cat.id}" onchange="addFromSelect('${cat.id}', this)">
-    <option value="">+ Ajouter…</option>
-    ${opts}
-  </select>`;
+  return `<select id="sel-${cat.id}" onchange="addFromSelect('${cat.id}', this)"><option value="">+ Ajouter…</option>${opts}</select>`;
 }
 
 function renderCheckboxAdd(cat, selected) {
@@ -343,32 +473,24 @@ function renderCheckboxAdd(cat, selected) {
     return `<label class="checkbox-add">
       <input type="checkbox" ${isChecked ? 'checked' : ''}
         onchange="toggleCheckbox('${cat.id}', '${f.name.replace(/'/g, "\\'")}', ${f.density}, '${f.nutrients.replace(/'/g, "\\'")}', this.checked)"
-      >
-      <span>+ ${f.name} (${f.density}%)</span>
+      ><span>+ ${f.name} (${f.density}%)</span>
     </label>`;
   }).join('');
 }
 
 function renderChips(catId, selected) {
-  return [...selected]
-    .sort((a, b) => b.density - a.density)
-    .map(item => {
-      const qtyControls = item.qty > 1 ? `
-        <span class="qty-controls">
-          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', -1)" title="Réduire">−</button>
-          <span class="qty-num">×${item.qty}</span>
-          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)" title="Augmenter">+</button>
-        </span>` : `
-        <span class="qty-controls">
-          <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)" title="Augmenter">+</button>
-        </span>`;
-      return `<span class="chip" title="${item.nutrients}">
-        ${item.name}
-        <span class="density-tag">${item.density}%</span>
-        ${qtyControls}
-        <button class="remove-btn" onclick="removeItem('${catId}', '${item.name.replace(/'/g, "\\'")}')" title="Retirer">×</button>
+  return [...selected].sort((a, b) => b.density - a.density).map(item => {
+    const qtyControls = item.qty > 1 ? `
+      <span class="qty-controls">
+        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', -1)">−</button>
+        <span class="qty-num">×${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)">+</button>
+      </span>` : `
+      <span class="qty-controls">
+        <button class="qty-btn" onclick="changeQty('${catId}', '${item.name.replace(/'/g, "\\'")}', 1)">+</button>
       </span>`;
-    }).join('');
+    return `<span class="chip" title="${item.nutrients}">${item.name}<span class="density-tag">${item.density}%</span>${qtyControls}<button class="remove-btn" onclick="removeItem('${catId}', '${item.name.replace(/'/g, "\\'")}')" title="Retirer">×</button></span>`;
+  }).join('');
 }
 
 // ─── Actions ───
@@ -378,49 +500,36 @@ function addFromSelect(catId, selectEl) {
   addItem(catId, { name: opt.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
   selectEl.value = '';
 }
-
 function addItem(catId, item) {
   if (!selections[catId]) selections[catId] = [];
   const existing = selections[catId].find(s => s.name === item.name);
   if (existing) { existing.qty = (existing.qty || 1) + 1; }
   else { selections[catId].push({ ...item, qty: 1 }); }
-  refreshCard(catId);
-  updateTabDots();
-  persistLocal();
-  updateSaveBar();
+  refreshCard(catId); updateTabDots(); updateSaveBar();
 }
-
 function removeItem(catId, name) {
   if (!selections[catId]) return;
   selections[catId] = selections[catId].filter(s => s.name !== name);
   if (selections[catId].length === 0) delete selections[catId];
   const card = document.querySelector(`[data-cat="${catId}"]`);
-  if (card) {
-    card.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      const span = cb.parentElement.querySelector('span');
-      if (span && span.textContent.includes(name)) cb.checked = false;
-    });
-  }
-  refreshCard(catId);
-  updateTabDots();
-  persistLocal();
-  updateSaveBar();
+  if (card) card.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    const span = cb.parentElement.querySelector('span');
+    if (span && span.textContent.includes(name)) cb.checked = false;
+  });
+  refreshCard(catId); updateTabDots(); updateSaveBar();
 }
-
 function changeQty(catId, name, delta) {
   if (!selections[catId]) return;
   const item = selections[catId].find(s => s.name === name);
   if (!item) return;
   item.qty = (item.qty || 1) + delta;
   if (item.qty <= 0) { removeItem(catId, name); }
-  else { refreshCard(catId); updateTabDots(); persistLocal(); updateSaveBar(); }
+  else { refreshCard(catId); updateTabDots(); updateSaveBar(); }
 }
-
 function toggleCheckbox(catId, name, density, nutrients, checked) {
   if (checked) addItem(catId, { name, density, nutrients });
   else removeItem(catId, name);
 }
-
 function refreshCard(catId) {
   const card = document.querySelector(`[data-cat="${catId}"]`);
   if (!card) return;
@@ -438,21 +547,16 @@ function refreshCard(catId) {
   const chipsContainer = card.querySelector(`#chips-${catId}`);
   if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
 }
-
 function updateTabDots() {
   DATA.sections.forEach(sec => {
     const dotClass = getSectionDotClass(sec.id);
     const idx = DATA.sections.findIndex(s => s.id === sec.id);
     const tabs = document.querySelectorAll('.tab');
-    if (tabs[idx]) {
-      const dot = tabs[idx].querySelector('.tab-dot');
-      if (dot) dot.className = 'tab-dot ' + dotClass;
-    }
+    if (tabs[idx]) { const dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
   });
 }
 
 // ─── Persistence ───
-function persistLocal() { localStorage.setItem(STORAGE_KEY, JSON.stringify(selections)); }
 function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
 
 function updateSaveBar() {
@@ -473,16 +577,24 @@ function updateSaveBar() {
 async function saveSelections() {
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
-  try {
-    const res = await fetch('save-selections.php', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(selections)
-    });
-    if (res.ok) { savedSnapshot = JSON.stringify(selections); persistLocal(); }
-    else { persistLocal(); savedSnapshot = JSON.stringify(selections); }
-  } catch(e) { persistLocal(); savedSnapshot = JSON.stringify(selections); }
+  const token = getToken();
+  if (token) {
+    try {
+      const res = await fetch(API + '/selections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ selections })
+      });
+      if (res.ok) { savedSnapshot = JSON.stringify(selections); }
+    } catch(e) {}
+  }
   btn.textContent = '💾 Sauvegarder'; updateSaveBar();
 }
+
+// Close modal on overlay click
+document.getElementById('auth-modal').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden');
+});
 
 init();
 </script>

@@ -1,0 +1,13 @@
+services:
+  nutrifood-api:
+    build: .
+    container_name: nutrifood-api
+    restart: unless-stopped
+    ports:
+      - "5010:5000"
+    volumes:
+      - ./data:/data
+    environment:
+      - DB_PATH=/data/nutrifood.db
+      - JWT_SECRET=changeme-please-use-a-long-random-string
+      - JWT_EXPIRY_HOURS=2160

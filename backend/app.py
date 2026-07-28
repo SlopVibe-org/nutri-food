@@ -22,9 +22,7 @@ CORS(app, origins=[
 
 DB_PATH = os.environ.get('DB_PATH', '/data/nutrifood.db')
 JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
-JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))  # 90 days default
-
-# Email config
+JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.fastmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
 SMTP_USER = os.environ.get('SMTP_USER', 'ai@slopvibe.org')
@@ -34,37 +32,50 @@ APP_URL = os.environ.get('APP_URL', 'https://slopvibe.org/nutri-food/')
 
 # ─── Email ───
 
-def send_welcome_email(to_email, name):
+def send_email(to_email, subject, html_body, text_body):
     msg = MIMEMultipart('alternative')
     msg['From'] = 'NutriFood <ai@slopvibe.org>'
     msg['To'] = to_email
-    msg['Subject'] = 'Bienvenue sur NutriFood! 🍎'
-
-    html = f'''\
-<div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; max-width: 500px; margin: 0 auto; background: #0f1117; color: #e4e4e7; padding: 32px; border-radius: 12px;">
-  <h1 style="color: #4ade80; margin-bottom: 8px;">🍎 Bienvenue sur NutriFood!</h1>
-  <p style="color: #94a3b8; font-size: 1.05rem;">Bonjour {name},</p>
-  <p style="color: #e4e4e7;">Votre compte a été créé avec succès. Vous pouvez maintenant planifier votre semaine nutritionnelle.</p>
-  <div style="margin: 24px 0;">
-    <a href="{APP_URL}" style="display: inline-block; padding: 12px 28px; background: #22c55e; color: #0f1117; text-decoration: none; border-radius: 8px; font-weight: 700;">Commencer →</a>
-  </div>
-  <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 24px;">NutriFood — slopvibe.org</p>
-</div>'''
-
-    text = f"Bienvenue sur NutriFood!\n\nBonjour {name},\n\nVotre compte a été créé avec succès.\n\nCommencez ici: {APP_URL}\n\nNutriFood — slopvibe.org"
-
-    msg.attach(MIMEText(text, 'plain'))
-    msg.attach(MIMEText(html, 'html'))
-
+    msg['Subject'] = subject
+    msg.attach(MIMEText(text_body, 'plain'))
+    msg.attach(MIMEText(html_body, 'html'))
     try:
         with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT) as server:
             server.login(SMTP_USER, SMTP_PASS)
             server.sendmail(MAIL_FROM, to_email, msg.as_string())
-        print(f'[NutriFood] Welcome email sent to {to_email}')
+        print(f'[NutriFood] Email sent to {to_email}: {subject}')
         return True
     except Exception as e:
         print(f'[NutriFood] Email error: {e}')
         return False
+
+def send_welcome_email(to_email, name):
+    html = (
+        '<div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0f1117;color:#e4e4e7;padding:32px;border-radius:12px">'
+        '<h1 style="color:#4ade80;margin-bottom:8px">🍎 Bienvenue sur NutriFood!</h1>'
+        f'<p style="color:#94a3b8;font-size:1.05rem">Bonjour {name},</p>'
+        '<p style="color:#e4e4e7">Votre compte a été créé avec succès. Vous pouvez maintenant planifier votre semaine nutritionnelle.</p>'
+        f'<div style="margin:24px 0"><a href="{APP_URL}" style="display:inline-block;padding:12px 28px;background:#22c55e;color:#0f1117;text-decoration:none;border-radius:8px;font-weight:700">Commencer →</a></div>'
+        '<p style="color:#94a3b8;font-size:0.85rem;margin-top:24px">NutriFood — slopvibe.org</p>'
+        '</div>'
+    )
+    text = f"Bienvenue sur NutriFood!\n\nBonjour {name},\n\nVotre compte a ete cree avec succes.\n\nCommencez ici: {APP_URL}\n\nNutriFood — slopvibe.org"
+    return send_email(to_email, 'Bienvenue sur NutriFood! 🍎', html, text)
+
+def send_reset_email(to_email, name, token):
+    reset_url = f"{APP_URL}#reset={token}"
+    html = (
+        '<div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0f1117;color:#e4e4e7;padding:32px;border-radius:12px">'
+        '<h1 style="color:#4ade80;margin-bottom:8px">🔑 Réinitialisation de mot de passe</h1>'
+        f'<p style="color:#94a3b8;font-size:1.05rem">Bonjour {name},</p>'
+        '<p style="color:#e4e4e7">Vous avez demandé à réinitialiser votre mot de passe NutriFood.</p>'
+        f'<div style="margin:24px 0"><a href="{reset_url}" style="display:inline-block;padding:12px 28px;background:#22c55e;color:#0f1117;text-decoration:none;border-radius:8px;font-weight:700">Changer mon mot de passe →</a></div>'
+        '<p style="color:#94a3b8;font-size:0.85rem">Ce lien expire dans 1 heure. Si vous n\'avez pas fait cette demande, ignorez cet email.</p>'
+        '<p style="color:#94a3b8;font-size:0.85rem;margin-top:24px">NutriFood — slopvibe.org</p>'
+        '</div>'
+    )
+    text = f"Reinitialisation de mot de passe\n\nBonjour {name},\n\nCliquez ici pour changer votre mot de passe: {reset_url}\n\nCe lien expire dans 1 heure.\n\nNutriFood — slopvibe.org"
+    return send_email(to_email, '🔑 Réinitialisation de mot de passe — NutriFood', html, text)
 
 # ─── Database ───
 
@@ -94,7 +105,6 @@ def init_db():
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         );
-
         CREATE TABLE IF NOT EXISTS selections (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
@@ -103,8 +113,17 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             UNIQUE(user_id)
         );
-
         CREATE INDEX IF NOT EXISTS idx_selections_user ON selections(user_id);
+        CREATE TABLE IF NOT EXISTS reset_tokens (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            expires_at TEXT NOT NULL,
+            used INTEGER DEFAULT 0,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_reset_token ON reset_tokens(token);
     ''')
     conn.commit()
     conn.close()
@@ -186,7 +205,6 @@ def register():
 
     salt = secrets.token_hex(16)
     pw_hash = hash_password(password, salt)
-    
     cursor = db.execute(
         'INSERT INTO users (email, name, password_hash, salt) VALUES (?, ?, ?, ?)',
         (email, name, pw_hash, salt)
@@ -194,7 +212,6 @@ def register():
     db.execute('INSERT INTO selections (user_id, data) VALUES (?, ?)', (cursor.lastrowid, '{}'))
     db.commit()
 
-    # Send welcome email (async-safe: just log on failure)
     send_welcome_email(email, name)
 
     token = make_token(cursor.lastrowid, email)
@@ -213,8 +230,10 @@ def login():
         return jsonify({'error': 'Identifiant et mot de passe requis'}), 400
 
     db = get_db()
-    # Login by email or by name (case-insensitive)
-    user = db.execute('SELECT * FROM users WHERE email = ? OR LOWER(name) = ?', (identifier.lower(), identifier.lower())).fetchone()
+    user = db.execute(
+        'SELECT * FROM users WHERE email = ? OR LOWER(name) = ?',
+        (identifier.lower(), identifier.lower())
+    ).fetchone()
     if not user:
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 
@@ -227,6 +246,122 @@ def login():
         'token': token,
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
     })
+
+# ─── Password reset ───
+
+@app.route('/api/forgot-password', methods=['POST'])
+def forgot_password():
+    data = request.get_json() or {}
+    identifier = (data.get('email') or data.get('identifier') or '').strip()
+
+    if not identifier:
+        return jsonify({'error': 'Email ou nom d\'usager requis'}), 400
+
+    db = get_db()
+    user = db.execute(
+        'SELECT * FROM users WHERE email = ? OR LOWER(name) = ?',
+        (identifier.lower(), identifier.lower())
+    ).fetchone()
+
+    # Always return success to prevent user enumeration
+    if not user:
+        return jsonify({'status': 'ok'})
+
+    # Generate reset token (1 hour expiry)
+    reset_token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(hours=1)
+    db.execute(
+        'INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
+        (user['id'], reset_token, expires_at.isoformat())
+    )
+    db.commit()
+
+    send_reset_email(user['email'], user['name'], reset_token)
+    return jsonify({'status': 'ok'})
+
+@app.route('/api/reset-password', methods=['POST'])
+def reset_password():
+    data = request.get_json() or {}
+    reset_token = data.get('token') or ''
+    new_password = data.get('password') or ''
+
+    if not reset_token or not new_password:
+        return jsonify({'error': 'Token et nouveau mot de passe requis'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Le mot de passe doit faire au moins 6 caractères'}), 400
+
+    db = get_db()
+    row = db.execute(
+        'SELECT * FROM reset_tokens WHERE token = ? AND used = 0',
+        (reset_token,)
+    ).fetchone()
+
+    if not row:
+        return jsonify({'error': 'Token invalide ou déjà utilisé'}), 400
+
+    expires_at = datetime.fromisoformat(row['expires_at'])
+    if datetime.utcnow() > expires_at:
+        return jsonify({'error': 'Ce lien a expiré'}), 400
+
+    # Get user and update password
+    user = db.execute('SELECT * FROM users WHERE id = ?', (row['user_id'],)).fetchone()
+    if not user:
+        return jsonify({'error': 'Utilisateur introuvable'}), 400
+
+    new_salt = secrets.token_hex(16)
+    new_hash = hash_password(new_password, new_salt)
+    db.execute(
+        'UPDATE users SET password_hash = ?, salt = ?, updated_at = datetime(\'now\') WHERE id = ?',
+        (new_hash, new_salt, user['id'])
+    )
+    db.execute('UPDATE reset_tokens SET used = 1 WHERE id = ?', (row['id'],))
+    db.commit()
+
+    # Issue new login token
+    token = make_token(user['id'], user['email'])
+    return jsonify({
+        'status': 'ok',
+        'token': token,
+        'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
+    })
+
+# ─── Change password (logged in) ───
+
+@app.route('/api/change-password', methods=['POST'])
+def change_password():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    data = request.get_json() or {}
+    current_password = data.get('current_password') or ''
+    new_password = data.get('new_password') or ''
+
+    if not current_password or not new_password:
+        return jsonify({'error': 'Mot de passe actuel et nouveau requis'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'Le nouveau mot de passe doit faire au moins 6 caractères'}), 400
+
+    db = get_db()
+    full_user = db.execute('SELECT * FROM users WHERE id = ?', (user['id'],)).fetchone()
+
+    # Verify current password
+    pw_hash = hash_password(current_password, full_user['salt'])
+    if not secrets.compare_digest(pw_hash, full_user['password_hash']):
+        return jsonify({'error': 'Mot de passe actuel incorrect'}), 403
+
+    # Update password
+    new_salt = secrets.token_hex(16)
+    new_hash = hash_password(new_password, new_salt)
+    db.execute(
+        'UPDATE users SET password_hash = ?, salt = ?, updated_at = datetime(\'now\') WHERE id = ?',
+        (new_hash, new_salt, user['id'])
+    )
+    db.commit()
+
+    return jsonify({'status': 'ok'})
+
+# ─── Selections ───
 
 @app.route('/api/selections', methods=['GET'])
 def get_selections():
@@ -274,7 +409,7 @@ def me():
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
     })
 
-# Initialize DB on import (works with gunicorn)
+# Initialize DB on import
 init_db()
 
 if __name__ == '__main__':

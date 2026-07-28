@@ -193,6 +193,50 @@
       <span id="auth-switch-text">Pas de compte? </span>
       <a id="auth-switch-link">S'inscrire</a>
     </div>
+    <div id="forgot-link" style="text-align:center;margin-top:8px;">
+      <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;text-decoration:none;" id="forgot-password-link">Mot de passe oublié?</a>
+    </div>
+  </div>
+</div>
+
+<!-- Change password modal -->
+<div class="modal-overlay hidden" id="pw-modal">
+  <div class="modal">
+    <h2>🔑 Changer le mot de passe</h2>
+    <div class="error-msg" id="pw-error"></div>
+    <div class="field">
+      <label>Mot de passe actuel</label>
+      <input type="password" id="pw-current" autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label>Nouveau mot de passe</label>
+      <input type="password" id="pw-new" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirmer</label>
+      <input type="password" id="pw-confirm" autocomplete="new-password">
+    </div>
+    <button type="button" class="submit-btn" id="pw-submit">Changer</button>
+    <div class="switch-link" style="text-align:center;margin-top:8px;">
+      <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;" id="pw-cancel">Annuler</a>
+    </div>
+  </div>
+</div>
+
+<!-- Reset password screen (magic link) -->
+<div class="modal-overlay hidden" id="reset-modal">
+  <div class="modal">
+    <h2>🔑 Nouveau mot de passe</h2>
+    <div class="error-msg" id="reset-error"></div>
+    <div class="field">
+      <label>Nouveau mot de passe</label>
+      <input type="password" id="reset-password" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirmer</label>
+      <input type="password" id="reset-confirm" autocomplete="new-password">
+    </div>
+    <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
   </div>
 </div>
 
@@ -246,8 +290,9 @@ function renderUserArea() {
   const area = $('user-area');
   if (!area) return;
   if (currentUser) {
-    area.innerHTML = '<span class="user-name">👤 ' + currentUser.name + '</span><button class="auth-btn outline" id="logout-btn">Déconnexion</button>';
+    area.innerHTML = '<span class="user-name">👤 ' + currentUser.name + '</span><button class="auth-btn outline" id="pw-btn">🔑 Mot de passe</button><button class="auth-btn outline" id="logout-btn">Déconnexion</button>';
     $('logout-btn').addEventListener('click', clearAuth);
+    $('pw-btn').addEventListener('click', showChangePassword);
   } else {
     area.innerHTML = '<button class="auth-btn" id="login-btn">Connexion</button>';
     $('login-btn').addEventListener('click', function() { showAuth('login'); });
@@ -312,6 +357,117 @@ function initAuthEvents() {
   $('auth-email').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
   // Close modal on overlay click
   $('auth-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Forgot password
+  $('forgot-password-link').addEventListener('click', function(e) { e.preventDefault(); showForgotPassword(); });
+  // Change password modal
+  $('pw-submit').addEventListener('click', function(e) { e.preventDefault(); submitChangePassword(); });
+  $('pw-cancel').addEventListener('click', function(e) { e.preventDefault(); $('pw-modal').classList.add('hidden'); });
+  // Reset password modal (magic link)
+  $('reset-submit').addEventListener('click', function(e) { e.preventDefault(); submitResetPassword(); });
+}
+
+// ─── Forgot password ───
+function showForgotPassword() {
+  var email = $('auth-email').value.trim();
+  $('auth-modal').classList.add('hidden');
+  $('app').innerHTML = '<div class="welcome"><h2>🔑 Mot de passe oublié</h2><p style="color:var(--text-dim);margin-bottom:20px;">Entrez votre email ou nom d'usager. Vous recevrez un lien par courriel.</p><div style="max-width:340px;margin:0 auto;"><input type="text" id="forgot-email" placeholder="Email ou nom d'usager" value="' + esc(email || '') + '" style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px;"><button class="login-cta" id="forgot-submit">Envoyer le lien</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="forgot-back">← Retour</a></div></div>';
+  $('forgot-submit').addEventListener('click', submitForgotPassword);
+  $('forgot-back').addEventListener('click', function() { window.location.reload(); });
+  $('forgot-email').focus();
+}
+
+async function submitForgotPassword() {
+  var identifier = $('forgot-email').value.trim();
+  if (!identifier) return;
+  $('forgot-submit').textContent = 'Envoi…';
+  $('forgot-submit').disabled = true;
+  try {
+    await fetch(API + '/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: identifier })
+    });
+    // Always show success (prevent enumeration)
+    $('app').innerHTML = '<div class="welcome"><h2>📧 Courriel envoyé</h2><p style="color:var(--text-dim);margin-bottom:20px;">Si ce compte existe, vous recevrez un lien de réinitialisation par courriel. Vérifiez votre boîte de réception.</p><button class="login-cta" id="forgot-done" onclick="location.reload()">Retour à NutriFood</button></div>';
+  } catch(e) {
+    $('forgot-submit').textContent = 'Erreur';
+  }
+}
+
+// ─── Reset via magic link ───
+async function submitResetPassword() {
+  var newPw = $('reset-password').value;
+  var confirmPw = $('reset-confirm').value;
+  var errEl = $('reset-error');
+  errEl.textContent = '';
+  if (!newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'Minimum 6 caractères'; return; }
+
+  var hash = window.location.hash;
+  var resetToken = '';
+  var match = hash.match(/reset=([^&]+)/);
+  if (match) resetToken = decodeURIComponent(match[1]);
+  if (!resetToken) { errEl.textContent = 'Token manquant'; return; }
+
+  $('reset-submit').textContent = 'Changement…';
+  $('reset-submit').disabled = true;
+  try {
+    var res = await fetch(API + '/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: resetToken, password: newPw })
+    });
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false; return; }
+    // Success: log in and redirect
+    setAuth(data.token, data.user);
+    window.location.hash = '';
+    window.location.reload();
+  } catch(e) {
+    errEl.textContent = 'Erreur de connexion'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false;
+  }
+}
+
+// ─── Change password (logged in) ───
+function showChangePassword() {
+  $('pw-error').textContent = '';
+  $('pw-current').value = '';
+  $('pw-new').value = '';
+  $('pw-confirm').value = '';
+  $('pw-modal').classList.remove('hidden');
+  $('pw-current').focus();
+}
+
+async function submitChangePassword() {
+  var current = $('pw-current').value;
+  var newPw = $('pw-new').value;
+  var confirmPw = $('pw-confirm').value;
+  var errEl = $('pw-error');
+  errEl.textContent = '';
+  if (!current || !newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = 'Les nouveaux mots de passe ne correspondent pas'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'Minimum 6 caractères'; return; }
+  if (newPw === current) { errEl.textContent = 'Le nouveau mot de passe doit être différent'; return; }
+
+  $('pw-submit').textContent = 'Changement…';
+  $('pw-submit').disabled = true;
+  var token = getToken();
+  try {
+    var res = await fetch(API + '/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ current_password: current, new_password: newPw })
+    });
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false; return; }
+    // Success
+    $('pw-modal').classList.add('hidden');
+    $('save-bar').classList.add('visible');
+    $('save-info').textContent = 'Mot de passe changé ✓';
+  } catch(e) {
+    errEl.textContent = 'Erreur de connexion'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false;
+  }
 }
 
 // ─── Server selections ───
@@ -602,6 +758,16 @@ async function saveSelections() {
 }
 
 // Start
+
+// Check for magic link in URL before init
+if (window.location.hash && window.location.hash.indexOf('reset=') !== -1) {
+  // Show reset screen immediately
+  document.addEventListener('DOMContentLoaded', function() {
+    $('reset-modal').classList.remove('hidden');
+    $('reset-password').focus();
+  });
+}
+
 init();
 
 </script>

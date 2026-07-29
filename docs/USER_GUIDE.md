@@ -2,8 +2,6 @@
 
 Guide complet pour utiliser NutriFood, votre outil de planification nutritionnelle hebdomadaire.
 
-🔗 **Application :** [https://slopvibe.org/nutri-food/](https://slopvibe.org/nutri-food/)
-
 ---
 
 ## 📝 Création de compte et connexion

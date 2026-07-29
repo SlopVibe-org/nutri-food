@@ -198,7 +198,7 @@ Un bouton **🔄** est visible en mode admin dans l'en-tête de l'application. C
 ### Méthode 2 — API
 
 ```bash
-curl -X POST https://slopvibe.org/nutri-food/api/deals/refresh \
+curl -X POST http://localhost:5011/api/deals/refresh \
   -H "Authorization: Bearer <VOTRE_TOKEN_JWT>"
 ```
 
@@ -450,7 +450,7 @@ curl -s http://localhost:5010/api/health
 docker logs --tail 20 nutrifood-api
 
 # Interface web
-# Ouvrez https://slopvibe.org/nutri-food/ dans le navigateur
+# Ouvrez http://localhost:5011/ dans le navigateur
 ```
 
 ### 7. Purger le cache Cloudflare

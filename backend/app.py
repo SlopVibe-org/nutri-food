@@ -9,7 +9,7 @@ import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
@@ -29,6 +29,14 @@ SMTP_USER = os.environ.get('SMTP_USER', 'ai@slopvibe.org')
 SMTP_PASS = os.environ.get('SMTP_PASS', '3q6q6a76769d6r5c')
 MAIL_FROM = os.environ.get('MAIL_FROM', 'ai@slopvibe.org')
 APP_URL = os.environ.get('APP_URL', 'https://slopvibe.org/nutri-food/')
+
+# ─── Helpers ───
+
+def get_week_key(d=None):
+    if d is None:
+        d = date.today()
+    iso = d.isocalendar()
+    return f"{iso[0]}-W{iso[1]:02d}"
 
 # ─── Email ───
 
@@ -125,6 +133,26 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_reset_token ON reset_tokens(token);
+        CREATE TABLE IF NOT EXISTS meal_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            week_key TEXT NOT NULL,
+            data TEXT NOT NULL DEFAULT '{}',
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, week_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_meal_plans_user ON meal_plans(user_id);
+        CREATE TABLE IF NOT EXISTS history_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            week_key TEXT NOT NULL,
+            selections_data TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, week_key)
+        );
+        CREATE INDEX IF NOT EXISTS idx_history_snapshots_user ON history_snapshots(user_id);
     ''')
     conn.commit()
     conn.close()
@@ -417,9 +445,126 @@ def save_selections():
            ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = datetime('now')''',
         (user['id'], json.dumps(selections_data))
     )
+
+    # Create weekly history snapshot if not already existing for this week
+    week_key = get_week_key()
+    db.execute(
+        '''INSERT INTO history_snapshots (user_id, week_key, selections_data)
+           VALUES (?, ?, ?)
+           ON CONFLICT(user_id, week_key) DO NOTHING''',
+        (user['id'], week_key, json.dumps(selections_data))
+    )
+
     db.commit()
 
     return jsonify({'status': 'saved', 'updated_at': datetime.utcnow().isoformat()})
+
+# ─── Meal Plan ───
+
+@app.route('/api/meal-plan', methods=['GET'])
+def get_meal_plan():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    week = request.args.get('week')
+    if not week:
+        week = get_week_key()
+
+    db = get_db()
+    row = db.execute(
+        'SELECT data FROM meal_plans WHERE user_id = ? AND week_key = ?',
+        (user['id'], week)
+    ).fetchone()
+
+    data = json.loads(row['data']) if row else {}
+    return jsonify({'data': data, 'week': week})
+
+@app.route('/api/meal-plan', methods=['POST'])
+def save_meal_plan():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    body = request.get_json() or {}
+    week = body.get('week')
+    plan_data = body.get('data', {})
+
+    if not week:
+        return jsonify({'error': 'Le paramètre week est requis'}), 400
+    if not isinstance(plan_data, dict):
+        return jsonify({'error': 'Format invalide'}), 400
+
+    db = get_db()
+    db.execute(
+        '''INSERT INTO meal_plans (user_id, week_key, data, updated_at)
+           VALUES (?, ?, ?, datetime('now'))
+           ON CONFLICT(user_id, week_key) DO UPDATE SET data = excluded.data, updated_at = datetime('now')''',
+        (user['id'], week, json.dumps(plan_data))
+    )
+    db.commit()
+
+    return jsonify({'status': 'ok'})
+
+# ─── History ───
+
+@app.route('/api/history', methods=['GET'])
+def get_history():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    db = get_db()
+    rows = db.execute(
+        'SELECT week_key, selections_data, created_at FROM history_snapshots WHERE user_id = ? ORDER BY week_key DESC',
+        (user['id'],)
+    ).fetchall()
+
+    result = []
+    for row in rows:
+        try:
+            sel_data = json.loads(row['selections_data'])
+        except Exception:
+            sel_data = {}
+
+        total_items = sum(len(items) for items in sel_data.values()) if isinstance(sel_data, dict) else 0
+
+        categories = {}
+        if isinstance(sel_data, dict):
+            for cat_id, items in sel_data.items():
+                categories[cat_id] = len(items) if isinstance(items, list) else 0
+
+        result.append({
+            'week': row['week_key'],
+            'date': row['created_at'],
+            'summary': {
+                'total_items': total_items,
+                'categories': categories
+            }
+        })
+
+    return jsonify(result)
+
+@app.route('/api/history/<week_key>', methods=['GET'])
+def get_history_detail(week_key):
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    db = get_db()
+    row = db.execute(
+        'SELECT selections_data, created_at FROM history_snapshots WHERE user_id = ? AND week_key = ?',
+        (user['id'], week_key)
+    ).fetchone()
+
+    if not row:
+        return jsonify({'error': 'Aucun snapshot pour cette semaine'}), 404
+
+    return jsonify({
+        'week': week_key,
+        'date': row['created_at'],
+        'selections': json.loads(row['selections_data'])
+    })
 
 # ─── Share link ───
 

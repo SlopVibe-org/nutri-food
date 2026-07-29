@@ -303,6 +303,55 @@
   .nutri-stat .ns-value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
   .nutri-stat .ns-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 
+  /* Meal planner */
+  .planner-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px;
+  }
+  .planner-day {
+    background: #12141c; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; min-height: 120px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .planner-day-header {
+    font-size: 0.75rem; font-weight: 700; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.5px; text-align: center; padding-bottom: 4px;
+    border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  }
+  .planner-day.today .planner-day-header { color: var(--accent); }
+  .planner-day.today { border-color: var(--accent-dim); }
+  .planner-meal-slot {
+    font-size: 0.72rem; min-height: 24px; padding: 2px 4px;
+    border-radius: 4px; cursor: pointer; transition: background 0.1s;
+  }
+  .planner-meal-slot:hover { background: rgba(74,222,128,0.06); }
+  .planner-meal-label { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; }
+  .planner-meal-items { color: var(--text); }
+  .planner-meal-add {
+    font-size: 0.65rem; color: var(--accent); cursor: pointer; opacity: 0.6;
+  }
+  .planner-meal-add:hover { opacity: 1; }
+  .planner-chip {
+    display: inline-block; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 10px; padding: 1px 6px; margin: 1px; font-size: 0.68rem; cursor: pointer;
+  }
+  .planner-chip:hover { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); }
+  .planner-Week-nav {
+    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;
+  }
+  .planner-week-nav button {
+    padding: 4px 12px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); cursor: pointer; font-size: 0.85rem;
+  }
+  .planner-week-nav button:hover { border-color: var(--accent); }
+  .planner-week-label { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 80px; text-align: center; }
+  .planner-food-palette {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; padding: 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .planner-food-palette .label { font-size: 0.75rem; color: var(--text-dim); width: 100%; margin-bottom: 4px; }
+  @media (max-width: 700px) {
+    .planner-grid { grid-template-columns: 1fr; }
+  }
+
   /* Edit mode */
   .card.editing { border-color: var(--accent-amber); }
   .edit-toggle {
@@ -525,6 +574,7 @@ function renderUserArea() {
     var initials = currentUser.name.charAt(0).toUpperCase();
     var menuItems = '';
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
+    menuItems += '<button class="user-menu-item" id="menu-planner"><span class="icon">📅</span> Planificateur</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-edit"><span class="icon">✏️</span> Mode édition</button>';
     menuItems += '<div class="user-menu-divider"></div>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
@@ -543,6 +593,7 @@ function renderUserArea() {
       if (!e.target.closest('.user-menu')) $('user-menu-dropdown').classList.remove('visible');
     });
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
+    $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {
@@ -632,6 +683,149 @@ function initAuthEvents() {
     }
     if (e.target.id === 'grocery-copy-btn') { copyGroceryList(); }
   });
+}
+
+// ─── Meal planner ───
+var plannerWeek = null;
+var plannerData = {};
+var plannerSelectedFood = null;
+
+function getWeekKey(offset) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offset || 0) * 7);
+  var iso = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay() + 1);
+  var year = iso.getFullYear();
+  var firstJan = new Date(year, 0, 1);
+  var weekNum = Math.ceil((((iso - firstJan) / 86400000) + firstJan.getDay() + 1) / 7);
+  return year + '-W' + String(weekNum).padStart(2, '0');
+}
+
+async function showPlanner() {
+  if (!plannerWeek) plannerWeek = 0; // current week
+  var weekKey = getWeekKey(plannerWeek);
+  
+  // Load plan from server
+  var token = getToken();
+  plannerData = {};
+  if (token) {
+    try {
+      var res = await fetch(API + '/meal-plan?week=' + weekKey, {
+        headers: { 'Authorization': '***' + token }
+      });
+      if (res.ok) {
+        var data = await res.json();
+        plannerData = data.data || {};
+      }
+    } catch(e) { console.error('[NutriFood] Plan load error:', e); }
+  }
+
+  renderPlanner(weekKey);
+}
+
+function renderPlanner(weekKey) {
+  var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var dayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
+  var mealLabels = { breakfast: 'jeuner', lunch: 'midi', dinner: 'soir', snack: 'collation' };
+  var todayIdx = (new Date().getDay() + 6) % 7; // 0=Monday
+
+  // Food palette from selections
+  var allFoods = [];
+  Object.keys(selections).forEach(function(catId) {
+    selections[catId].forEach(function(item) {
+      allFoods.push(item.name);
+    });
+  });
+
+  var html = '<div style="margin-bottom:16px;">';
+  html += '<div class="planner-week-nav">';
+  html += '<button onclick="plannerPrevWeek()">←</button>';
+  html += '<span class="planner-week-label">' + weekKey + '</span>';
+  html += '<button onclick="plannerNextWeek()">→</button>';
+  html += '</div>';
+
+  // Food palette
+  if (allFoods.length > 0) {
+    html += '<div class="planner-food-palette"><div class="label">Cliquez un aliment puis cliquez sur un repas pour l\'ajouter:</div>';
+    allFoods.forEach(function(name) {
+      var sel = plannerSelectedFood === name ? 'border-color:var(--accent);background:rgba(74,222,128,0.2);' : '';
+      html += '<span class="planner-chip" style="' + sel + '" onclick="plannerSelectFood(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</span>';
+    });
+    html += '</div>';
+  } else {
+    html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Sélectionnez d\'abord des aliments dans les onglets ci-dessus.</p>';
+  }
+
+  // Day grid
+  html += '<div class="planner-grid">';
+  days.forEach(function(day, idx) {
+    var isToday = idx === todayIdx && plannerWeek === 0;
+    html += '<div class="planner-day' + (isToday ? ' today' : '') + '">';
+    html += '<div class="planner-day-header">' + dayLabels[idx] + '</div>';
+    meals.forEach(function(meal) {
+      var items = (plannerData[day] && plannerData[day][meal]) || [];
+      var itemsHtml = items.map(function(name) {
+        return '<span class="planner-chip" onclick="plannerRemoveFood(\'' + day + '\',\'' + meal + '\',\'' + name.replace(/'/g, "\\'") + '\')">' + name + ' ×</span>';
+      }).join(' ');
+      html += '<div class="planner-meal-slot" onclick="plannerAddToSlot(\'' + day + '\',\'' + meal + '\')">';
+      html += '<div class="planner-meal-label">' + mealLabels[meal] + '</div>';
+      html += '<div class="planner-meal-items">' + itemsHtml + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="saveMealPlan()">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="closePlanner()">← Retour</a></p>';
+  html += '</div>';
+
+  $('app').innerHTML = html;
+  $('save-bar').classList.remove('visible');
+}
+
+function plannerSelectFood(name) {
+  plannerSelectedFood = plannerSelectedFood === name ? null : name;
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function plannerAddToSlot(day, meal) {
+  if (!plannerSelectedFood) { alert('Choisissez d\'abord un aliment dans la palette'); return; }
+  if (!plannerData[day]) plannerData[day] = {};
+  if (!plannerData[day][meal]) plannerData[day][meal] = [];
+  if (plannerData[day][meal].indexOf(plannerSelectedFood) === -1) {
+    plannerData[day][meal].push(plannerSelectedFood);
+  }
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function plannerRemoveFood(day, meal, name) {
+  if (plannerData[day] && plannerData[day][meal]) {
+    plannerData[day][meal] = plannerData[day][meal].filter(function(f) { return f !== name; });
+  }
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function plannerPrevWeek() { plannerWeek--; showPlanner(); }
+function plannerNextWeek() { plannerWeek++; showPlanner(); }
+function closePlanner() { plannerWeek = 0; render(); updateSaveBar(); }
+
+async function saveMealPlan() {
+  var token = getToken();
+  var weekKey = getWeekKey(plannerWeek);
+  if (!token) return;
+  try {
+    var res = await fetch(API + '/meal-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': '***' + token },
+      body: JSON.stringify({ week: weekKey, data: plannerData })
+    });
+    if (res.ok) {
+      var info = document.createElement('div');
+      info.textContent = '✓ Plan sauvegardé';
+      info.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--accent-dim);color:#0f1117;padding:8px 20px;border-radius:8px;font-weight:700;z-index:300;';
+      document.body.appendChild(info);
+      setTimeout(function() { info.remove(); }, 2000);
+    }
+  } catch(e) { console.error('[NutriFood] Plan save error:', e); }
 }
 
 // ─── Share link ───

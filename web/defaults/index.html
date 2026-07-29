@@ -3255,16 +3255,14 @@ function renderCard(cat) {
   }
 
   if (cat.type === 'checkbox') {
- else {
-      cat.foods.forEach(function(f) {
+    cat.foods.forEach(function(f) {
         var isChecked = selected.some(function(s) { return s.name === f.name; });
         var dealBadgesHtml = buildDealBadges(f.name);
         html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span>' + dealBadgesHtml + '</label>';
       });
     }
   } else {
- else {
-      html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
+    html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
       cat.foods.forEach(function(f) {
         var seasonPrefix = '';
         if (f.season && f.season.length > 0) {

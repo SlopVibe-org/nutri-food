@@ -689,6 +689,92 @@
   .nutri-progress-fill.good { background: var(--accent); }
   .nutri-progress-fill.ok { background: var(--accent-amber); }
   .nutri-progress-fill.low { background: var(--accent-red); }
+
+  /* ─── Journal ─── */
+  .journal-day-nav {
+    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;
+  }
+  .journal-day-nav button {
+    padding: 6px 14px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); cursor: pointer; font-size: 1rem; transition: border-color 0.15s;
+  }
+  .journal-day-nav button:hover { border-color: var(--accent); }
+  .journal-day-nav button:disabled { opacity: 0.3; cursor: default; }
+  .journal-day-label { font-size: 1rem; font-weight: 700; color: var(--text); min-width: 140px; text-align: center; }
+  .journal-search-bar {
+    position: relative; margin-bottom: 12px;
+  }
+  .journal-search-bar input {
+    width: 100%; padding: 10px 12px 10px 38px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+  }
+  .journal-search-bar input:focus { outline: none; border-color: var(--accent); }
+  .journal-search-bar .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 1rem; color: var(--text-dim); pointer-events: none;
+  }
+  .journal-search-results {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    margin-top: 4px; max-height: 240px; overflow-y: auto; display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .journal-search-results.visible { display: block; }
+  .journal-search-results .search-result {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .journal-search-results .search-result:last-child { border-bottom: none; }
+  .journal-search-results .search-result:hover { background: rgba(74,222,128,0.08); }
+  .journal-entry {
+    display: flex; align-items: center; gap: 8px; padding: 8px 4px;
+    border-bottom: 1px solid var(--border); font-size: 0.95rem;
+  }
+  .journal-entry:last-child { border-bottom: none; }
+  .journal-entry .je-name { flex: 1; color: var(--text); }
+  .journal-entry .je-qty-controls { display: inline-flex; align-items: center; gap: 4px; }
+  .journal-entry .je-qty-btn {
+    background: rgba(74,222,128,0.15); border: none; color: var(--accent); cursor: pointer;
+    font-size: 0.85rem; line-height: 1; width: 24px; height: 24px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; transition: background 0.15s;
+  }
+  .journal-entry .je-qty-btn:hover { background: rgba(74,222,128,0.3); }
+  .journal-entry .je-qty-num { font-weight: 700; color: var(--text); min-width: 20px; text-align: center; }
+  .journal-entry .je-remove {
+    background: none; border: none; color: var(--accent-red); cursor: pointer;
+    font-size: 1.1rem; line-height: 1; padding: 0 4px; opacity: 0.7; transition: opacity 0.15s;
+  }
+  .journal-entry .je-remove:hover { opacity: 1; }
+  .journal-totals {
+    margin-top: 16px; padding: 14px; background: #12141c; border-radius: 10px; border: 1px solid var(--border);
+  }
+  .journal-totals-title { font-size: 0.85rem; font-weight: 700; color: var(--text-dim); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .journal-nutri-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.85rem;
+  }
+  .journal-nutri-row:last-child { margin-bottom: 0; }
+  .journal-nutri-label { width: 80px; color: var(--text-dim); }
+  .journal-nutri-value { font-weight: 700; color: var(--text); min-width: 50px; }
+  .journal-nutri-bar {
+    flex: 1; height: 8px; background: var(--border); border-radius: 4px; overflow: hidden;
+  }
+  .journal-nutri-bar-fill {
+    height: 100%; border-radius: 4px; transition: width 0.4s ease;
+  }
+  .journal-nutri-bar-fill.good { background: var(--accent); }
+  .journal-nutri-bar-fill.ok { background: var(--accent-amber); }
+  .journal-nutri-bar-fill.low { background: var(--accent-red); }
+  .journal-nutri-pct { font-size: 0.75rem; font-weight: 700; min-width: 34px; text-align: right; }
+  .journal-nutri-pct.good { color: var(--accent); }
+  .journal-nutri-pct.ok { color: var(--accent-amber); }
+  .journal-nutri-pct.low { color: var(--accent-red); }
+  .journal-suggestions {
+    margin-top: 12px; padding: 12px; background: rgba(74,222,128,0.06);
+    border: 1px solid rgba(74,222,128,0.2); border-radius: 10px; font-size: 0.85rem; color: var(--text);
+  }
+  .journal-suggestions strong { color: var(--accent); }
+  .journal-empty { text-align: center; padding: 20px; color: var(--text-dim); font-size: 0.9rem; }
 </style>
 </head>
 <body>
@@ -823,6 +909,15 @@
   </div>
 </div>
 
+<!-- Journal modal -->
+<div class="modal-overlay hidden" id="journal-modal">
+  <div class="modal wide scrollable">
+    <h2>📝 Journal</h2>
+    <div id="journal-content"><p class="loading">Chargement…</p></div>
+    <a class="cancel-link" id="journal-close">Fermer</a>
+  </div>
+</div>
+
 <!-- Grocery list modal -->
 <div id="grocery-overlay" class="grocery-overlay hidden">
   <div class="grocery-modal">
@@ -934,6 +1029,7 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-planner"><span class="icon">📅</span> Planificateur</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
+    menuItems += '<button class="user-menu-item" id="menu-journal"><span class="icon">📝</span> Journal</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-edit"><span class="icon">✏️</span> Mode édition</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-refresh-deals"><span class="icon">🔄</span> Spéciaux</button>';
@@ -953,6 +1049,7 @@ function renderUserArea() {
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
     $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
     $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
+    $('menu-journal').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showJournal(); });
     $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showHistory(); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
@@ -1053,6 +1150,9 @@ function initAuthEvents() {
   // Feature 4: History modal
   $('history-close').addEventListener('click', function() { $('history-modal').classList.add('hidden'); });
   $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Journal modal
+  $('journal-close').addEventListener('click', function() { $('journal-modal').classList.add('hidden'); });
+  $('journal-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
   $('auth-submit').addEventListener('click', function(e) { e.preventDefault(); submitAuth(); });
   $('auth-switch-link').addEventListener('click', function(e) { e.preventDefault(); toggleAuthMode(); });
   $('auth-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
@@ -1070,7 +1170,10 @@ function initAuthEvents() {
   $('search-input').addEventListener('input', performSearch);
   $('search-input').addEventListener('keydown', handleSearchKeydown);
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.search-bar')) { $('search-results').classList.remove('visible'); searchActiveIndex = -1; }
+    if (!e.target.closest('.search-bar') && !e.target.closest('.journal-search-bar')) { 
+      $('search-results').classList.remove('visible'); searchActiveIndex = -1; 
+      var jsr = $('journal-search-results'); if (jsr) jsr.classList.remove('visible');
+    }
   });
   // Grocery list
   document.addEventListener('click', function(e) {
@@ -2219,6 +2322,324 @@ async function showHistoryDetail(weekKey) {
   }
 }
 
+// ─── Journal ───
+var journalDate = new Date().toISOString().split('T')[0];
+var journalEntries = [];
+var journalSearchTimer = null;
+
+async function showJournal() {
+  journalDate = new Date().toISOString().split('T')[0];
+  $('journal-modal').classList.remove('hidden');
+  var content = $('journal-content');
+  content.innerHTML = '<p class="loading">Chargement…</p>';
+  await loadJournalEntries();
+  renderJournal();
+}
+
+async function loadJournalEntries() {
+  var token = getToken();
+  if (!token) { journalEntries = []; return; }
+  try {
+    var res = await fetchWithTimeout(API + '/journal?date=' + journalDate, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (res.ok) {
+      var data = await res.json();
+      journalEntries = data.entries || [];
+    } else {
+      journalEntries = [];
+    }
+  } catch(e) {
+    console.error('[NutriFood] Journal load error:', e);
+    journalEntries = [];
+  }
+}
+
+function formatDateLabel(dStr) {
+  var d = new Date(dStr + 'T00:00:00');
+  var days = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  var months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+function renderJournal() {
+  var content = $('journal-content');
+  var todayStr = new Date().toISOString().split('T')[0];
+  var d = new Date(journalDate + 'T00:00:00');
+  var today = new Date();
+  today.setHours(0,0,0,0);
+  var diffDays = Math.round((today - d) / 86400000);
+  var canGoBack = diffDays < 7;
+  var canGoForward = journalDate < todayStr;
+
+  var html = '';
+
+  // Day navigation
+  html += '<div class="journal-day-nav">';
+  html += '<button id="journal-prev-day" ' + (canGoBack ? '' : 'disabled') + '>←</button>';
+  html += '<span class="journal-day-label">' + formatDateLabel(journalDate) + '</span>';
+  html += '<button id="journal-next-day" ' + (canGoForward ? '' : 'disabled') + '>→</button>';
+  html += '</div>';
+
+  // Search bar for adding foods
+  html += '<div class="journal-search-bar">';
+  html += '<span class="search-icon">🔍</span>';
+  html += '<input type="text" id="journal-search-input" placeholder="Ajouter un aliment au journal…" autocomplete="off">';
+  html += '<div class="journal-search-results" id="journal-search-results"></div>';
+  html += '</div>';
+
+  // Entries list
+  if (journalEntries.length === 0) {
+    html += '<div class="journal-empty">Aucune entrée pour cette journée.</div>';
+  } else {
+    journalEntries.forEach(function(entry) {
+      html += '<div class="journal-entry">';
+      html += '<span class="je-name">' + esc(entry.food_name) + '</span>';
+      html += '<span class="je-qty-controls">';
+      html += '<button class="je-qty-btn" data-journal-action="dec" data-food="' + esc(entry.food_name) + '">−</button>';
+      html += '<span class="je-qty-num">×' + entry.qty + '</span>';
+      html += '<button class="je-qty-btn" data-journal-action="inc" data-food="' + esc(entry.food_name) + '">+</button>';
+      html += '</span>';
+      html += '<button class="je-remove" data-journal-action="remove" data-food="' + esc(entry.food_name) + '">×</button>';
+      html += '</div>';
+    });
+  }
+
+  // Totals
+  var totals = computeJournalTotals();
+  var goals = userGoals || defaultGoals;
+  var dailyGoals = {
+    protein: goals.protein / 7,
+    fiber: goals.fiber / 7,
+    iron: goals.iron / 7,
+    vitamin_c: goals.vitamin_c / 7,
+    calcium: goals.calcium / 7,
+    omega3: goals.omega3 / 7
+  };
+
+  var nutrients = [
+    { key: 'protein',  label: 'Protéines', unit: 'g',  val: totals.protein,  goal: dailyGoals.protein },
+    { key: 'fiber',    label: 'Fibres',    unit: 'g',  val: totals.fiber,    goal: dailyGoals.fiber },
+    { key: 'iron',     label: 'Fer',       unit: 'mg', val: totals.iron,     goal: dailyGoals.iron },
+    { key: 'vitamin_c',label: 'Vit C',     unit: 'mg', val: totals.vitamin_c,goal: dailyGoals.vitamin_c },
+    { key: 'calcium',  label: 'Calcium',   unit: 'mg', val: totals.calcium,  goal: dailyGoals.calcium },
+    { key: 'omega3',   label: 'Oméga-3',   unit: 'g',  val: totals.omega3,   goal: dailyGoals.omega3 }
+  ];
+
+  html += '<div class="journal-totals">';
+  html += '<div class="journal-totals-title">Total du jour</div>';
+  nutrients.forEach(function(n) {
+    var pct = n.goal > 0 ? Math.round((n.val / n.goal) * 100) : 0;
+    var cls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+    var valStr = n.key === 'protein' || n.key === 'fiber' || n.key === 'omega3' ? (Math.round(n.val * 10) / 10) : Math.round(n.val);
+    html += '<div class="journal-nutri-row">';
+    html += '<span class="journal-nutri-label">' + n.label + ':</span>';
+    html += '<span class="journal-nutri-value">' + valStr + n.unit + '</span>';
+    html += '<div class="journal-nutri-bar"><div class="journal-nutri-bar-fill ' + cls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+    html += '<span class="journal-nutri-pct ' + cls + '">' + pct + '%</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Suggestions for deficiencies
+  var deficiencies = [];
+  nutrients.forEach(function(n) {
+    var pct = n.goal > 0 ? Math.round((n.val / n.goal) * 100) : 0;
+    if (pct < 80) deficiencies.push({ key: n.key, label: n.label, pct: pct });
+  });
+  if (deficiencies.length > 0 && journalEntries.length > 0) {
+    var suggestHtml = '<div class="journal-suggestions"><strong>💡 Pour combler:</strong> ';
+    var parts = [];
+    deficiencies.sort(function(a, b) { return a.pct - b.pct; }).forEach(function(def) {
+      // Find top foods for this nutrient
+      var candidates = [];
+      var nutriKey = def.key === 'vitamin_c' ? 'vit_c' : def.key;
+      DATA.categories.forEach(function(cat) {
+        cat.foods.forEach(function(f) {
+          var n = f.nutrition || {};
+          var val = n[nutriKey] || 0;
+          if (val > 0) candidates.push({ name: f.name, val: val });
+        });
+      });
+      candidates.sort(function(a, b) { return b.val - a.val; });
+      if (candidates.length > 0) {
+        parts.push(candidates[0].name + ' (' + def.label.toLowerCase() + ')');
+      }
+    });
+    suggestHtml += parts.slice(0, 4).join(', ');
+    suggestHtml += '</div>';
+    html += suggestHtml;
+  }
+
+  content.innerHTML = html;
+
+  // Wire up navigation
+  $('journal-prev-day').addEventListener('click', function() {
+    var d = new Date(journalDate + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    journalDate = d.toISOString().split('T')[0];
+    loadJournalEntries().then(renderJournal);
+  });
+  $('journal-next-day').addEventListener('click', function() {
+    var d = new Date(journalDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    journalDate = d.toISOString().split('T')[0];
+    loadJournalEntries().then(renderJournal);
+  });
+
+  // Wire up search
+  var searchInput = $('journal-search-input');
+  if (searchInput) {
+    searchInput.addEventListener('input', performJournalSearch);
+    searchInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        searchInput.value = '';
+        $('journal-search-results').classList.remove('visible');
+      }
+    });
+  }
+
+  // Wire up qty/remove buttons
+  content.querySelectorAll('[data-journal-action]').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var action = btn.dataset.journalAction;
+      var foodName = btn.dataset.food.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+      if (action === 'inc') changeJournalQty(foodName, 1);
+      else if (action === 'dec') changeJournalQty(foodName, -1);
+      else if (action === 'remove') removeJournalEntry(foodName);
+    });
+  });
+}
+
+function computeJournalTotals() {
+  var totals = { protein: 0, fiber: 0, iron: 0, vitamin_c: 0, calcium: 0, omega3: 0 };
+  journalEntries.forEach(function(entry) {
+    var n = entry.nutrition || {};
+    var qty = entry.qty || 1;
+    totals.protein += (n.protein || 0) * qty;
+    totals.fiber += (n.fiber || 0) * qty;
+    totals.iron += (n.iron || 0) * qty;
+    totals.vitamin_c += (n.vit_c || 0) * qty;
+    totals.calcium += (n.calcium || 0) * qty;
+    totals.omega3 += (n.omega3 || 0) * qty;
+  });
+  return totals;
+}
+
+function performJournalSearch() {
+  clearTimeout(journalSearchTimer);
+  journalSearchTimer = setTimeout(actualJournalSearch, 150);
+}
+
+function actualJournalSearch() {
+  var input = $('journal-search-input');
+  if (!input) return;
+  var rawQuery = input.value.trim();
+  var query = normalizeForSearch(rawQuery);
+  var results = $('journal-search-results');
+  if (!results) return;
+  if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
+  var matches = [];
+  DATA.categories.forEach(function(cat) {
+    cat.foods.forEach(function(f) {
+      if (normalizeForSearch(f.name).indexOf(query) !== -1) {
+        matches.push({ cat: cat, food: f });
+      }
+    });
+  });
+  if (matches.length === 0) {
+    results.innerHTML = '<div class="search-result"><span class="sr-meta">Aucun résultat</span></div>';
+  } else {
+    results.innerHTML = matches.slice(0, 15).map(function(m) {
+      return '<div class="search-result" data-journal-add-name="' + esc(m.food.name) + '" data-journal-add-cat="' + m.cat.id + '"><div><div class="sr-name">' + m.food.name + '</div><div class="sr-cat">' + m.cat.icon + ' ' + m.cat.name + '</div></div><div class="sr-density">' + m.food.density + '%</div></div>';
+    }).join('');;
+    results.querySelectorAll('[data-journal-add-name]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var name = el.dataset.journalAddName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        var catId = el.dataset.journalAddCat;
+        addJournalEntry(name, catId);
+      });
+    });
+  }
+  results.classList.add('visible');
+}
+
+async function addJournalEntry(foodName, catId) {
+  var token = getToken();
+  if (!token) return;
+
+  // Find food in DATA to get nutrition
+  var nutrition = null;
+  for (var i = 0; i < DATA.categories.length; i++) {
+    var cat = DATA.categories[i];
+    var food = cat.foods.find(function(f) { return f.name === foodName; });
+    if (food) {
+      nutrition = food.nutrition || null;
+      if (!catId) catId = cat.id;
+      break;
+    }
+  }
+
+  try {
+    var res = await fetchWithTimeout(API + '/journal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ date: journalDate, food_name: foodName, cat_id: catId, qty: 1, nutrition: nutrition })
+    }, 10000);
+    if (res.ok) {
+      // Clear search
+      var input = $('journal-search-input');
+      if (input) input.value = '';
+      var results = $('journal-search-results');
+      if (results) results.classList.remove('visible');
+      await loadJournalEntries();
+      renderJournal();
+      showToast(foodName + ' ajouté au journal', 'success');
+    } else {
+      showToast('Erreur ajout au journal', 'error');
+    }
+  } catch(e) {
+    console.error('[NutriFood] Journal add error:', e);
+    showToast('Erreur: ' + e.message, 'error');
+  }
+}
+
+async function changeJournalQty(foodName, delta) {
+  var entry = journalEntries.find(function(e) { return e.food_name === foodName; });
+  if (!entry) return;
+  var newQty = (entry.qty || 1) + delta;
+  if (newQty <= 0) {
+    await removeJournalEntry(foodName);
+    return;
+  }
+  var token = getToken();
+  if (!token) return;
+  try {
+    await fetchWithTimeout(API + '/journal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ date: journalDate, food_name: foodName, cat_id: entry.cat_id, qty: newQty, nutrition: entry.nutrition })
+    }, 10000);
+    await loadJournalEntries();
+    renderJournal();
+  } catch(e) { console.error('[NutriFood] Journal qty error:', e); }
+}
+
+async function removeJournalEntry(foodName) {
+  var token = getToken();
+  if (!token) return;
+  try {
+    await fetchWithTimeout(API + '/journal', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ date: journalDate, food_name: foodName })
+    }, 10000);
+    await loadJournalEntries();
+    renderJournal();
+    showToast(foodName + ' retiré du journal', 'info');
+  } catch(e) { console.error('[NutriFood] Journal delete error:', e); }
+}
+
 // ─── Init ───
 async function init() {
   try {
@@ -2689,25 +3110,69 @@ function updateTabDots() {
 function updateScoreBar() {
   var bar = document.querySelector('.score-bar');
   if (!bar) return;
-  var totalSelected = 0, totalMin = 0;
+  // Per-category portion dots (still useful for variety)
   var catDots = [];
   DATA.categories.forEach(function(cat) {
     var sel = selections[cat.id] || [];
     var count = sel.reduce(function(s, i) { return s + i.qty; }, 0);
-    totalSelected += count;
-    totalMin += cat.weekly_min;
     var dotCls = count < cat.weekly_min ? 'under' : (count > cat.weekly_max ? 'over' : 'in-range');
     if (count > 0) catDots.push('<span class="score-cat-dot ' + dotCls + '" title="' + cat.name + '"></span>');
   });
-  var pct = totalMin > 0 ? Math.round(Math.min(totalSelected / totalMin, 1) * 100) : 0;
+  // Compute actual nutrition totals from selections
+  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0 };
+  Object.keys(selections).forEach(function(catId) {
+    selections[catId].forEach(function(item) {
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      if (cat) {
+        var food = cat.foods.find(function(f) { return f.name === item.name; });
+        if (food && food.nutrition) {
+          var qty = item.qty || 1;
+          totals.protein += (food.nutrition.protein || 0) * qty;
+          totals.fiber += (food.nutrition.fiber || 0) * qty;
+          totals.iron += (food.nutrition.iron || 0) * qty;
+          totals.vit_c += (food.nutrition.vit_c || 0) * qty;
+          totals.calcium += (food.nutrition.calcium || 0) * qty;
+          totals.omega3 += (food.nutrition.omega3 || 0) * qty;
+        }
+      }
+    });
+  });
+  // Compare against goals (userGoals or defaults)
+  var goals = userGoals || defaultGoals || { protein: 350, fiber: 175, iron: 56, vitamin_c: 630, calcium: 7000, omega3: 14 };
+  var nutrientKeys = [
+    { key: 'protein', goal: goals.protein || 350, label: 'Prot' },
+    { key: 'fiber', goal: goals.fiber || 175, label: 'Fib' },
+    { key: 'iron', goal: goals.iron || 56, label: 'Fer' },
+    { key: 'vit_c', goal: goals.vitamin_c || goals.vit_c || 630, label: 'Vit C' },
+    { key: 'calcium', goal: goals.calcium || 7000, label: 'Ca' },
+    { key: 'omega3', goal: goals.omega3 || 14, label: 'Ω-3' }
+  ];
+  // Average % across all nutrients (capped at 100%)
+  var totalPct = 0;
+  nutrientKeys.forEach(function(n) {
+    var val = totals[n.key] || 0;
+    var pct = n.goal > 0 ? Math.min(val / n.goal, 1) : 0;
+    totalPct += pct;
+  });
+  var avgPct = nutrientKeys.length > 0 ? Math.round((totalPct / nutrientKeys.length) * 100) : 0;
   var circumference = 2 * Math.PI * 22;
-  var dashOffset = circumference - (pct / 100) * circumference;
+  var dashOffset = circumference - (avgPct / 100) * circumference;
   var fg = bar.querySelector('.fg-circle');
   if (fg) fg.setAttribute('stroke-dashoffset', dashOffset);
   var text = bar.querySelector('.score-text');
-  if (text) text.textContent = pct + '%';
+  if (text) text.textContent = avgPct + '%';
   var sub = bar.querySelector('.score-sub');
-  if (sub) sub.textContent = totalSelected + ' / ' + totalMin + ' portions cette semaine';
+  if (sub) {
+    // Show brief nutrition summary
+    var parts = [];
+    nutrientKeys.forEach(function(n) {
+      var val = totals[n.key] || 0;
+      var goal = n.goal;
+      var p = goal > 0 ? Math.round((val / goal) * 100) : 0;
+      parts.push(n.label + ' ' + p + '%');
+    });
+    sub.textContent = parts.join(' · ');
+  }
   var dotsContainer = bar.querySelector('.score-cat-dots');
   if (dotsContainer) dotsContainer.innerHTML = catDots.join('');
 }

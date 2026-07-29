@@ -2643,7 +2643,7 @@ async function removeJournalEntry(foodName) {
 // ─── Init ───
 async function init() {
   try {
-    var res = await fetchWithTimeout('foods.json', {}, 8000);
+    var res = await fetchWithTimeout(API + '/foods', {}, 8000);
     DATA = await res.json();
     activeTab = DATA.sections[0].id;
 

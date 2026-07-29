@@ -357,6 +357,10 @@ def load_foods():
         return {}
     return _FOODS_CACHE if _FOODS_CACHE is not None else {}
 
+@app.route('/api/foods', methods=['GET'])
+def get_foods():
+    return jsonify(load_foods())
+
 @app.route('/api/admin/foods', methods=['POST'])
 def save_foods():
     user = get_auth_user()

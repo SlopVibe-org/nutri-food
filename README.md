@@ -6,24 +6,40 @@ Outil de planification nutritionnelle pour sélectionner et suivre ses choix d'a
 
 NutriFood permet de:
 - **Visualiser** les aliments classés par densité nutritionnelle (du plus nutritif au moins nutritif)
-- **Sélectionner** les aliments consommés dans une semaine
-- **Suivre** les portions recommandées par catégorie via des compteurs couleur
-- **Sauvegarder** ses sélections (localStorage + endpoint serveur optionnel)
+- **Sélectionner** les aliments consommés dans une semaine avec compteurs de portions
+- **Suivre** les apports nutritionnels (protéines, fibres, fer, vitamine C, calcium, Ω-3)
+- **Voir la saisonnalité** des fruits et légumes (Québec)
+- **Générer et partager** des listes d'épicerie
+- **Rechercher** rapidement un aliment
+- **Administrer** les listes d'aliments (admins)
 
 ## Démo
 
 🔗 https://slopvibe.org/nutri-food/
 
-## Fonctionnement
+## Architecture
 
-### Architecture
+- **Frontend:** HTML/CSS/JS vanilla — zéro dépendance, zéro build
+- **Backend:** Python Flask + SQLite dans Docker
+- **Persistance:** SQLite sur volume Docker + `localStorage` pour cache navigateur
+- **Email:** SMTP via Fastmail (bienvenue, reset mot de passe)
 
-- **100% frontend** — HTML/CSS/JS vanilla, zéro dépendance, zéro build
-- **`foods.json`** — Base de données nutritionnelle (read-only, partagée)
-- **`index.html`** — Application complète (UI + logique)
-- **Persistance:** `localStorage` (auto-save) + endpoint serveur optionnel (`save-selections.php`)
+### Structure des fichiers
 
-### Structure des données
+```
+nutri-food/
+├── index.html          # Application frontend complète
+├── foods.json          # Base de données nutritionnelle (sections + catégories + aliments)
+├── favicon.svg         # Favicon
+├── README.md
+└── backend/
+    ├── app.py          # API Flask (auth, selections, admin, share, email)
+    ├── Dockerfile      # Image Docker Python
+    ├── docker-compose.yml
+    └── requirements.txt
+```
+
+### Structure des données (foods.json)
 
 ```json
 {
@@ -40,28 +56,45 @@ NutriFood permet de:
       "weekly_min": 2,
       "weekly_max": 4,
       "foods": [
-        { "name": "Sardines", "density": 100, "nutrients": "Ω-3, B12, D, Calcium" }
+        {
+          "name": "Sardines",
+          "density": 100,
+          "nutrients": "Ω-3, B12, D, Calcium",
+          "nutrition": {
+            "protein": 24.6,
+            "fiber": 0.0,
+            "iron": 2.9,
+            "vit_c": 0.0,
+            "calcium": 382.0,
+            "omega3": 1.48
+          },
+          "season": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        }
       ]
     }
   ]
 }
 ```
 
-### Types de catégories
+**Champs:**
+- `nutrition` — valeurs par portion (protéine, fibres, fer, vitamine C, calcium, Ω-3)
+- `season` — mois (1-12) de saisonnalité au Québec (fruits/légumes seulement)
 
-| Type | Utilisation | Comportement |
-|------|-------------|--------------|
-| `select` | Liste d'aliments (multi-sélection) | Dropdown pour ajouter, chips avec bouton [+] pour augmenter la quantité |
-| `checkbox` | Catégorie à un seul élément (ex: œufs) | Case à cocher |
+## API Endpoints
 
-### Compteurs hebdomadaires
-
-Chaque catégorie affiche un compteur `X / min-max sem.`:
-- 🔴 **Rouge** — Sous l'objectif minimal
-- 🟢 **Vert** — Dans la cible
-- 🟡 **Jaune** — Au-dessus du maximum
-
-Les onglets affichent aussi un point coloré indiquant le statut global de chaque section.
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/register` | POST | Inscription + email bienvenue |
+| `/api/login` | POST | Connexion (email ou nom, case-insensitive) |
+| `/api/forgot-password` | POST | Envoie magic link par courriel |
+| `/api/reset-password` | POST | Reset via token |
+| `/api/change-password` | POST | Changer mot de passe (loggué) |
+| `/api/me` | GET | Info utilisateur courant |
+| `/api/selections` | GET/POST | Sélections de l'utilisateur |
+| `/api/share` | POST | Crée un lien de partage (liste d'épicerie) |
+| `/api/shared/<token>` | GET | Récupère la liste d'épicerie partagée |
+| `/api/admin/foods` | POST | Modifier foods.json (admin only) |
 
 ## Sections nutritionnelles
 
@@ -88,42 +121,61 @@ Les onglets affichent aussi un point coloré indiquant le statut global de chaqu
 - Blancs — ail, oignons, chou-fleur, champignons, poireaux... (7/sem)
 - Mauves — aubergines, chou violet, carottes mauves... (7/sem)
 
-## Déploiement
-
-### Serveur web statique
-
-```bash
-# Copier les fichiers dans un répertoire web
-cp index.html foods.json /var/www/nutri-food/
-
-# Nginx
-location /nutri-food/ {
-    alias /var/www/nutri-food/;
-    index index.html;
-}
-```
-
-### Persistance serveur (optionnel)
-
-Créer un endpoint `save-selections.php` qui reçoit les sélections en POST JSON et les stocke (par utilisateur/session). Sans cet endpoint, l'application utilise automatiquement `localStorage` en fallback.
-
-## Roadmap
-
-- [ ] Sessions utilisateur
 ### 🍎 Fruits
 - Petits fruits — bleuets, framboises, camerises, canneberges... (7/sem)
 - Protecteurs (Vit C) — argousier, cassis, kiwi, agrumes, grenade... (7/sem)
 - Autres fruits — avocat, mangue, pommes, bananes, litchi... (7/sem)
 
 ### 🌱 Habitudes
-- Bons gras — huile d'olive, avocat, olives, beurre de noix... (14-28/sem)
-- Aliments fermentés — kéfir, yaourt, choucroute, kimchi, miso... (7/sem)
+- Bons gras — huile d'olive, avocat, olives... (14-28/sem)
+- Aliments fermentés — kéfir, yaourt, choucroute, kimchi... (7/sem)
 - Herbes & épices — persil, curcuma, gingembre, cannelle, ail... (7-21/sem)
 - Boissons — eau, thé vert, thé noir, tisanes, lait... (suivi quotidien)
-- [ ] Sessions utilisateur (backend Docker + SQLite)
-- [ ] Génération de liste d'épicerie
-- [ ] Calcul automatique des apports nutritionnels
-- [ ] Export/import des sélections
+
+## Déploiement
+
+### Frontend (statique)
+
+```nginx
+location /nutri-food/ {
+    alias /var/www/nutri-food/;
+    index index.html;
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+}
+
+location /nutri-food/api/ {
+    proxy_pass http://backend:5010/api/;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_pass_request_headers on;
+}
+```
+
+### Backend (Docker)
+
+```bash
+cd backend
+docker compose up -d
+```
+
+Le backend utilise SQLite (volume `./data/`), JWT pour l'auth, et Fastmail SMTP pour les courriels.
+
+## Roadmap
+
+- [x] Favicon
+- [x] Score global (anneau de progression)
+- [x] Recherche d'aliments
+- [x] Liste d'épicerie (modal + copier + partage)
+- [x] Détection de doublons entre catégories
+- [x] Détail nutritif au survol (tooltip)
+- [x] Partage de liste d'épicerie (lien cochable)
+- [x] Mode édition admin (ajouter/retirer des aliments)
+- [x] Calcul automatique des apports nutritionnels
+- [x] Indicateurs de saisonnalité (Québec)
+- [ ] Planificateur de repas (drag vers jours de la semaine)
+- [ ] Historique (snapshots semaine par semaine)
 
 ## Licence
 

@@ -102,6 +102,7 @@ def init_db():
             name TEXT NOT NULL,
             password_hash TEXT NOT NULL,
             salt TEXT NOT NULL,
+            is_admin INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         );
@@ -175,7 +176,7 @@ def get_auth_user():
     if not payload:
         return None
     db = get_db()
-    user = db.execute('SELECT id, email, name FROM users WHERE id = ?', (payload['uid'],)).fetchone()
+    user = db.execute('SELECT id, email, name, is_admin FROM users WHERE id = ?', (payload['uid'],)).fetchone()
     return user
 
 # ─── Routes ───
@@ -217,7 +218,7 @@ def register():
     token = make_token(cursor.lastrowid, email)
     return jsonify({
         'token': token,
-        'user': {'id': cursor.lastrowid, 'email': email, 'name': name}
+        'user': {'id': cursor.lastrowid, 'email': email, 'name': name, 'is_admin': 0}
     }), 201
 
 @app.route('/api/login', methods=['POST'])
@@ -244,8 +245,28 @@ def login():
     token = make_token(user['id'], user['email'])
     return jsonify({
         'token': token,
-        'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
+        'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
+
+# ─── Admin: edit foods ───
+
+FOODS_PATH = os.environ.get('FOODS_PATH', '/data/foods.json')
+
+@app.route('/api/admin/foods', methods=['POST'])
+def save_foods():
+    user = get_auth_user()
+    if not user or not user['is_admin']:
+        return jsonify({'error': 'Accès refusé'}), 403
+    data = request.get_json() or {}
+    foods_data = data.get('foods')
+    if not foods_data or not isinstance(foods_data, dict):
+        return jsonify({'error': 'Données invalides'}), 400
+    try:
+        with open(FOODS_PATH, 'w') as f:
+            json.dump(foods_data, f, ensure_ascii=False, indent=2)
+        return jsonify({'status': 'ok'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # ─── Password reset ───
 
@@ -400,13 +421,86 @@ def save_selections():
 
     return jsonify({'status': 'saved', 'updated_at': datetime.utcnow().isoformat()})
 
+# ─── Share link ───
+
+@app.route('/api/share', methods=['POST'])
+def create_share():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    share_token = secrets.token_urlsafe(16)
+    db = get_db()
+    # Store share token in a simple table
+    db.execute('''CREATE TABLE IF NOT EXISTS share_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )''')
+    db.execute('INSERT OR REPLACE INTO share_links (user_id, token) VALUES (?, ?)', (user['id'], share_token))
+    db.commit()
+
+    return jsonify({'share_url': f'{APP_URL}#share={share_token}', 'token': share_token})
+
+@app.route('/api/shared/<token>', methods=['GET'])
+def get_shared(token):
+    db = get_db()
+    db.execute('''CREATE TABLE IF NOT EXISTS share_links (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        token TEXT UNIQUE NOT NULL,
+        created_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    )''')
+    row = db.execute('SELECT user_id FROM share_links WHERE token = ?', (token,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Lien invalide'}), 404
+
+    sel = db.execute('SELECT data FROM selections WHERE user_id = ?', (row['user_id'],)).fetchone()
+    user = db.execute('SELECT name FROM users WHERE id = ?', (row['user_id'],)).fetchone()
+
+    selections_data = json.loads(sel['data']) if sel else {}
+
+    # Build grocery list from selections
+    grocery = []
+    # Load foods.json to get category icons
+    foods_data = {}
+    try:
+        with open(FOODS_PATH, 'r') as f:
+            foods_data = json.load(f)
+    except:
+        pass
+
+    for cat_id, items in selections_data.items():
+        cat_name = cat_id
+        cat_icon = ''
+        for cat in foods_data.get('categories', []):
+            if cat['id'] == cat_id:
+                cat_name = cat['name']
+                cat_icon = cat.get('icon', '')
+                break
+        for item in items:
+            grocery.append({
+                'name': item.get('name', ''),
+                'qty': item.get('qty', 1),
+                'icon': cat_icon
+            })
+    grocery.sort(key=lambda x: x['name'])
+
+    return jsonify({
+        'grocery': grocery,
+        'user_name': user['name'] if user else 'Inconnu'
+    })
+
 @app.route('/api/me', methods=['GET'])
 def me():
     user = get_auth_user()
     if not user:
         return jsonify({'error': 'Non autorisé'}), 401
     return jsonify({
-        'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
+        'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
 
 # Initialize DB on import

@@ -1,10 +1,30 @@
 {
   "sections": [
-    { "id": "viandes-laitiers", "name": "Viandes & Produits Laitiers", "icon": "🥩" },
-    { "id": "feculents", "name": "Féculents", "icon": "🥔" },
-    { "id": "legumes", "name": "Légumes", "icon": "🥬" },
-    { "id": "fruits", "name": "Fruits", "icon": "🍎" },
-    { "id": "habitudes", "name": "Habitudes", "icon": "🌱" }
+    {
+      "id": "viandes-laitiers",
+      "name": "Viandes & Produits Laitiers",
+      "icon": "🥩"
+    },
+    {
+      "id": "feculents",
+      "name": "Féculents",
+      "icon": "🥔"
+    },
+    {
+      "id": "legumes",
+      "name": "Légumes",
+      "icon": "🥬"
+    },
+    {
+      "id": "fruits",
+      "name": "Fruits",
+      "icon": "🍎"
+    },
+    {
+      "id": "habitudes",
+      "name": "Habitudes",
+      "icon": "🌱"
+    }
   ],
   "categories": [
     {
@@ -16,10 +36,58 @@
       "weekly_min": 2,
       "weekly_max": 4,
       "foods": [
-        { "name": "Sardines", "density": 100, "nutrients": "Ω-3, B12, D, Calcium" },
-        { "name": "Saumon", "density": 92, "nutrients": "Ω-3, B12, D, Sélénium" },
-        { "name": "Maquereau", "density": 88, "nutrients": "Ω-3, B12, D, Sélénium" },
-        { "name": "Truite", "density": 80, "nutrients": "Ω-3, B12, B6, Niacine" }
+        {
+          "name": "Sardines",
+          "density": 100,
+          "nutrients": "Ω-3, B12, D, Calcium",
+          "nutrition": {
+            "protein": 24.6,
+            "fiber": 0.0,
+            "iron": 2.9,
+            "vit_c": 0.0,
+            "calcium": 382.0,
+            "omega3": 1.48
+          }
+        },
+        {
+          "name": "Saumon",
+          "density": 92,
+          "nutrients": "Ω-3, B12, D, Sélénium",
+          "nutrition": {
+            "protein": 20.4,
+            "fiber": 0.0,
+            "iron": 0.8,
+            "vit_c": 0.0,
+            "calcium": 9.0,
+            "omega3": 2.26
+          }
+        },
+        {
+          "name": "Maquereau",
+          "density": 88,
+          "nutrients": "Ω-3, B12, D, Sélénium",
+          "nutrition": {
+            "protein": 18.6,
+            "fiber": 0.0,
+            "iron": 1.6,
+            "vit_c": 0.4,
+            "calcium": 12.0,
+            "omega3": 2.68
+          }
+        },
+        {
+          "name": "Truite",
+          "density": 80,
+          "nutrients": "Ω-3, B12, B6, Niacine",
+          "nutrition": {
+            "protein": 20.8,
+            "fiber": 0.0,
+            "iron": 0.7,
+            "vit_c": 0.0,
+            "calcium": 20.0,
+            "omega3": 0.98
+          }
+        }
       ]
     },
     {
@@ -31,11 +99,71 @@
       "weekly_min": 2,
       "weekly_max": 3,
       "foods": [
-        { "name": "Thon pâle", "density": 85, "nutrients": "Protéine, B3, B12, Sélénium" },
-        { "name": "Morue", "density": 72, "nutrients": "Protéine, B12, Iode, Phosphore" },
-        { "name": "Flétan", "density": 68, "nutrients": "Protéine, B12, Magnésium" },
-        { "name": "Aiglefin", "density": 65, "nutrients": "B12, B6, Sélénium" },
-        { "name": "Sole", "density": 55, "nutrients": "Protéine, B12, Iode" }
+        {
+          "name": "Thon pâle",
+          "density": 85,
+          "nutrients": "Protéine, B3, B12, Sélénium",
+          "nutrition": {
+            "protein": 23.3,
+            "fiber": 0.0,
+            "iron": 1.0,
+            "vit_c": 0.0,
+            "calcium": 4.0,
+            "omega3": 0.23
+          }
+        },
+        {
+          "name": "Morue",
+          "density": 72,
+          "nutrients": "Protéine, B12, Iode, Phosphore",
+          "nutrition": {
+            "protein": 17.8,
+            "fiber": 0.0,
+            "iron": 0.4,
+            "vit_c": 0.0,
+            "calcium": 16.0,
+            "omega3": 0.15
+          }
+        },
+        {
+          "name": "Flétan",
+          "density": 68,
+          "nutrients": "Protéine, B12, Magnésium",
+          "nutrition": {
+            "protein": 18.6,
+            "fiber": 0.0,
+            "iron": 0.9,
+            "vit_c": 0.0,
+            "calcium": 11.0,
+            "omega3": 0.43
+          }
+        },
+        {
+          "name": "Aiglefin",
+          "density": 65,
+          "nutrients": "B12, B6, Sélénium",
+          "nutrition": {
+            "protein": 16.3,
+            "fiber": 0.0,
+            "iron": 0.4,
+            "vit_c": 0.0,
+            "calcium": 42.0,
+            "omega3": 0.21
+          }
+        },
+        {
+          "name": "Sole",
+          "density": 55,
+          "nutrients": "Protéine, B12, Iode",
+          "nutrition": {
+            "protein": 15.3,
+            "fiber": 0.0,
+            "iron": 0.3,
+            "vit_c": 0.0,
+            "calcium": 21.0,
+            "omega3": 0.1
+          }
+        }
       ]
     },
     {
@@ -47,9 +175,45 @@
       "weekly_min": 1,
       "weekly_max": 2,
       "foods": [
-        { "name": "Huîtres", "density": 95, "nutrients": "Zinc, B12, Fer, Cuivre, Ω-3" },
-        { "name": "Pétoncles", "density": 78, "nutrients": "B12, Magnésium, Zinc, Iode" },
-        { "name": "Crevettes", "density": 70, "nutrients": "Protéine, Iode, B12, Astaxanthine" }
+        {
+          "name": "Huîtres",
+          "density": 95,
+          "nutrients": "Zinc, B12, Fer, Cuivre, Ω-3",
+          "nutrition": {
+            "protein": 9.5,
+            "fiber": 0.0,
+            "iron": 6.7,
+            "vit_c": 5.0,
+            "calcium": 70.0,
+            "omega3": 0.67
+          }
+        },
+        {
+          "name": "Pétoncles",
+          "density": 78,
+          "nutrients": "B12, Magnésium, Zinc, Iode",
+          "nutrition": {
+            "protein": 12.1,
+            "fiber": 0.0,
+            "iron": 0.3,
+            "vit_c": 2.0,
+            "calcium": 28.0,
+            "omega3": 0.17
+          }
+        },
+        {
+          "name": "Crevettes",
+          "density": 70,
+          "nutrients": "Protéine, Iode, B12, Astaxanthine",
+          "nutrition": {
+            "protein": 20.3,
+            "fiber": 0.0,
+            "iron": 0.5,
+            "vit_c": 0.0,
+            "calcium": 70.0,
+            "omega3": 0.27
+          }
+        }
       ]
     },
     {
@@ -61,9 +225,45 @@
       "weekly_min": 2,
       "weekly_max": 3,
       "foods": [
-        { "name": "Blanc de poulet", "density": 75, "nutrients": "Protéine, B3, B6, Phosphore" },
-        { "name": "Cuisse de poulet", "density": 60, "nutrients": "Fer, Zinc, B2, B12" },
-        { "name": "Aile de poulet", "density": 55, "nutrients": "Collagène, Fer, Zinc" }
+        {
+          "name": "Blanc de poulet",
+          "density": 75,
+          "nutrients": "Protéine, B3, B6, Phosphore",
+          "nutrition": {
+            "protein": 31.0,
+            "fiber": 0.0,
+            "iron": 1.0,
+            "vit_c": 0.0,
+            "calcium": 15.0,
+            "omega3": 0.05
+          }
+        },
+        {
+          "name": "Cuisse de poulet",
+          "density": 60,
+          "nutrients": "Fer, Zinc, B2, B12",
+          "nutrition": {
+            "protein": 24.0,
+            "fiber": 0.0,
+            "iron": 1.3,
+            "vit_c": 0.0,
+            "calcium": 17.0,
+            "omega3": 0.08
+          }
+        },
+        {
+          "name": "Aile de poulet",
+          "density": 55,
+          "nutrients": "Collagène, Fer, Zinc",
+          "nutrition": {
+            "protein": 22.0,
+            "fiber": 0.0,
+            "iron": 1.1,
+            "vit_c": 0.0,
+            "calcium": 14.0,
+            "omega3": 0.06
+          }
+        }
       ]
     },
     {
@@ -75,7 +275,19 @@
       "weekly_min": 3,
       "weekly_max": 6,
       "foods": [
-        { "name": "Œufs entiers", "density": 82, "nutrients": "Choline, B12, D, Lutéine, Protéine" }
+        {
+          "name": "Œufs entiers",
+          "density": 82,
+          "nutrients": "Choline, B12, D, Lutéine, Protéine",
+          "nutrition": {
+            "protein": 12.6,
+            "fiber": 0.0,
+            "iron": 1.8,
+            "vit_c": 0.0,
+            "calcium": 50.0,
+            "omega3": 0.12
+          }
+        }
       ]
     },
     {
@@ -87,11 +299,71 @@
       "weekly_min": 1,
       "weekly_max": 1,
       "foods": [
-        { "name": "Foie de bœuf", "density": 98, "nutrients": "Fer, B12, A, Folate, Cuivre" },
-        { "name": "Bœuf maigre", "density": 80, "nutrients": "Fer, B12, Zinc, Protéine" },
-        { "name": "Bifteck de surlonge", "density": 72, "nutrients": "Protéine, Fer, B12" },
-        { "name": "Veau", "density": 68, "nutrients": "Protéine, B12, Zinc" },
-        { "name": "Agneau", "density": 65, "nutrients": "Fer, B12, Zinc, Protéine" }
+        {
+          "name": "Foie de bœuf",
+          "density": 98,
+          "nutrients": "Fer, B12, A, Folate, Cuivre",
+          "nutrition": {
+            "protein": 20.4,
+            "fiber": 0.0,
+            "iron": 4.9,
+            "vit_c": 1.6,
+            "calcium": 5.0,
+            "omega3": 0.2
+          }
+        },
+        {
+          "name": "Bœuf maigre",
+          "density": 80,
+          "nutrients": "Fer, B12, Zinc, Protéine",
+          "nutrition": {
+            "protein": 26.1,
+            "fiber": 0.0,
+            "iron": 2.6,
+            "vit_c": 0.0,
+            "calcium": 9.0,
+            "omega3": 0.1
+          }
+        },
+        {
+          "name": "Bifteck de surlonge",
+          "density": 72,
+          "nutrients": "Protéine, Fer, B12",
+          "nutrition": {
+            "protein": 25.0,
+            "fiber": 0.0,
+            "iron": 2.1,
+            "vit_c": 0.0,
+            "calcium": 8.0,
+            "omega3": 0.08
+          }
+        },
+        {
+          "name": "Veau",
+          "density": 68,
+          "nutrients": "Protéine, B12, Zinc",
+          "nutrition": {
+            "protein": 24.0,
+            "fiber": 0.0,
+            "iron": 0.9,
+            "vit_c": 0.0,
+            "calcium": 18.0,
+            "omega3": 0.05
+          }
+        },
+        {
+          "name": "Agneau",
+          "density": 65,
+          "nutrients": "Fer, B12, Zinc, Protéine",
+          "nutrition": {
+            "protein": 25.6,
+            "fiber": 0.0,
+            "iron": 1.9,
+            "vit_c": 0.0,
+            "calcium": 17.0,
+            "omega3": 0.2
+          }
+        }
       ]
     },
     {
@@ -103,10 +375,58 @@
       "weekly_min": 2,
       "weekly_max": 4,
       "foods": [
-        { "name": "Lentilles", "density": 78, "nutrients": "Fer, Folate, Fibres, Protéine, Mg" },
-        { "name": "Pois chiches", "density": 72, "nutrients": "Folate, Fer, Fibres, Cuivre" },
-        { "name": "Haricots", "density": 68, "nutrients": "Fibres, Fer, Folate, Potassium" },
-        { "name": "Pois cassés", "density": 65, "nutrients": "Protéine, Fibres, Folate, Thiamine" }
+        {
+          "name": "Lentilles",
+          "density": 78,
+          "nutrients": "Fer, Folate, Fibres, Protéine, Mg",
+          "nutrition": {
+            "protein": 9.0,
+            "fiber": 7.9,
+            "iron": 3.3,
+            "vit_c": 1.5,
+            "calcium": 19.0,
+            "omega3": 0.1
+          }
+        },
+        {
+          "name": "Pois chiches",
+          "density": 72,
+          "nutrients": "Folate, Fer, Fibres, Cuivre",
+          "nutrition": {
+            "protein": 8.9,
+            "fiber": 7.6,
+            "iron": 2.9,
+            "vit_c": 1.3,
+            "calcium": 49.0,
+            "omega3": 0.07
+          }
+        },
+        {
+          "name": "Haricots",
+          "density": 68,
+          "nutrients": "Fibres, Fer, Folate, Potassium",
+          "nutrition": {
+            "protein": 8.7,
+            "fiber": 6.4,
+            "iron": 2.1,
+            "vit_c": 0.0,
+            "calcium": 50.0,
+            "omega3": 0.06
+          }
+        },
+        {
+          "name": "Pois cassés",
+          "density": 65,
+          "nutrients": "Protéine, Fibres, Folate, Thiamine",
+          "nutrition": {
+            "protein": 8.3,
+            "fiber": 8.3,
+            "iron": 2.4,
+            "vit_c": 0.0,
+            "calcium": 25.0,
+            "omega3": 0.04
+          }
+        }
       ]
     },
     {
@@ -118,15 +438,123 @@
       "weekly_min": 4,
       "weekly_max": 7,
       "foods": [
-        { "name": "Graines de chanvre", "density": 90, "nutrients": "Protéine, Ω-3, Mg, Fer, Zn" },
-        { "name": "Graines de chia", "density": 88, "nutrients": "Ω-3, Fibres, Ca, Mg" },
-        { "name": "Graines de lin", "density": 86, "nutrients": "Ω-3, Lignanes, Fibres" },
-        { "name": "Graines de citrouille", "density": 85, "nutrients": "Mg, Zn, Fer, Ω-3" },
-        { "name": "Amandes", "density": 82, "nutrients": "Vit E, Mg, Fibres, Protéine" },
-        { "name": "Noix de Grenoble", "density": 78, "nutrients": "Ω-3, Vit E, Mg, Antioxydants" },
-        { "name": "Pistaches", "density": 75, "nutrients": "B6, Potassium, Protéine, Antioxydants" },
-        { "name": "Noisettes", "density": 72, "nutrients": "Vit E, Mg, Fibres, Acide folique" },
-        { "name": "Noix de cajou", "density": 70, "nutrients": "Mg, Fer, Zn, Cuivre" }
+        {
+          "name": "Graines de chanvre",
+          "density": 90,
+          "nutrients": "Protéine, Ω-3, Mg, Fer, Zn",
+          "nutrition": {
+            "protein": 31.6,
+            "fiber": 4.0,
+            "iron": 7.95,
+            "vit_c": 0.0,
+            "calcium": 70.0,
+            "omega3": 9.0
+          }
+        },
+        {
+          "name": "Graines de chia",
+          "density": 88,
+          "nutrients": "Ω-3, Fibres, Ca, Mg",
+          "nutrition": {
+            "protein": 16.5,
+            "fiber": 34.4,
+            "iron": 7.7,
+            "vit_c": 1.6,
+            "calcium": 631.0,
+            "omega3": 17.83
+          }
+        },
+        {
+          "name": "Graines de lin",
+          "density": 86,
+          "nutrients": "Ω-3, Lignanes, Fibres",
+          "nutrition": {
+            "protein": 18.3,
+            "fiber": 27.3,
+            "iron": 5.7,
+            "vit_c": 0.6,
+            "calcium": 255.0,
+            "omega3": 22.81
+          }
+        },
+        {
+          "name": "Graines de citrouille",
+          "density": 85,
+          "nutrients": "Mg, Zn, Fer, Ω-3",
+          "nutrition": {
+            "protein": 30.2,
+            "fiber": 6.0,
+            "iron": 8.8,
+            "vit_c": 1.9,
+            "calcium": 46.0,
+            "omega3": 0.12
+          }
+        },
+        {
+          "name": "Amandes",
+          "density": 82,
+          "nutrients": "Vit E, Mg, Fibres, Protéine",
+          "nutrition": {
+            "protein": 21.2,
+            "fiber": 12.5,
+            "iron": 3.7,
+            "vit_c": 0.0,
+            "calcium": 269.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Noix de Grenoble",
+          "density": 78,
+          "nutrients": "Ω-3, Vit E, Mg, Antioxydants",
+          "nutrition": {
+            "protein": 15.2,
+            "fiber": 6.7,
+            "iron": 2.9,
+            "vit_c": 1.3,
+            "calcium": 98.0,
+            "omega3": 9.08
+          }
+        },
+        {
+          "name": "Pistaches",
+          "density": 75,
+          "nutrients": "B6, Potassium, Protéine, Antioxydants",
+          "nutrition": {
+            "protein": 20.6,
+            "fiber": 10.6,
+            "iron": 4.0,
+            "vit_c": 5.6,
+            "calcium": 105.0,
+            "omega3": 0.26
+          }
+        },
+        {
+          "name": "Noisettes",
+          "density": 72,
+          "nutrients": "Vit E, Mg, Fibres, Acide folique",
+          "nutrition": {
+            "protein": 15.0,
+            "fiber": 9.7,
+            "iron": 4.7,
+            "vit_c": 6.3,
+            "calcium": 114.0,
+            "omega3": 0.09
+          }
+        },
+        {
+          "name": "Noix de cajou",
+          "density": 70,
+          "nutrients": "Mg, Fer, Zn, Cuivre",
+          "nutrition": {
+            "protein": 18.2,
+            "fiber": 3.3,
+            "iron": 6.7,
+            "vit_c": 0.5,
+            "calcium": 37.0,
+            "omega3": 0.06
+          }
+        }
       ]
     },
     {
@@ -138,9 +566,45 @@
       "weekly_min": 10,
       "weekly_max": 10,
       "foods": [
-        { "name": "Yaourt grec", "density": 70, "nutrients": "Protéine, Calcium, B12, Probiotiques" },
-        { "name": "Fromage cottage", "density": 65, "nutrients": "Caséine, Calcium, B12, Phosphore" },
-        { "name": "Fromage", "density": 60, "nutrients": "Calcium, B12, Protéine, Zinc, Vit A" }
+        {
+          "name": "Yaourt grec",
+          "density": 70,
+          "nutrients": "Protéine, Calcium, B12, Probiotiques",
+          "nutrition": {
+            "protein": 9.0,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 0.0,
+            "calcium": 110.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Fromage cottage",
+          "density": 65,
+          "nutrients": "Caséine, Calcium, B12, Phosphore",
+          "nutrition": {
+            "protein": 11.1,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 0.0,
+            "calcium": 83.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Fromage",
+          "density": 60,
+          "nutrients": "Calcium, B12, Protéine, Zinc, Vit A",
+          "nutrition": {
+            "protein": 25.0,
+            "fiber": 0.0,
+            "iron": 0.7,
+            "vit_c": 0.0,
+            "calcium": 721.0,
+            "omega3": 0.08
+          }
+        }
       ]
     },
     {
@@ -152,18 +616,268 @@
       "weekly_min": 21,
       "weekly_max": 21,
       "foods": [
-        { "name": "Kale", "density": 95, "nutrients": "Vit K, A, C, Mn, Ca, Antioxydants" },
-        { "name": "Brocoli", "density": 88, "nutrients": "Vit C, K, Folate, Sulforaphane, Fibres" },
-        { "name": "Épinards", "density": 90, "nutrients": "Fer, Vit K, A, C, Folate, Mg" },
-        { "name": "Cresson", "density": 85, "nutrients": "Vit K, C, A, Ca, Antioxydants" },
-        { "name": "Feuilles de moutarde", "density": 82, "nutrients": "Vit K, A, C, Glucosinolates" },
-        { "name": "Haricots verts", "density": 65, "nutrients": "Vit K, C, Mn, Fibres, Folates" },
-        { "name": "Asperges", "density": 75, "nutrients": "Folates, Vit K, A, Inuline, Glutathion" },
-        { "name": "Pois", "density": 68, "nutrients": "Protéine, Vit K, C, Thiamine, Fibres" },
-        { "name": "Courgettes", "density": 55, "nutrients": "Vit C, A, K, K, Fibres" },
-        { "name": "Concombre", "density": 45, "nutrients": "Vit K, C, K, Hydratation, Cucurbitacines" },
-        { "name": "Laitue", "density": 50, "nutrients": "Vit A, K, C, Folates, Faible calorie" },
-        { "name": "Navet (fanes)", "density": 70, "nutrients": "Vit K, A, C, Ca, Glucosinolates" }
+        {
+          "name": "Kale",
+          "density": 95,
+          "nutrients": "Vit K, A, C, Mn, Ca, Antioxydants",
+          "nutrition": {
+            "protein": 4.3,
+            "fiber": 3.6,
+            "iron": 1.5,
+            "vit_c": 120.0,
+            "calcium": 254.0,
+            "omega3": 0.14
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Brocoli",
+          "density": 88,
+          "nutrients": "Vit C, K, Folate, Sulforaphane, Fibres",
+          "nutrition": {
+            "protein": 2.8,
+            "fiber": 2.6,
+            "iron": 0.7,
+            "vit_c": 89.2,
+            "calcium": 47.0,
+            "omega3": 0.03
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Épinards",
+          "density": 90,
+          "nutrients": "Fer, Vit K, A, C, Folate, Mg",
+          "nutrition": {
+            "protein": 2.9,
+            "fiber": 2.2,
+            "iron": 2.7,
+            "vit_c": 28.1,
+            "calcium": 99.0,
+            "omega3": 0.14
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Cresson",
+          "density": 85,
+          "nutrients": "Vit K, C, A, Ca, Antioxydants",
+          "nutrition": {
+            "protein": 2.3,
+            "fiber": 0.5,
+            "iron": 0.2,
+            "vit_c": 43.0,
+            "calcium": 120.0,
+            "omega3": 0.1
+          },
+          "season": [
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11
+          ]
+        },
+        {
+          "name": "Feuilles de moutarde",
+          "density": 82,
+          "nutrients": "Vit K, A, C, Glucosinolates",
+          "nutrition": {
+            "protein": 2.7,
+            "fiber": 3.2,
+            "iron": 1.5,
+            "vit_c": 70.0,
+            "calcium": 115.0,
+            "omega3": 0.08
+          },
+          "season": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Haricots verts",
+          "density": 65,
+          "nutrients": "Vit K, C, Mn, Fibres, Folates",
+          "nutrition": {
+            "protein": 1.8,
+            "fiber": 2.7,
+            "iron": 1.0,
+            "vit_c": 12.2,
+            "calcium": 37.0,
+            "omega3": 0.03
+          },
+          "season": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Asperges",
+          "density": 75,
+          "nutrients": "Folates, Vit K, A, Inuline, Glutathion",
+          "nutrition": {
+            "protein": 2.2,
+            "fiber": 2.1,
+            "iron": 2.1,
+            "vit_c": 5.6,
+            "calcium": 24.0,
+            "omega3": 0.02
+          },
+          "season": [
+            5,
+            6
+          ]
+        },
+        {
+          "name": "Pois",
+          "density": 68,
+          "nutrients": "Protéine, Vit K, C, Thiamine, Fibres",
+          "nutrition": {
+            "protein": 5.4,
+            "fiber": 5.7,
+            "iron": 1.5,
+            "vit_c": 40.0,
+            "calcium": 25.0,
+            "omega3": 0.03
+          },
+          "season": [
+            6,
+            7,
+            8
+          ]
+        },
+        {
+          "name": "Courgettes",
+          "density": 55,
+          "nutrients": "Vit C, A, K, K, Fibres",
+          "nutrition": {
+            "protein": 1.2,
+            "fiber": 1.0,
+            "iron": 0.4,
+            "vit_c": 17.9,
+            "calcium": 16.0,
+            "omega3": 0.01
+          },
+          "season": [
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Concombre",
+          "density": 45,
+          "nutrients": "Vit K, C, K, Hydratation, Cucurbitacines",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 0.5,
+            "iron": 0.3,
+            "vit_c": 2.8,
+            "calcium": 16.0,
+            "omega3": 0.0
+          },
+          "season": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Laitue",
+          "density": 50,
+          "nutrients": "Vit A, K, C, Folates, Faible calorie",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 1.3,
+            "iron": 0.9,
+            "vit_c": 9.2,
+            "calcium": 36.0,
+            "omega3": 0.02
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Navet (fanes)",
+          "density": 70,
+          "nutrients": "Vit K, A, C, Ca, Glucosinolates",
+          "nutrition": {
+            "protein": 1.5,
+            "fiber": 1.8,
+            "iron": 0.9,
+            "vit_c": 60.0,
+            "calcium": 138.0,
+            "omega3": 0.05
+          },
+          "season": [
+            5,
+            6,
+            7,
+            8,
+            9,
+            10
+          ]
+        }
       ]
     },
     {
@@ -175,12 +889,139 @@
       "weekly_min": 14,
       "weekly_max": 14,
       "foods": [
-        { "name": "Carottes", "density": 80, "nutrients": "β-carotène, Vit A, K, B6, Fibres" },
-        { "name": "Courge butternut", "density": 72, "nutrients": "Vit A, C, Mg, K, Fibres" },
-        { "name": "Poivrons orange", "density": 75, "nutrients": "Vit C, A, B6, Antioxydants" },
-        { "name": "Maïs", "density": 60, "nutrients": "Lutéine, Zéaxanthine, Fibres, B-vitamines" },
-        { "name": "Rutabaga", "density": 55, "nutrients": "Vit C, K, Fibres, K, Mn" },
-        { "name": "Citrouille", "density": 70, "nutrients": "Vit A, C, E, K, Antioxydants" }
+        {
+          "name": "Carottes",
+          "density": 80,
+          "nutrients": "β-carotène, Vit A, K, B6, Fibres",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 2.8,
+            "iron": 0.3,
+            "vit_c": 5.9,
+            "calcium": 33.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Courge butternut",
+          "density": 72,
+          "nutrients": "Vit A, C, Mg, K, Fibres",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 15.1,
+            "calcium": 48.0,
+            "omega3": 0.02
+          },
+          "season": [
+            9,
+            10,
+            11,
+            12,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Poivrons orange",
+          "density": 75,
+          "nutrients": "Vit C, A, B6, Antioxydants",
+          "nutrition": {
+            "protein": 1.0,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 184.0,
+            "calcium": 11.0,
+            "omega3": 0.02
+          },
+          "season": [
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Maïs",
+          "density": 60,
+          "nutrients": "Lutéine, Zéaxanthine, Fibres, B-vitamines",
+          "nutrition": {
+            "protein": 3.2,
+            "fiber": 2.7,
+            "iron": 0.5,
+            "vit_c": 6.8,
+            "calcium": 2.0,
+            "omega3": 0.02
+          },
+          "season": [
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Rutabaga",
+          "density": 55,
+          "nutrients": "Vit C, K, Fibres, K, Mn",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 1.8,
+            "iron": 0.5,
+            "vit_c": 25.0,
+            "calcium": 47.0,
+            "omega3": 0.02
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Citrouille",
+          "density": 70,
+          "nutrients": "Vit A, C, E, K, Antioxydants",
+          "nutrition": {
+            "protein": 1.0,
+            "fiber": 0.5,
+            "iron": 0.8,
+            "vit_c": 9.0,
+            "calcium": 21.0,
+            "omega3": 0.01
+          },
+          "season": [
+            9,
+            10,
+            11,
+            12,
+            1,
+            2,
+            3
+          ]
+        }
       ]
     },
     {
@@ -192,11 +1033,124 @@
       "weekly_min": 14,
       "weekly_max": 14,
       "foods": [
-        { "name": "Tomates", "density": 78, "nutrients": "Lycopène, Vit C, K, Potassium" },
-        { "name": "Poivrons rouges", "density": 85, "nutrients": "Vit C, A, B6, Antioxydants" },
-        { "name": "Betteraves", "density": 75, "nutrients": "Nitrates, Folates, K, Mn, Bétalaïnes" },
-        { "name": "Chou rouge", "density": 70, "nutrients": "Vit C, K, Anthocyanes, Fibres" },
-        { "name": "Radis", "density": 50, "nutrients": "Vit C, K, Glucosinolates, Hydratation" }
+        {
+          "name": "Tomates",
+          "density": 78,
+          "nutrients": "Lycopène, Vit C, K, Potassium",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 1.2,
+            "iron": 0.3,
+            "vit_c": 13.7,
+            "calcium": 10.0,
+            "omega3": 0.0
+          },
+          "season": [
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Poivrons rouges",
+          "density": 85,
+          "nutrients": "Vit C, A, B6, Antioxydants",
+          "nutrition": {
+            "protein": 1.0,
+            "fiber": 2.1,
+            "iron": 0.4,
+            "vit_c": 190.0,
+            "calcium": 7.0,
+            "omega3": 0.02
+          },
+          "season": [
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Betteraves",
+          "density": 75,
+          "nutrients": "Nitrates, Folates, K, Mn, Bétalaïnes",
+          "nutrition": {
+            "protein": 1.6,
+            "fiber": 2.8,
+            "iron": 0.8,
+            "vit_c": 4.9,
+            "calcium": 16.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Chou rouge",
+          "density": 70,
+          "nutrients": "Vit C, K, Anthocyanes, Fibres",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 2.1,
+            "iron": 0.6,
+            "vit_c": 57.0,
+            "calcium": 45.0,
+            "omega3": 0.03
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Radis",
+          "density": 50,
+          "nutrients": "Vit C, K, Glucosinolates, Hydratation",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 1.6,
+            "iron": 0.3,
+            "vit_c": 14.8,
+            "calcium": 25.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        }
       ]
     },
     {
@@ -208,14 +1162,208 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Ail", "density": 92, "nutrients": "Allicine, Mn, B6, Vit C, Antioxydants" },
-        { "name": "Oignons", "density": 65, "nutrients": "Quercétine, Vit C, B6, Fibres" },
-        { "name": "Chou-fleur", "density": 70, "nutrients": "Vit C, K, Folates, Sulforaphane" },
-        { "name": "Champignons", "density": 68, "nutrients": "Sélénium, B2, B3, Cu, β-glucanes" },
-        { "name": "Poireaux", "density": 62, "nutrients": "Vit K, A, C, Folates, Inuline" },
-        { "name": "Panais", "density": 58, "nutrients": "Folates, Vit C, K, Fibres" },
-        { "name": "Céleri-rave", "density": 52, "nutrients": "Vit K, C, P, Fibres" },
-        { "name": "Cœur de palmier", "density": 55, "nutrients": "Fibres, Cu, Fer, Vit C" }
+        {
+          "name": "Ail",
+          "density": 92,
+          "nutrients": "Allicine, Mn, B6, Vit C, Antioxydants",
+          "nutrition": {
+            "protein": 6.4,
+            "fiber": 2.1,
+            "iron": 1.7,
+            "vit_c": 31.2,
+            "calcium": 181.0,
+            "omega3": 0.01
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Oignons",
+          "density": 65,
+          "nutrients": "Quercétine, Vit C, B6, Fibres",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 1.7,
+            "iron": 0.2,
+            "vit_c": 7.4,
+            "calcium": 23.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Chou-fleur",
+          "density": 70,
+          "nutrients": "Vit C, K, Folates, Sulforaphane",
+          "nutrition": {
+            "protein": 1.9,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 48.2,
+            "calcium": 22.0,
+            "omega3": 0.03
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Champignons",
+          "density": 68,
+          "nutrients": "Sélénium, B2, B3, Cu, β-glucanes",
+          "nutrition": {
+            "protein": 3.1,
+            "fiber": 1.0,
+            "iron": 0.5,
+            "vit_c": 2.1,
+            "calcium": 3.0,
+            "omega3": 0.01
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Poireaux",
+          "density": 62,
+          "nutrients": "Vit K, A, C, Folates, Inuline",
+          "nutrition": {
+            "protein": 1.5,
+            "fiber": 1.8,
+            "iron": 1.0,
+            "vit_c": 12.0,
+            "calcium": 59.0,
+            "omega3": 0.02
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Panais",
+          "density": 58,
+          "nutrients": "Folates, Vit C, K, Fibres",
+          "nutrition": {
+            "protein": 1.2,
+            "fiber": 4.9,
+            "iron": 0.6,
+            "vit_c": 17.0,
+            "calcium": 36.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Céleri-rave",
+          "density": 52,
+          "nutrients": "Vit K, C, P, Fibres",
+          "nutrition": {
+            "protein": 1.5,
+            "fiber": 1.8,
+            "iron": 0.4,
+            "vit_c": 8.0,
+            "calcium": 43.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Cœur de palmier",
+          "density": 55,
+          "nutrients": "Fibres, Cu, Fer, Vit C",
+          "nutrition": {
+            "protein": 2.5,
+            "fiber": 3.5,
+            "iron": 1.7,
+            "vit_c": 6.8,
+            "calcium": 19.0,
+            "omega3": 0.01
+          }
+        }
       ]
     },
     {
@@ -227,11 +1375,133 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Aubergines", "density": 65, "nutrients": "Nasunine, Fibres, Mn, Antioxydants" },
-        { "name": "Chou violet", "density": 72, "nutrients": "Anthocyanes, Vit C, K, Fibres" },
-        { "name": "Chou-fleur mauve", "density": 70, "nutrients": "Anthocyanes, Vit C, Sulforaphane" },
-        { "name": "Carottes mauves", "density": 75, "nutrients": "Anthocyanes, α-carotène, Vit A" },
-        { "name": "Radis noir", "density": 68, "nutrients": "Glucosinolates, Vit C, K, K" }
+        {
+          "name": "Aubergines",
+          "density": 65,
+          "nutrients": "Nasunine, Fibres, Mn, Antioxydants",
+          "nutrition": {
+            "protein": 1.0,
+            "fiber": 3.0,
+            "iron": 0.2,
+            "vit_c": 2.2,
+            "calcium": 9.0,
+            "omega3": 0.01
+          },
+          "season": [
+            7,
+            8,
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Chou violet",
+          "density": 72,
+          "nutrients": "Anthocyanes, Vit C, K, Fibres",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 2.1,
+            "iron": 0.6,
+            "vit_c": 57.0,
+            "calcium": 45.0,
+            "omega3": 0.03
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Chou-fleur mauve",
+          "density": 70,
+          "nutrients": "Anthocyanes, Vit C, Sulforaphane",
+          "nutrition": {
+            "protein": 1.9,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 48.2,
+            "calcium": 22.0,
+            "omega3": 0.03
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Carottes mauves",
+          "density": 75,
+          "nutrients": "Anthocyanes, α-carotène, Vit A",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 2.8,
+            "iron": 0.3,
+            "vit_c": 5.9,
+            "calcium": 33.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        },
+        {
+          "name": "Radis noir",
+          "density": 68,
+          "nutrients": "Glucosinolates, Vit C, K, K",
+          "nutrition": {
+            "protein": 1.2,
+            "fiber": 1.6,
+            "iron": 0.4,
+            "vit_c": 22.0,
+            "calcium": 34.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
+        }
       ]
     },
     {
@@ -243,13 +1513,127 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Camerises", "density": 85, "nutrients": "Vit C, K, Antioxydants, Polyphénols" },
-        { "name": "Bleuets", "density": 82, "nutrients": "Anthocyanes, Vit C, K, Mn, Fibres" },
-        { "name": "Mûres", "density": 80, "nutrients": "Anthocyanes, Vit C, K, Folates, Fibres" },
-        { "name": "Framboises", "density": 78, "nutrients": "Vit C, Mn, Fibres, Xylitol, Ellagitannins" },
-        { "name": "Groseilles noires", "density": 88, "nutrients": "Vit C, Anthocyanes, Ω-3, Antioxydants" },
-        { "name": "Canneberges", "density": 70, "nutrients": "Proanthocyanidines, Vit C, Mn, Fibres" },
-        { "name": "Fraises", "density": 75, "nutrients": "Vit C, Mn, Folates, Anthocyanes, Fibres" }
+        {
+          "name": "Camerises",
+          "density": 85,
+          "nutrients": "Vit C, K, Antioxydants, Polyphénols",
+          "nutrition": {
+            "protein": 0.5,
+            "fiber": 1.6,
+            "iron": 0.4,
+            "vit_c": 50.0,
+            "calcium": 30.0,
+            "omega3": 0.03
+          },
+          "season": [
+            6,
+            7
+          ]
+        },
+        {
+          "name": "Bleuets",
+          "density": 82,
+          "nutrients": "Anthocyanes, Vit C, K, Mn, Fibres",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 2.4,
+            "iron": 0.3,
+            "vit_c": 9.7,
+            "calcium": 6.0,
+            "omega3": 0.03
+          },
+          "season": [
+            7,
+            8
+          ]
+        },
+        {
+          "name": "Mûres",
+          "density": 80,
+          "nutrients": "Anthocyanes, Vit C, K, Folates, Fibres",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 5.3,
+            "iron": 0.6,
+            "vit_c": 21.0,
+            "calcium": 29.0,
+            "omega3": 0.09
+          },
+          "season": [
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Framboises",
+          "density": 78,
+          "nutrients": "Vit C, Mn, Fibres, Xylitol, Ellagitannins",
+          "nutrition": {
+            "protein": 1.2,
+            "fiber": 6.5,
+            "iron": 0.7,
+            "vit_c": 26.2,
+            "calcium": 25.0,
+            "omega3": 0.12
+          },
+          "season": [
+            7,
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Groseilles noires",
+          "density": 88,
+          "nutrients": "Vit C, Anthocyanes, Ω-3, Antioxydants",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 4.3,
+            "iron": 1.5,
+            "vit_c": 181.0,
+            "calcium": 55.0,
+            "omega3": 0.1
+          },
+          "season": [
+            7,
+            8
+          ]
+        },
+        {
+          "name": "Canneberges",
+          "density": 70,
+          "nutrients": "Proanthocyanidines, Vit C, Mn, Fibres",
+          "nutrition": {
+            "protein": 0.4,
+            "fiber": 4.6,
+            "iron": 0.3,
+            "vit_c": 13.3,
+            "calcium": 8.0,
+            "omega3": 0.02
+          },
+          "season": [
+            9,
+            10,
+            11
+          ]
+        },
+        {
+          "name": "Fraises",
+          "density": 75,
+          "nutrients": "Vit C, Mn, Folates, Anthocyanes, Fibres",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 58.8,
+            "calcium": 16.0,
+            "omega3": 0.03
+          },
+          "season": [
+            6,
+            7
+          ]
+        }
       ]
     },
     {
@@ -261,17 +1645,157 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Argousier", "density": 95, "nutrients": "Vit C (extrême), Vit E, Ω-7, β-carotène" },
-        { "name": "Cassis", "density": 90, "nutrients": "Vit C, Anthocyanes, Ω-3, γ-linolénique" },
-        { "name": "Goyave", "density": 85, "nutrients": "Vit C, A, Folates, Fibres, Lycopène" },
-        { "name": "Kiwi", "density": 80, "nutrients": "Vit C, K, E, Folates, K, Actinidine" },
-        { "name": "Pamplemousse", "density": 72, "nutrients": "Vit C, A, Lycopène, Naringénine, Fibres" },
-        { "name": "Orange", "density": 75, "nutrients": "Vit C, A, B9, Ca, Hespéridine" },
-        { "name": "Grenade", "density": 82, "nutrients": "Punicalagines, Vit C, K, Folates" },
-        { "name": "Mandarine", "density": 68, "nutrients": "Vit C, A, Fibres, Hespéridine" },
-        { "name": "Clémentine", "density": 65, "nutrients": "Vit C, A, B9, Fibres" },
-        { "name": "Citron", "density": 78, "nutrients": "Vit C, Acide citrique, Hespéridine, D-limonène" },
-        { "name": "Lime", "density": 70, "nutrients": "Vit C, Antioxydants, D-limonène, Flavonoïdes" }
+        {
+          "name": "Argousier",
+          "density": 95,
+          "nutrients": "Vit C (extrême), Vit E, Ω-7, β-carotène",
+          "nutrition": {
+            "protein": 1.2,
+            "fiber": 2.4,
+            "iron": 1.6,
+            "vit_c": 695.0,
+            "calcium": 42.0,
+            "omega3": 0.2
+          },
+          "season": [
+            9,
+            10
+          ]
+        },
+        {
+          "name": "Cassis",
+          "density": 90,
+          "nutrients": "Vit C, Anthocyanes, Ω-3, γ-linolénique",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 4.3,
+            "iron": 1.5,
+            "vit_c": 181.0,
+            "calcium": 55.0,
+            "omega3": 0.1
+          },
+          "season": [
+            7,
+            8
+          ]
+        },
+        {
+          "name": "Goyave",
+          "density": 85,
+          "nutrients": "Vit C, A, Folates, Fibres, Lycopène",
+          "nutrition": {
+            "protein": 2.6,
+            "fiber": 5.4,
+            "iron": 0.3,
+            "vit_c": 228.3,
+            "calcium": 18.0,
+            "omega3": 0.09
+          }
+        },
+        {
+          "name": "Kiwi",
+          "density": 80,
+          "nutrients": "Vit C, K, E, Folates, K, Actinidine",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 3.0,
+            "iron": 0.3,
+            "vit_c": 92.7,
+            "calcium": 34.0,
+            "omega3": 0.04
+          }
+        },
+        {
+          "name": "Pamplemousse",
+          "density": 72,
+          "nutrients": "Vit C, A, Lycopène, Naringénine, Fibres",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 1.6,
+            "iron": 0.1,
+            "vit_c": 31.2,
+            "calcium": 22.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Orange",
+          "density": 75,
+          "nutrients": "Vit C, A, B9, Ca, Hespéridine",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 2.4,
+            "iron": 0.1,
+            "vit_c": 53.2,
+            "calcium": 40.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Grenade",
+          "density": 82,
+          "nutrients": "Punicalagines, Vit C, K, Folates",
+          "nutrition": {
+            "protein": 1.7,
+            "fiber": 4.0,
+            "iron": 0.3,
+            "vit_c": 10.2,
+            "calcium": 10.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Mandarine",
+          "density": 68,
+          "nutrients": "Vit C, A, Fibres, Hespéridine",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 1.8,
+            "iron": 0.2,
+            "vit_c": 26.7,
+            "calcium": 37.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Clémentine",
+          "density": 65,
+          "nutrients": "Vit C, A, B9, Fibres",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 1.7,
+            "iron": 0.2,
+            "vit_c": 26.0,
+            "calcium": 33.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Citron",
+          "density": 78,
+          "nutrients": "Vit C, Acide citrique, Hespéridine, D-limonène",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 2.8,
+            "iron": 0.6,
+            "vit_c": 53.0,
+            "calcium": 26.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Lime",
+          "density": 70,
+          "nutrients": "Vit C, Antioxydants, D-limonène, Flavonoïdes",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 2.8,
+            "iron": 0.6,
+            "vit_c": 29.1,
+            "calcium": 33.0,
+            "omega3": 0.02
+          }
+        }
       ]
     },
     {
@@ -283,18 +1807,198 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Avocat", "density": 88, "nutrients": "Lipides sains, K, Vit E, Folates, Fibres" },
-        { "name": "Mangue", "density": 72, "nutrients": "Vit A, C, Folates, Fibres, Caroténoïdes" },
-        { "name": "Fruit de la passion", "density": 75, "nutrients": "Vit C, A, Fibres, Fer, K" },
-        { "name": "Pomme", "density": 60, "nutrients": "Pectine, Vit C, K, Quercétine, Fibres" },
-        { "name": "Poire", "density": 58, "nutrients": "Fibres, Vit C, K, Cu" },
-        { "name": "Abricot", "density": 65, "nutrients": "Vit A, C, E, K, Fibres, β-carotène" },
-        { "name": "Banane", "density": 62, "nutrients": "K, B6, Vit C, Résistant, Mg" },
-        { "name": "Pêche", "density": 55, "nutrients": "Vit A, C, Niacine, Fibres" },
-        { "name": "Nectarine", "density": 55, "nutrients": "Vit C, A, K, Fibres, Antioxydants" },
-        { "name": "Prune", "density": 60, "nutrients": "Vit K, C, Sorbitol, Fibres, Anthocyanes" },
-        { "name": "Litchi", "density": 68, "nutrients": "Vit C, Cu, B6, Oligonol" },
-        { "name": "Noix de coco fraîche", "density": 65, "nutrients": "MCT, Mn, Cu, Sélenium, Fibres" }
+        {
+          "name": "Avocat",
+          "density": 88,
+          "nutrients": "Lipides sains, K, Vit E, Folates, Fibres",
+          "nutrition": {
+            "protein": 2.0,
+            "fiber": 6.7,
+            "iron": 0.6,
+            "vit_c": 10.0,
+            "calcium": 12.0,
+            "omega3": 0.11
+          }
+        },
+        {
+          "name": "Mangue",
+          "density": 72,
+          "nutrients": "Vit A, C, Folates, Fibres, Caroténoïdes",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 1.6,
+            "iron": 0.2,
+            "vit_c": 36.4,
+            "calcium": 11.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Fruit de la passion",
+          "density": 75,
+          "nutrients": "Vit C, A, Fibres, Fer, K",
+          "nutrition": {
+            "protein": 2.2,
+            "fiber": 10.4,
+            "iron": 1.1,
+            "vit_c": 30.0,
+            "calcium": 12.0,
+            "omega3": 0.01
+          }
+        },
+        {
+          "name": "Pomme",
+          "density": 60,
+          "nutrients": "Pectine, Vit C, K, Quercétine, Fibres",
+          "nutrition": {
+            "protein": 0.3,
+            "fiber": 2.4,
+            "iron": 0.1,
+            "vit_c": 4.6,
+            "calcium": 6.0,
+            "omega3": 0.0
+          },
+          "season": [
+            9,
+            10,
+            11,
+            12,
+            1,
+            2,
+            3,
+            4,
+            5
+          ]
+        },
+        {
+          "name": "Poire",
+          "density": 58,
+          "nutrients": "Fibres, Vit C, K, Cu",
+          "nutrition": {
+            "protein": 0.4,
+            "fiber": 3.1,
+            "iron": 0.2,
+            "vit_c": 4.3,
+            "calcium": 9.0,
+            "omega3": 0.0
+          },
+          "season": [
+            9,
+            10,
+            11,
+            12,
+            1,
+            2,
+            3
+          ]
+        },
+        {
+          "name": "Abricot",
+          "density": 65,
+          "nutrients": "Vit A, C, E, K, Fibres, β-carotène",
+          "nutrition": {
+            "protein": 1.4,
+            "fiber": 2.0,
+            "iron": 0.4,
+            "vit_c": 10.0,
+            "calcium": 13.0,
+            "omega3": 0.0
+          },
+          "season": [
+            7,
+            8
+          ]
+        },
+        {
+          "name": "Banane",
+          "density": 62,
+          "nutrients": "K, B6, Vit C, Résistant, Mg",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 2.6,
+            "iron": 0.3,
+            "vit_c": 8.7,
+            "calcium": 5.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Pêche",
+          "density": 55,
+          "nutrients": "Vit A, C, Niacine, Fibres",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 1.5,
+            "iron": 0.3,
+            "vit_c": 6.6,
+            "calcium": 6.0,
+            "omega3": 0.0
+          },
+          "season": [
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Nectarine",
+          "density": 55,
+          "nutrients": "Vit C, A, K, Fibres, Antioxydants",
+          "nutrition": {
+            "protein": 0.9,
+            "fiber": 1.7,
+            "iron": 0.3,
+            "vit_c": 5.4,
+            "calcium": 6.0,
+            "omega3": 0.0
+          },
+          "season": [
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Prune",
+          "density": 60,
+          "nutrients": "Vit K, C, Sorbitol, Fibres, Anthocyanes",
+          "nutrition": {
+            "protein": 0.7,
+            "fiber": 1.4,
+            "iron": 0.2,
+            "vit_c": 9.5,
+            "calcium": 6.0,
+            "omega3": 0.0
+          },
+          "season": [
+            8,
+            9
+          ]
+        },
+        {
+          "name": "Litchi",
+          "density": 68,
+          "nutrients": "Vit C, Cu, B6, Oligonol",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 1.3,
+            "iron": 0.1,
+            "vit_c": 71.5,
+            "calcium": 5.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Noix de coco fraîche",
+          "density": 65,
+          "nutrients": "MCT, Mn, Cu, Sélenium, Fibres",
+          "nutrition": {
+            "protein": 3.3,
+            "fiber": 9.0,
+            "iron": 2.4,
+            "vit_c": 3.3,
+            "calcium": 14.0,
+            "omega3": 0.0
+          }
+        }
       ]
     },
     {
@@ -306,15 +2010,123 @@
       "weekly_min": 16,
       "weekly_max": 16,
       "foods": [
-        { "name": "Quinoa", "density": 85, "nutrients": "Protéine complète, Fer, Mg, Fibres, Folate" },
-        { "name": "Sarrasin", "density": 82, "nutrients": "Rutine, Mg, Fibres, Mn, Protéine" },
-        { "name": "Avoine complète", "density": 80, "nutrients": "β-glucanes, Fibres, Mn, Fe, Zn" },
-        { "name": "Orge mondé", "density": 75, "nutrients": "Fibres β-glucanes, Sélenium, Cu, Mn" },
-        { "name": "Riz sauvage", "density": 78, "nutrients": "Protéine, Mg, Zn, Mn, Antioxydants" },
-        { "name": "Épeautre complet", "density": 72, "nutrients": "Protéine, Fer, Mg, Niacine" },
-        { "name": "Boulgour complet", "density": 70, "nutrients": "Fibres, Fer, Mn, B6, Mg" },
-        { "name": "Millet", "density": 68, "nutrients": "Mg, P, Cu, Mn, Antioxydants" },
-        { "name": "Amarante", "density": 82, "nutrients": "Protéine complète, Fer, Ca, Mg, Fibres" }
+        {
+          "name": "Quinoa",
+          "density": 85,
+          "nutrients": "Protéine complète, Fer, Mg, Fibres, Folate",
+          "nutrition": {
+            "protein": 4.4,
+            "fiber": 2.8,
+            "iron": 1.5,
+            "vit_c": 0.0,
+            "calcium": 17.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Sarrasin",
+          "density": 82,
+          "nutrients": "Rutine, Mg, Fibres, Mn, Protéine",
+          "nutrition": {
+            "protein": 5.7,
+            "fiber": 2.7,
+            "iron": 2.2,
+            "vit_c": 0.0,
+            "calcium": 7.0,
+            "omega3": 0.04
+          }
+        },
+        {
+          "name": "Avoine complète",
+          "density": 80,
+          "nutrients": "β-glucanes, Fibres, Mn, Fe, Zn",
+          "nutrition": {
+            "protein": 5.9,
+            "fiber": 4.0,
+            "iron": 2.1,
+            "vit_c": 0.0,
+            "calcium": 54.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Orge mondé",
+          "density": 75,
+          "nutrients": "Fibres β-glucanes, Sélenium, Cu, Mn",
+          "nutrition": {
+            "protein": 3.5,
+            "fiber": 3.8,
+            "iron": 1.3,
+            "vit_c": 0.0,
+            "calcium": 29.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Riz sauvage",
+          "density": 78,
+          "nutrients": "Protéine, Mg, Zn, Mn, Antioxydants",
+          "nutrition": {
+            "protein": 4.0,
+            "fiber": 1.8,
+            "iron": 0.6,
+            "vit_c": 0.0,
+            "calcium": 7.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Épeautre complet",
+          "density": 72,
+          "nutrients": "Protéine, Fer, Mg, Niacine",
+          "nutrition": {
+            "protein": 5.0,
+            "fiber": 3.9,
+            "iron": 1.6,
+            "vit_c": 0.0,
+            "calcium": 13.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Boulgour complet",
+          "density": 70,
+          "nutrients": "Fibres, Fer, Mn, B6, Mg",
+          "nutrition": {
+            "protein": 3.1,
+            "fiber": 4.5,
+            "iron": 0.9,
+            "vit_c": 0.0,
+            "calcium": 10.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Millet",
+          "density": 68,
+          "nutrients": "Mg, P, Cu, Mn, Antioxydants",
+          "nutrition": {
+            "protein": 3.5,
+            "fiber": 1.3,
+            "iron": 0.6,
+            "vit_c": 0.0,
+            "calcium": 3.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Amarante",
+          "density": 82,
+          "nutrients": "Protéine complète, Fer, Ca, Mg, Fibres",
+          "nutrition": {
+            "protein": 5.2,
+            "fiber": 6.7,
+            "iron": 2.1,
+            "vit_c": 0.0,
+            "calcium": 47.0,
+            "omega3": 0.03
+          }
+        }
       ]
     },
     {
@@ -326,14 +2138,110 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Riz brun", "density": 65, "nutrients": "Mn, Mg, B-vitamines, Fibres" },
-        { "name": "Riz noir", "density": 70, "nutrients": "Anthocyanes, Fer, Vit E, Fibres" },
-        { "name": "Riz rouge", "density": 68, "nutrients": "Antioxydants, Fer, Zn, Mg" },
-        { "name": "Pâtes de blé entier", "density": 60, "nutrients": "Fibres, Mn, Cu, B3" },
-        { "name": "Nouilles soba", "density": 62, "nutrients": "Rutine, Mg, Mn, Protéine" },
-        { "name": "Nouilles de sarrasin", "density": 62, "nutrients": "Rutine, Mg, Protéine, Fibres" },
-        { "name": "Pain intégral au levain", "density": 58, "nutrients": "Fibres, Fer, B-vitamines, Probiotiques" },
-        { "name": "Tortillas de grain entier", "density": 55, "nutrients": "Fibres, Ca, Fer, B-vitamines" }
+        {
+          "name": "Riz brun",
+          "density": 65,
+          "nutrients": "Mn, Mg, B-vitamines, Fibres",
+          "nutrition": {
+            "protein": 2.6,
+            "fiber": 1.8,
+            "iron": 0.6,
+            "vit_c": 0.0,
+            "calcium": 9.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Riz noir",
+          "density": 70,
+          "nutrients": "Anthocyanes, Fer, Vit E, Fibres",
+          "nutrition": {
+            "protein": 2.8,
+            "fiber": 2.0,
+            "iron": 1.2,
+            "vit_c": 0.0,
+            "calcium": 10.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Riz rouge",
+          "density": 68,
+          "nutrients": "Antioxydants, Fer, Zn, Mg",
+          "nutrition": {
+            "protein": 2.7,
+            "fiber": 1.9,
+            "iron": 1.0,
+            "vit_c": 0.0,
+            "calcium": 10.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Pâtes de blé entier",
+          "density": 60,
+          "nutrients": "Fibres, Mn, Cu, B3",
+          "nutrition": {
+            "protein": 5.0,
+            "fiber": 2.5,
+            "iron": 1.3,
+            "vit_c": 0.0,
+            "calcium": 7.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Nouilles soba",
+          "density": 62,
+          "nutrients": "Rutine, Mg, Mn, Protéine",
+          "nutrition": {
+            "protein": 5.0,
+            "fiber": 2.0,
+            "iron": 1.5,
+            "vit_c": 0.0,
+            "calcium": 10.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Nouilles de sarrasin",
+          "density": 62,
+          "nutrients": "Rutine, Mg, Protéine, Fibres",
+          "nutrition": {
+            "protein": 5.0,
+            "fiber": 2.0,
+            "iron": 1.5,
+            "vit_c": 0.0,
+            "calcium": 10.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Pain intégral au levain",
+          "density": 58,
+          "nutrients": "Fibres, Fer, B-vitamines, Probiotiques",
+          "nutrition": {
+            "protein": 6.0,
+            "fiber": 4.0,
+            "iron": 1.5,
+            "vit_c": 0.0,
+            "calcium": 54.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Tortillas de grain entier",
+          "density": 55,
+          "nutrients": "Fibres, Ca, Fer, B-vitamines",
+          "nutrition": {
+            "protein": 3.5,
+            "fiber": 2.5,
+            "iron": 1.0,
+            "vit_c": 0.0,
+            "calcium": 45.0,
+            "omega3": 0.02
+          }
+        }
       ]
     },
     {
@@ -345,9 +2253,45 @@
       "weekly_min": 4,
       "weekly_max": 4,
       "foods": [
-        { "name": "Patates douces", "density": 78, "nutrients": "β-carotène, Vit A, Vit C, K, Fibres" },
-        { "name": "Pommes de terre", "density": 65, "nutrients": "K, Vit C, B6, Fibres, Résistant" },
-        { "name": "Topinambours", "density": 70, "nutrients": "Inuline, K, Fer, Fibres prébiotiques" }
+        {
+          "name": "Patates douces",
+          "density": 78,
+          "nutrients": "β-carotène, Vit A, Vit C, K, Fibres",
+          "nutrition": {
+            "protein": 1.6,
+            "fiber": 3.0,
+            "iron": 0.6,
+            "vit_c": 2.4,
+            "calcium": 30.0,
+            "omega3": 0.01
+          }
+        },
+        {
+          "name": "Pommes de terre",
+          "density": 65,
+          "nutrients": "K, Vit C, B6, Fibres, Résistant",
+          "nutrition": {
+            "protein": 2.0,
+            "fiber": 2.2,
+            "iron": 0.8,
+            "vit_c": 19.7,
+            "calcium": 12.0,
+            "omega3": 0.01
+          }
+        },
+        {
+          "name": "Topinambours",
+          "density": 70,
+          "nutrients": "Inuline, K, Fer, Fibres prébiotiques",
+          "nutrition": {
+            "protein": 3.0,
+            "fiber": 2.5,
+            "iron": 3.4,
+            "vit_c": 4.0,
+            "calcium": 14.0,
+            "omega3": 0.01
+          }
+        }
       ]
     },
     {
@@ -359,13 +2303,97 @@
       "weekly_min": 14,
       "weekly_max": 28,
       "foods": [
-        { "name": "Huile d'olive extra vierge", "density": 92, "nutrients": "Acide oléique, Polyphénols, Vit E, Ω-9" },
-        { "name": "Avocat", "density": 88, "nutrients": "Lipides mono-insaturés, K, Vit E, Folates, Fibres" },
-        { "name": "Olives", "density": 75, "nutrients": "Acide oléique, Vit E, Fer, Cu, Antioxydants" },
-        { "name": "Beurre de noix", "density": 80, "nutrients": "Protéine, Mg, Vit E, Ω-3, Gras sains" },
-        { "name": "Huile de lin", "density": 85, "nutrients": "Ω-3 (ALA), Lignanes, Vit E" },
-        { "name": "Ghee / Beurre clarifié", "density": 65, "nutrients": "Vit A, D, E, K2, Acides gras à chaîne courte" },
-        { "name": "Pâte de sésame (tahini)", "density": 70, "nutrients": "Ca, Mg, Fer, Zn, Lignanes" }
+        {
+          "name": "Huile d'olive extra vierge",
+          "density": 92,
+          "nutrients": "Acide oléique, Polyphénols, Vit E, Ω-9",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.6,
+            "vit_c": 0.0,
+            "calcium": 1.0,
+            "omega3": 0.07
+          }
+        },
+        {
+          "name": "Avocat",
+          "density": 88,
+          "nutrients": "Lipides mono-insaturés, K, Vit E, Folates, Fibres",
+          "nutrition": {
+            "protein": 2.0,
+            "fiber": 6.7,
+            "iron": 0.6,
+            "vit_c": 10.0,
+            "calcium": 12.0,
+            "omega3": 0.11
+          }
+        },
+        {
+          "name": "Olives",
+          "density": 75,
+          "nutrients": "Acide oléique, Vit E, Fer, Cu, Antioxydants",
+          "nutrition": {
+            "protein": 0.8,
+            "fiber": 3.2,
+            "iron": 3.3,
+            "vit_c": 0.0,
+            "calcium": 88.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Beurre de noix",
+          "density": 80,
+          "nutrients": "Protéine, Mg, Vit E, Ω-3, Gras sains",
+          "nutrition": {
+            "protein": 25.0,
+            "fiber": 6.0,
+            "iron": 2.5,
+            "vit_c": 0.0,
+            "calcium": 45.0,
+            "omega3": 0.5
+          }
+        },
+        {
+          "name": "Huile de lin",
+          "density": 85,
+          "nutrients": "Ω-3 (ALA), Lignanes, Vit E",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 0.0,
+            "omega3": 53.36
+          }
+        },
+        {
+          "name": "Ghee / Beurre clarifié",
+          "density": 65,
+          "nutrients": "Vit A, D, E, K2, Acides gras à chaîne courte",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 0.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Pâte de sésame (tahini)",
+          "density": 70,
+          "nutrients": "Ca, Mg, Fer, Zn, Lignanes",
+          "nutrition": {
+            "protein": 17.0,
+            "fiber": 9.3,
+            "iron": 2.6,
+            "vit_c": 0.0,
+            "calcium": 426.0,
+            "omega3": 0.04
+          }
+        }
       ]
     },
     {
@@ -377,14 +2405,110 @@
       "weekly_min": 7,
       "weekly_max": 7,
       "foods": [
-        { "name": "Kéfir", "density": 85, "nutrients": "Probiotiques, Protéine, Ca, B12, Biotine" },
-        { "name": "Yaourt nature", "density": 75, "nutrients": "Probiotiques, Ca, Protéine, B12" },
-        { "name": "Choucroute (non pasteurisée)", "density": 80, "nutrients": "Probiotiques, Vit C, K, Fibres, Glucosinolates" },
-        { "name": "Kimchi", "density": 82, "nutrients": "Probiotiques, Vit A, C, B2, β-carotène" },
-        { "name": "Kombucha", "density": 60, "nutrients": "Probiotiques, Antioxydants, Acides organiques" },
-        { "name": "Miso", "density": 72, "nutrients": "Probiotiques, Protéine, Mn, Vit K2" },
-        { "name": "Tempeh", "density": 78, "nutrients": "Protéine, Fer, Mg, Probiotiques, Ca" },
-        { "name": "Pain au levain", "density": 55, "nutrients": "Probiotiques, Fibres, Fer biodisponible" }
+        {
+          "name": "Kéfir",
+          "density": 85,
+          "nutrients": "Probiotiques, Protéine, Ca, B12, Biotine",
+          "nutrition": {
+            "protein": 3.8,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 0.2,
+            "calcium": 130.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Yaourt nature",
+          "density": 75,
+          "nutrients": "Probiotiques, Ca, Protéine, B12",
+          "nutrition": {
+            "protein": 3.5,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 0.5,
+            "calcium": 121.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Choucroute (non pasteurisée)",
+          "density": 80,
+          "nutrients": "Probiotiques, Vit C, K, Fibres, Glucosinolates",
+          "nutrition": {
+            "protein": 1.3,
+            "fiber": 3.0,
+            "iron": 1.5,
+            "vit_c": 15.0,
+            "calcium": 30.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Kimchi",
+          "density": 82,
+          "nutrients": "Probiotiques, Vit A, C, B2, β-carotène",
+          "nutrition": {
+            "protein": 1.6,
+            "fiber": 1.8,
+            "iron": 1.0,
+            "vit_c": 15.0,
+            "calcium": 33.0,
+            "omega3": 0.02
+          }
+        },
+        {
+          "name": "Kombucha",
+          "density": 60,
+          "nutrients": "Probiotiques, Antioxydants, Acides organiques",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 2.0,
+            "calcium": 5.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Miso",
+          "density": 72,
+          "nutrients": "Probiotiques, Protéine, Mn, Vit K2",
+          "nutrition": {
+            "protein": 12.8,
+            "fiber": 5.4,
+            "iron": 2.6,
+            "vit_c": 0.0,
+            "calcium": 62.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Tempeh",
+          "density": 78,
+          "nutrients": "Protéine, Fer, Mg, Probiotiques, Ca",
+          "nutrition": {
+            "protein": 18.5,
+            "fiber": 9.3,
+            "iron": 2.7,
+            "vit_c": 0.0,
+            "calcium": 111.0,
+            "omega3": 0.36
+          }
+        },
+        {
+          "name": "Pain au levain",
+          "density": 55,
+          "nutrients": "Probiotiques, Fibres, Fer biodisponible",
+          "nutrition": {
+            "protein": 5.6,
+            "fiber": 3.5,
+            "iron": 1.4,
+            "vit_c": 0.0,
+            "calcium": 50.0,
+            "omega3": 0.02
+          }
+        }
       ]
     },
     {
@@ -392,22 +2516,166 @@
       "name": "Herbes & Épices",
       "icon": "🌿",
       "section": "habitudes",
-      "type": "checkbox",
+      "type": "select",
       "weekly_min": 7,
       "weekly_max": 21,
       "foods": [
-        { "name": "Persil", "density": 85, "nutrients": "Vit K, C, A, Flavonoïdes, Apigénine" },
-        { "name": "Coriandre", "density": 80, "nutrients": "Vit K, C, Chélation métaux lourds" },
-        { "name": "Basilic", "density": 78, "nutrients": "Vit K, A, C, Eugénol, Antioxydants" },
-        { "name": "Romarin", "density": 82, "nutrients": "Acide rosmarinique, Fer, Ca, Antioxydants" },
-        { "name": "Thym", "density": 80, "nutrients": "Vit C, A, Fer, Thymol, Antiseptique" },
-        { "name": "Curcuma", "density": 92, "nutrients": "Curcumine, Fer, Mn, Anti-inflammatoire" },
-        { "name": "Gingembre", "density": 85, "nutrients": "Gingérol, Mg, K, Anti-nauséeux" },
-        { "name": "Cannelle", "density": 88, "nutrients": "Antioxydants, Mn, Ca, Régulation glycémie" },
-        { "name": "Ail", "density": 90, "nutrients": "Allicine, Mn, B6, Vit C, Cardiovasculaire" },
-        { "name": "Origan", "density": 82, "nutrients": "Vit K, Fer, Carvacrol, Antioxydants" },
-        { "name": "Menthe", "density": 75, "nutrients": "Vit A, C, Menthol, Digestif" },
-        { "name": "Cumin", "density": 78, "nutrients": "Fer, Mg, Ca, Digestif" }
+        {
+          "name": "Persil",
+          "density": 85,
+          "nutrients": "Vit K, C, A, Flavonoïdes, Apigénine",
+          "nutrition": {
+            "protein": 3.0,
+            "fiber": 3.3,
+            "iron": 6.2,
+            "vit_c": 133.0,
+            "calcium": 138.0,
+            "omega3": 0.08
+          }
+        },
+        {
+          "name": "Coriandre",
+          "density": 80,
+          "nutrients": "Vit K, C, Chélation métaux lourds",
+          "nutrition": {
+            "protein": 2.1,
+            "fiber": 2.8,
+            "iron": 1.8,
+            "vit_c": 27.0,
+            "calcium": 67.0,
+            "omega3": 0.04
+          }
+        },
+        {
+          "name": "Basilic",
+          "density": 78,
+          "nutrients": "Vit K, A, C, Eugénol, Antioxydants",
+          "nutrition": {
+            "protein": 3.2,
+            "fiber": 1.6,
+            "iron": 3.2,
+            "vit_c": 18.0,
+            "calcium": 177.0,
+            "omega3": 0.09
+          }
+        },
+        {
+          "name": "Romarin",
+          "density": 82,
+          "nutrients": "Acide rosmarinique, Fer, Ca, Antioxydants",
+          "nutrition": {
+            "protein": 3.3,
+            "fiber": 14.1,
+            "iron": 6.7,
+            "vit_c": 21.8,
+            "calcium": 317.0,
+            "omega3": 0.09
+          }
+        },
+        {
+          "name": "Thym",
+          "density": 80,
+          "nutrients": "Vit C, A, Fer, Thymol, Antiseptique",
+          "nutrition": {
+            "protein": 5.6,
+            "fiber": 14.0,
+            "iron": 17.5,
+            "vit_c": 160.0,
+            "calcium": 405.0,
+            "omega3": 0.12
+          }
+        },
+        {
+          "name": "Curcuma",
+          "density": 92,
+          "nutrients": "Curcumine, Fer, Mn, Anti-inflammatoire",
+          "nutrition": {
+            "protein": 7.8,
+            "fiber": 22.7,
+            "iron": 55.0,
+            "vit_c": 25.9,
+            "calcium": 182.0,
+            "omega3": 0.12
+          }
+        },
+        {
+          "name": "Gingembre",
+          "density": 85,
+          "nutrients": "Gingérol, Mg, K, Anti-nauséeux",
+          "nutrition": {
+            "protein": 1.8,
+            "fiber": 2.0,
+            "iron": 0.6,
+            "vit_c": 5.0,
+            "calcium": 16.0,
+            "omega3": 0.03
+          }
+        },
+        {
+          "name": "Cannelle",
+          "density": 88,
+          "nutrients": "Antioxydants, Mn, Ca, Régulation glycémie",
+          "nutrition": {
+            "protein": 4.0,
+            "fiber": 53.1,
+            "iron": 8.3,
+            "vit_c": 3.8,
+            "calcium": 1002.0,
+            "omega3": 0.05
+          }
+        },
+        {
+          "name": "Ail",
+          "density": 90,
+          "nutrients": "Allicine, Mn, B6, Vit C, Cardiovasculaire",
+          "nutrition": {
+            "protein": 6.4,
+            "fiber": 2.1,
+            "iron": 1.7,
+            "vit_c": 31.2,
+            "calcium": 181.0,
+            "omega3": 0.01
+          }
+        },
+        {
+          "name": "Origan",
+          "density": 82,
+          "nutrients": "Vit K, Fer, Carvacrol, Antioxydants",
+          "nutrition": {
+            "protein": 9.0,
+            "fiber": 42.5,
+            "iron": 36.8,
+            "vit_c": 42.0,
+            "calcium": 1597.0,
+            "omega3": 0.18
+          }
+        },
+        {
+          "name": "Menthe",
+          "density": 75,
+          "nutrients": "Vit A, C, Menthol, Digestif",
+          "nutrition": {
+            "protein": 3.3,
+            "fiber": 8.0,
+            "iron": 5.1,
+            "vit_c": 31.2,
+            "calcium": 243.0,
+            "omega3": 0.1
+          }
+        },
+        {
+          "name": "Cumin",
+          "density": 78,
+          "nutrients": "Fer, Mg, Ca, Digestif",
+          "nutrition": {
+            "protein": 17.8,
+            "fiber": 10.5,
+            "iron": 16.6,
+            "vit_c": 7.7,
+            "calcium": 931.0,
+            "omega3": 0.1
+          }
+        }
       ]
     },
     {
@@ -420,12 +2688,84 @@
       "weekly_min": 10,
       "weekly_max": 14,
       "foods": [
-        { "name": "Eau", "density": 100, "nutrients": "Hydratation, Élimination, Thermorégulation" },
-        { "name": "Thé vert", "density": 90, "nutrients": "EGCG, L-théanine, Polyphénols, Vit C" },
-        { "name": "Thé noir", "density": 75, "nutrients": "Théaflavines, Flavonoïdes, Mn" },
-        { "name": "Tisanes", "density": 70, "nutrients": "Antioxydants, Digestif, Sans caféine" },
-        { "name": "Lait", "density": 65, "nutrients": "Ca, Vit D, Protéine, B12, K" },
-        { "name": "Café", "density": 72, "nutrients": "Antioxydants, Mn, Mg, Caféine" }
+        {
+          "name": "Eau",
+          "density": 100,
+          "nutrients": "Hydratation, Élimination, Thermorégulation",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 0.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Thé vert",
+          "density": 90,
+          "nutrients": "EGCG, L-théanine, Polyphénols, Vit C",
+          "nutrition": {
+            "protein": 0.2,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.3,
+            "calcium": 0.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Thé noir",
+          "density": 75,
+          "nutrients": "Théaflavines, Flavonoïdes, Mn",
+          "nutrition": {
+            "protein": 0.2,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 0.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Tisanes",
+          "density": 70,
+          "nutrients": "Antioxydants, Digestif, Sans caféine",
+          "nutrition": {
+            "protein": 0.0,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 0.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Lait",
+          "density": 65,
+          "nutrients": "Ca, Vit D, Protéine, B12, K",
+          "nutrition": {
+            "protein": 3.4,
+            "fiber": 0.0,
+            "iron": 0.1,
+            "vit_c": 0.0,
+            "calcium": 113.0,
+            "omega3": 0.0
+          }
+        },
+        {
+          "name": "Café",
+          "density": 72,
+          "nutrients": "Antioxydants, Mn, Mg, Caféine",
+          "nutrition": {
+            "protein": 0.1,
+            "fiber": 0.0,
+            "iron": 0.0,
+            "vit_c": 0.0,
+            "calcium": 2.0,
+            "omega3": 0.0
+          }
+        }
       ]
     }
   ]

@@ -719,8 +719,15 @@ function showChipTooltip(catId, name, x, y) {
   var month = new Date().getMonth() + 1;
   var seasonHtml = '';
   if (food.season && food.season.length > 0) {
-    var inSeason = food.season.indexOf(month) !== -1;
-    seasonHtml = '<div class="ct-season"><span class="season-badge ' + (inSeason ? 'in-season' : 'out-season') + '">' + (inSeason ? '🌱 De saison' : '❄️ Hors saison') + '</span></div>';
+    if (food.season.indexOf(month) !== -1) {
+      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge in-season">🌱 De saison</span></div>';
+    } else if (food.import_season && food.import_season.indexOf(month) !== -1) {
+      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
+    }
+  } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
+    if (food.import_season.indexOf(month) !== -1) {
+      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
+    }
   }
   if (!tooltipEl) { tooltipEl = $('chip-tooltip'); }
   var html = '<div class="ct-title">' + food.name + '</div>';
@@ -742,12 +749,17 @@ function hideChipTooltip() {
 
 // ─── Grocery list ───
 function showGroceryList() {
+  var month = new Date().getMonth() + 1;
   var items = [];
   Object.keys(selections).forEach(function(catId) {
     var cat = DATA.categories.find(function(c) { return c.id === catId; });
     if (!cat) return;
     selections[catId].forEach(function(item) {
-      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: cat.icon });
+      var food = cat.foods.find(function(f) { return f.name === item.name; });
+      var icon = cat.icon;
+      var seasonIcon = getSeasonIcon(food, month);
+      if (seasonIcon) icon = seasonIcon + ' ' + icon;
+      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: icon });
     });
   });
   items.sort(function(a, b) { return a.name.localeCompare(b.name); });
@@ -1111,6 +1123,17 @@ function render() {
   });
 }
 
+function getSeasonIcon(food, month) {
+  if (!food) return '';
+  if (food.season && food.season.length > 0 && food.season.length < 12) {
+    if (food.season.indexOf(month) !== -1) return '🌱';
+    if (food.import_season && food.import_season.indexOf(month) !== -1) return '✈️';
+  } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
+    if (food.import_season.indexOf(month) !== -1) return '✈️';
+  }
+  return '';
+}
+
 function getSectionDotClass(sectionId) {
   var cats = DATA.categories.filter(function(c) { return c.section === sectionId; });
   var totalSelected = 0, totalMin = 0, totalMax = 0;
@@ -1161,7 +1184,16 @@ function renderCard(cat) {
     } else {
       html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
       cat.foods.forEach(function(f) {
-        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
+        var seasonPrefix = '';
+        if (f.season && f.season.length > 0) {
+          var month = new Date().getMonth() + 1;
+          if (f.season.indexOf(month) !== -1) seasonPrefix = '🌱 ';
+          else if (f.import_season && f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+        } else if (f.import_season && f.import_season.length > 0 && f.import_season.length < 12) {
+          var month = new Date().getMonth() + 1;
+          if (f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+        }
+        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
       });
       html += '</select>';
     }

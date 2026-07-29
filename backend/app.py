@@ -465,13 +465,15 @@ def get_shared(token):
 
     # Build grocery list from selections
     grocery = []
-    # Load foods.json to get category icons
     foods_data = {}
     try:
         with open(FOODS_PATH, 'r') as f:
             foods_data = json.load(f)
     except:
         pass
+
+    import datetime
+    current_month = datetime.datetime.now().month
 
     for cat_id, items in selections_data.items():
         cat_name = cat_id
@@ -482,10 +484,31 @@ def get_shared(token):
                 cat_icon = cat.get('icon', '')
                 break
         for item in items:
+            # Find food to check season
+            food_data = None
+            for cat in foods_data.get('categories', []):
+                if cat['id'] == cat_id:
+                    food_data = next((f for f in cat['foods'] if f['name'] == item.get('name', '')), None)
+                    break
+
+            season_icon = ''
+            if food_data:
+                season = food_data.get('season', [])
+                import_season = food_data.get('import_season', [])
+                if season and len(season) < 12:
+                    if current_month in season:
+                        season_icon = '🌱'
+                    elif import_season and current_month in import_season:
+                        season_icon = '✈️'
+                elif import_season and len(import_season) < 12:
+                    if current_month in import_season:
+                        season_icon = '✈️'
+
+            icon = (season_icon + ' ' if season_icon else '') + cat_icon
             grocery.append({
                 'name': item.get('name', ''),
                 'qty': item.get('qty', 1),
-                'icon': cat_icon
+                'icon': icon
             })
     grocery.sort(key=lambda x: x['name'])
 

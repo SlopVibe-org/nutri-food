@@ -10,7 +10,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import re
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
@@ -38,6 +38,11 @@ def check_rate_limit(key):
             RATE_LIMIT[key][0] += 1
             return True
     RATE_LIMIT[key] = [1, now]
+    # Cleanup expired entries to prevent unbounded growth
+    if len(RATE_LIMIT) > 1000:
+        expired = [k for k, (c, first) in RATE_LIMIT.items() if now - first >= RATE_WINDOW]
+        for k in expired:
+            del RATE_LIMIT[k]
     return True
 JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
 JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))
@@ -109,7 +114,6 @@ def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(DB_PATH)
         g.db.row_factory = sqlite3.Row
-        g.db.execute('PRAGMA journal_mode=WAL')
     return g.db
 
 @app.teardown_appcontext
@@ -121,6 +125,7 @@ def close_db(error):
 def init_db():
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
+    conn.execute('PRAGMA journal_mode=WAL')
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -310,6 +315,21 @@ def login():
 
 FOODS_PATH = os.environ.get('FOODS_PATH', '/data/foods.json')
 
+_FOODS_CACHE = None
+_FOODS_MTIME = 0
+
+def load_foods():
+    global _FOODS_CACHE, _FOODS_MTIME
+    try:
+        mtime = os.path.getmtime(FOODS_PATH)
+        if _FOODS_CACHE is None or mtime != _FOODS_MTIME:
+            with open(FOODS_PATH, 'r') as f:
+                _FOODS_CACHE = json.load(f)
+            _FOODS_MTIME = mtime
+    except:
+        return {}
+    return _FOODS_CACHE if _FOODS_CACHE is not None else {}
+
 @app.route('/api/admin/foods', methods=['POST'])
 def save_foods():
     user = get_auth_user()
@@ -350,7 +370,7 @@ def forgot_password():
 
     # Generate reset token (1 hour expiry)
     reset_token = secrets.token_urlsafe(32)
-    expires_at = datetime.utcnow() + timedelta(hours=1)
+    expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
     db.execute(
         'INSERT INTO reset_tokens (user_id, token, expires_at) VALUES (?, ?, ?)',
         (user['id'], reset_token, expires_at.isoformat())
@@ -381,7 +401,7 @@ def reset_password():
         return jsonify({'error': 'Token invalide ou déjà utilisé'}), 400
 
     expires_at = datetime.fromisoformat(row['expires_at'])
-    if datetime.utcnow() > expires_at:
+    if datetime.now(timezone.utc) > expires_at:
         return jsonify({'error': 'Ce lien a expiré'}), 400
 
     # Get user and update password
@@ -489,7 +509,7 @@ def save_selections():
 
     db.commit()
 
-    return jsonify({'status': 'saved', 'updated_at': datetime.utcnow().isoformat()})
+    return jsonify({'status': 'saved', 'updated_at': datetime.now(timezone.utc).isoformat()})
 
 # ─── Meal Plan ───
 
@@ -627,12 +647,7 @@ def get_shared(token):
 
     # Build grocery list from selections
     grocery = []
-    foods_data = {}
-    try:
-        with open(FOODS_PATH, 'r') as f:
-            foods_data = json.load(f)
-    except:
-        pass
+    foods_data = load_foods()
 
     current_month = date.today().month
 

@@ -430,6 +430,55 @@
   .score-cat-dot.over { background: var(--accent-amber); }
 
   @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } #save-bar { flex-direction: column; gap: 8px; text-align: center; } }
+
+  /* Toast system */
+  .toast-container {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    z-index: 400; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none;
+  }
+  .toast {
+    background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; color: var(--text);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); max-width: 380px; animation: toastSlideIn 0.3s ease;
+    pointer-events: auto;
+  }
+  .toast.info { border-left-color: #38bdf8; }
+  .toast.success { border-left-color: var(--accent); }
+  .toast.warning { border-left-color: var(--accent-amber); }
+  .toast.error { border-left-color: var(--accent-red); }
+  .toast.fade-out { animation: toastFadeOut 0.3s ease forwards; }
+  @keyframes toastSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+
+  /* Search keyboard navigation */
+  .search-result.search-result-active { background: rgba(74,222,128,0.15); border-left: 3px solid var(--accent); }
+
+  /* Planner mobile tabs */
+  .planner-mobile-tabs { display: none; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+  .planner-mobile-tab {
+    padding: 6px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-dim); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  }
+  .planner-mobile-tab.active { background: var(--accent-dim); color: #0f1117; border-color: var(--accent); }
+  @media (max-width: 768px) {
+    .planner-mobile-tabs { display: flex; }
+    .planner-grid { display: none; }
+    .planner-grid.mobile-active { display: grid; grid-template-columns: 1fr; }
+    .planner-day { display: none !important; }
+    .planner-day.mobile-selected { display: flex !important; }
+  }
+
+  /* API error state */
+  .api-error {
+    text-align: center; padding: 40px 20px;
+  }
+  .api-error h2 { font-size: 1.3rem; color: var(--accent-red); margin-bottom: 8px; }
+  .api-error p { color: var(--text-dim); margin-bottom: 16px; }
+  .api-error button {
+    padding: 10px 24px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  }
+  .api-error button:hover { background: var(--accent); }
 </style>
 </head>
 <body>
@@ -544,6 +593,8 @@
   <button id="save-btn" disabled>Sauvegarder</button>
 </div>
 
+<div class="toast-container" id="toast-container"></div>
+
 <script>
 'use strict';
 
@@ -558,9 +609,38 @@ let activeTab = null;
 let currentUser = null;
 let authMode = 'login';
 var editMode = false;
+var autoSaveTimer = null;
+var searchActiveIndex = -1;
+var mobileSelectedDay = 0;
 
 // ─── DOM helpers ───
 function $(id) { return document.getElementById(id); }
+
+// ─── Toast system ───
+function showToast(message, type) {
+  type = type || 'info';
+  var container = $('toast-container');
+  if (!container) return;
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.classList.add('fade-out');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 3000);
+}
+
+// ─── Fetch with timeout ───
+function fetchWithTimeout(url, options, timeoutMs) {
+  timeoutMs = timeoutMs || 10000;
+  return Promise.race([
+    fetch(url, options),
+    new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('D\u00e9lai d\u00e9pass\u00e9')); }, timeoutMs);
+    })
+  ]);
+}
 
 // ─── Token helpers ───
 function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { return null; } }
@@ -650,6 +730,7 @@ async function submitAuth() {
   var password = $('auth-password').value;
   var name = $('auth-name').value.trim();
   var errEl = $('auth-error');
+  var submitBtn = $('auth-submit');
   errEl.textContent = '';
 
   if (!email || !password) { errEl.textContent = 'Identifiant et mot de passe requis'; return; }
@@ -658,25 +739,34 @@ async function submitAuth() {
   var endpoint = authMode === 'register' ? '/register' : '/login';
   var body = authMode === 'register' ? { email: email.toLowerCase(), name: name, password: password } : { email: email.toLowerCase(), password: password };
 
-  errEl.textContent = 'Connexion…';
+  submitBtn.disabled = true;
+  submitBtn.textContent = authMode === 'register' ? 'Inscription…' : 'Connexion…';
 
   try {
-    var res = await fetch(API + endpoint, {
+    var res = await fetchWithTimeout(API + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
-    });
+    }, 10000);
     var data = await res.json();
-    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; return; }
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; submitBtn.disabled = false; submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion'; return; }
 
-    // Success - save and reload
+    // Success - smooth transition without page reload
     setAuth(data.token, data.user);
     $('auth-modal').classList.add('hidden');
-    // Reload to reinitialize with saved session
-    window.location.reload();
+    $('search-bar-container').style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
+    // Load selections and render
+    await loadSelectionsFromServer();
+    render();
+    updateSaveBar();
+    showToast(authMode === 'register' ? 'Compte créé!' : 'Connexion réussie', 'success');
   } catch(e) {
     console.error('[NutriFood] Auth error:', e);
     errEl.textContent = 'Erreur de connexion au serveur: ' + e.message;
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
   }
 }
 
@@ -697,9 +787,9 @@ function initAuthEvents() {
   $('reset-submit').addEventListener('click', function(e) { e.preventDefault(); submitResetPassword(); });
   // Search
   $('search-input').addEventListener('input', performSearch);
-  $('search-input').addEventListener('keydown', function(e) { if (e.key === 'Escape') { $('search-input').value = ''; $('search-results').classList.remove('visible'); } });
+  $('search-input').addEventListener('keydown', handleSearchKeydown);
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.search-bar')) $('search-results').classList.remove('visible');
+    if (!e.target.closest('.search-bar')) { $('search-results').classList.remove('visible'); searchActiveIndex = -1; }
   });
   // Grocery list
   document.addEventListener('click', function(e) {
@@ -736,9 +826,9 @@ async function showPlanner() {
   plannerData = {};
   if (token) {
     try {
-      var res = await fetch(API + '/meal-plan?week=' + weekKey, {
-        headers: { 'Authorization': 'Bea' + 'rer ' + token }
-      });
+      var res = await fetchWithTimeout(API + '/meal-plan?week=' + weekKey, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }, 10000);
       if (res.ok) {
         var data = await res.json();
         plannerData = data.data || {};
@@ -755,6 +845,7 @@ function renderPlanner(weekKey) {
   var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
   var mealLabels = { breakfast: 'matin', lunch: 'midi', dinner: 'soir', snack: 'collation' };
   var todayIdx = (new Date().getDay() + 6) % 7; // 0=Monday
+  if (typeof mobileSelectedDay === 'undefined') mobileSelectedDay = todayIdx;
 
   // Food palette from selections
   var allFoods = [];
@@ -771,6 +862,14 @@ function renderPlanner(weekKey) {
   html += '<button data-planner-action="next-week">→</button>';
   html += '</div>';
 
+  // Mobile day tabs
+  html += '<div class="planner-mobile-tabs">';
+  days.forEach(function(day, idx) {
+    var cls = idx === mobileSelectedDay ? 'planner-mobile-tab active' : 'planner-mobile-tab';
+    html += '<button class="' + cls + '" data-planner-action="select-day" data-day-idx="' + idx + '">' + dayLabels[idx] + '</button>';
+  });
+  html += '</div>';
+
   // Food palette
   if (allFoods.length > 0) {
     html += '<div class="planner-food-palette"><div class="label">Cliquez un aliment puis cliquez sur un repas pour l\'ajouter:</div>';
@@ -784,10 +883,11 @@ function renderPlanner(weekKey) {
   }
 
   // Day grid
-  html += '<div class="planner-grid">';
+  html += '<div class="planner-grid' + (window.innerWidth <= 768 ? ' mobile-active' : '') + '">';
   days.forEach(function(day, idx) {
     var isToday = idx === todayIdx && plannerWeek === 0;
-    html += '<div class="planner-day' + (isToday ? ' today' : '') + '">';
+    var mobileClass = idx === mobileSelectedDay ? ' mobile-selected' : '';
+    html += '<div class="planner-day' + (isToday ? ' today' : '') + mobileClass + '">';
     html += '<div class="planner-day-header">' + dayLabels[idx] + '</div>';
     meals.forEach(function(meal) {
       var items = (plannerData[day] && plannerData[day][meal]) || [];
@@ -814,7 +914,7 @@ function plannerSelectFood(name) {
 }
 
 function plannerAddToSlot(day, meal) {
-  if (!plannerSelectedFood) { alert('Choisissez d\'abord un aliment dans la palette'); return; }
+  if (!plannerSelectedFood) { showToast('Choisissez d\'abord un aliment dans la palette', 'warning'); return; }
   if (!plannerData[day]) plannerData[day] = {};
   if (!plannerData[day][meal]) plannerData[day][meal] = [];
   if (plannerData[day][meal].indexOf(plannerSelectedFood) === -1) {
@@ -846,6 +946,7 @@ function initPlannerDelegation() {
     else if (action === 'remove') { plannerRemoveFood(day, meal, food); }
     else if (action === 'prev-week') { plannerWeek--; showPlanner(); }
     else if (action === 'next-week') { plannerWeek++; showPlanner(); }
+    else if (action === 'select-day') { mobileSelectedDay = parseInt(el.dataset.dayIdx); renderPlanner(getWeekKey(plannerWeek)); }
     else if (action === 'save') { saveMealPlan(); }
     else if (action === 'print') { plannerPrint(); }
     else if (action === 'close') { closePlanner(); }
@@ -880,20 +981,26 @@ async function saveMealPlan() {
   var token = getToken();
   var weekKey = getWeekKey(plannerWeek);
   if (!token) return;
+  // Find the save link and show loading
+  var saveLink = document.querySelector('[data-planner-action="save"]');
+  var origText = saveLink ? saveLink.textContent : '';
+  if (saveLink) { saveLink.textContent = '⏳ Sauvegarde…'; saveLink.style.pointerEvents = 'none'; }
   try {
-    var res = await fetch(API + '/meal-plan', {
+    var res = await fetchWithTimeout(API + '/meal-plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bea' + 'rer ' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ week: weekKey, data: plannerData })
-    });
+    }, 10000);
     if (res.ok) {
-      var info = document.createElement('div');
-      info.textContent = '✓ Plan sauvegardé';
-      info.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:var(--accent-dim);color:#0f1117;padding:8px 20px;border-radius:8px;font-weight:700;z-index:300;';
-      document.body.appendChild(info);
-      setTimeout(function() { info.remove(); }, 2000);
+      showToast('Plan sauvegardé', 'success');
+    } else {
+      showToast('Erreur sauvegarde du plan', 'error');
     }
-  } catch(e) { console.error('[NutriFood] Plan save error:', e); }
+  } catch(e) {
+    console.error('[NutriFood] Plan save error:', e);
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  if (saveLink) { saveLink.textContent = origText; saveLink.style.pointerEvents = ''; }
 }
 
 // ─── Share link ───
@@ -908,13 +1015,15 @@ function toggleEditMode() {
 async function showShareLink() {
   var token = getToken();
   if (!token) { console.error('[NutriFood] No token for share'); return; }
+  // Show loading state in app
+  $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Génération du lien…</p><p class="loading">⏳ Patientez…</p></div>';
   try {
-    var res = await fetch(API + '/share', {
+    var res = await fetchWithTimeout(API + '/share', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    });
+    }, 10000);
     var data = await res.json();
-    if (!res.ok) { console.error('[NutriFood] Share failed:', data); return; }
+    if (!res.ok) { console.error('[NutriFood] Share failed:', data); showToast('Erreur de partage', 'error'); render(); return; }
     var url = data.share_url || '';
     $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Lien en lecture seule :</p><div style="max-width:420px;margin:0 auto;"><input type="text" value="' + url + '" id="share-url" readonly style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.85rem;margin-bottom:12px;text-align:center;"><button class="login-cta" id="share-copy-btn">📋 Copier</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="share-back">← Retour</a></div></div>';
     $('share-copy-btn').addEventListener('click', function() {
@@ -922,11 +1031,12 @@ async function showShareLink() {
       input.select();
       navigator.clipboard.writeText(input.value).then(function() {
         $('share-copy-btn').textContent = '✓ Copié!';
+        showToast('Lien copié!', 'success');
         setTimeout(function() { $('share-copy-btn').textContent = '📋 Copier'; }, 2000);
       });
     });
-    $('share-back').addEventListener('click', function() { window.location.reload(); });
-  } catch(e) { console.error('[NutriFood] Share error:', e); }
+    $('share-back').addEventListener('click', function() { render(); updateSaveBar(); });
+  } catch(e) { console.error('[NutriFood] Share error:', e); showToast('Erreur: ' + e.message, 'error'); render(); updateSaveBar(); }
 }
 
 // ─── View shared (read-only grocery list) ───
@@ -1046,18 +1156,25 @@ function showGroceryList() {
     shareBtn.onclick = async function() {
       var token = getToken();
       if (!token) return;
+      var origText = shareBtn.textContent;
+      shareBtn.disabled = true; shareBtn.textContent = '⏳…';
       try {
-        var res = await fetch(API + '/share', {
+        var res = await fetchWithTimeout(API + '/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-        });
+        }, 10000);
         var data = await res.json();
         if (res.ok && data.share_url) {
           shareBtn.textContent = '✓ Lien copié!';
           navigator.clipboard.writeText(data.share_url);
-          setTimeout(function() { shareBtn.textContent = '📤 Partager'; }, 2000);
+          showToast('Lien copié!', 'success');
+          setTimeout(function() { shareBtn.textContent = origText; }, 2000);
+        } else {
+          showToast('Erreur de partage', 'error');
+          shareBtn.textContent = origText;
         }
-      } catch(e) { console.error('[NutriFood] Grocery share error:', e); }
+      } catch(e) { console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
+      shareBtn.disabled = false;
     };
   }
 
@@ -1113,9 +1230,46 @@ function performSearch() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(actualSearch, 150);
 }
+
+function handleSearchKeydown(e) {
+  var results = $('search-results');
+  if (!results.classList.contains('visible')) return;
+  var items = results.querySelectorAll('.search-result[data-cat]');
+  if (items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1);
+    updateSearchActive(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
+    updateSearchActive(items);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+      items[searchActiveIndex].click();
+    }
+  } else if (e.key === 'Escape') {
+    $('search-input').value = '';
+    results.classList.remove('visible');
+    searchActiveIndex = -1;
+  }
+}
+
+function updateSearchActive(items) {
+  items.forEach(function(el, i) {
+    el.classList.toggle('search-result-active', i === searchActiveIndex);
+  });
+  // Scroll active item into view
+  if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+    items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
 function actualSearch() {
   var query = $('search-input').value.trim().toLowerCase();
   var results = $('search-results');
+  searchActiveIndex = -1;
   if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
   var matches = [];
   DATA.categories.forEach(function(cat) {
@@ -1193,11 +1347,11 @@ async function submitResetPassword() {
   $('reset-submit').textContent = 'Changement…';
   $('reset-submit').disabled = true;
   try {
-    var res = await fetch(API + '/reset-password', {
+    var res = await fetchWithTimeout(API + '/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: resetToken, password: newPw })
-    });
+    }, 10000);
     var data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false; return; }
     // Success: log in and redirect
@@ -1234,15 +1388,16 @@ async function submitChangePassword() {
   $('pw-submit').disabled = true;
   var token = getToken();
   try {
-    var res = await fetch(API + '/change-password', {
+    var res = await fetchWithTimeout(API + '/change-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ current_password: current, new_password: newPw })
-    });
+    }, 10000);
     var data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false; return; }
     // Success
     $('pw-modal').classList.add('hidden');
+    showToast('Mot de passe changé', 'success');
     $('save-bar').classList.add('visible');
     $('save-info').textContent = 'Mot de passe changé ✓';
   } catch(e) {
@@ -1255,7 +1410,7 @@ async function loadSelectionsFromServer() {
   var token = getToken();
   if (!token) return;
   try {
-    var res = await fetch(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } });
+    var res = await fetchWithTimeout(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
     var data = await res.json();
     selections = data.selections || {};
@@ -1267,7 +1422,7 @@ async function loadSelectionsFromServer() {
 // ─── Init ───
 async function init() {
   try {
-    var res = await fetch('foods.json');
+    var res = await fetchWithTimeout('foods.json', {}, 8000);
     DATA = await res.json();
     activeTab = DATA.sections[0].id;
 
@@ -1283,7 +1438,7 @@ async function init() {
       var token = getToken();
       if (token) {
         try {
-          var meRes = await fetch(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } });
+          var meRes = await fetchWithTimeout(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
           if (meRes.ok) {
             renderUserArea();
             await loadSelectionsFromServer();
@@ -1311,7 +1466,13 @@ async function init() {
     }
   } catch (e) {
     console.error('[NutriFood] Init error:', e);
-    $('app').innerHTML = '<p class="loading">Erreur de chargement</p>';
+    $('app').innerHTML = '<div class="api-error"><h2>⚠️ Serveur indisponible</h2><p>Impossible de se connecter au serveur. Réessayez dans un moment.</p><button id="retry-init">Réessayer</button></div>';
+    $('save-bar').classList.remove('visible');
+    var retryBtn = $('retry-init');
+    if (retryBtn) retryBtn.addEventListener('click', function() {
+      $('app').innerHTML = '<p class="loading">Chargement…</p>';
+      init();
+    });
   }
 }
 
@@ -1566,7 +1727,7 @@ function addItem(catId, item) {
   var existing = selections[catId].find(function(s) { return s.name === item.name; });
   if (existing) existing.qty = (existing.qty || 1) + 1;
   else selections[catId].push(Object.assign({}, item, { qty: 1 }));
-  refreshCard(catId); updateTabDots(); updateSaveBar();
+  refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
 }
 
 function removeItem(catId, name) {
@@ -1576,7 +1737,7 @@ function removeItem(catId, name) {
   // Uncheck checkbox if visible
   var cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
   if (cb) cb.checked = false;
-  refreshCard(catId); updateTabDots(); updateSaveBar();
+  refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
 }
 
 function changeQty(catId, name, delta) {
@@ -1585,7 +1746,7 @@ function changeQty(catId, name, delta) {
   if (!item) return;
   item.qty = (item.qty || 1) + delta;
   if (item.qty <= 0) removeItem(catId, name);
-  else { refreshCard(catId); updateTabDots(); updateSaveBar(); }
+  else { refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave(); }
 }
 
 function refreshCard(catId) {
@@ -1646,6 +1807,20 @@ function updateScoreBar() {
 // ─── Persistence ───
 function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
 
+function scheduleAutoSave() {
+  if (!getToken()) return; // skip if not logged in
+  setDirty(true);
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(function() { saveSelections(); }, 2000);
+}
+
+function setDirty(dirty) {
+  var btn = $('save-btn');
+  if (!btn) return;
+  if (dirty) { btn.classList.add('dirty'); btn.disabled = false; }
+  else { btn.classList.remove('dirty'); btn.disabled = true; }
+}
+
 // ─── Admin food editing ───
 function adminAddFood(catId) {
   var nameEl = $('add-name-' + catId);
@@ -1659,7 +1834,7 @@ function adminAddFood(catId) {
   // Add to DATA
   var cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
-  if (cat.foods.some(function(f) { return f.name === name; })) { alert('Cet aliment existe déjà'); return; }
+  if (cat.foods.some(function(f) { return f.name === name; })) { showToast('Cet aliment existe d\u00e9j\u00e0', 'warning'); return; }
   cat.foods.push({ name: name, density: density, nutrients: nutrients });
   
   // Clear fields
@@ -1688,12 +1863,12 @@ async function saveFoodsToServer() {
   var token = getToken();
   if (!token) return;
   try {
-    await fetch(API + '/admin/foods', {
+    await fetchWithTimeout(API + '/admin/foods', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bea' + 'rer ' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ foods: DATA })
-    });
-  } catch(e) { console.error('[NutriFood] Save foods error:', e); }
+    }, 10000);
+  } catch(e) { console.error('[NutriFood] Save foods error:', e); showToast('Erreur sauvegarde aliments', 'error'); }
 }
 
 function updateSaveBar() {
@@ -1716,18 +1891,29 @@ function updateSaveBar() {
 }
 
 async function saveSelections() {
+  // Cancel pending auto-save timer since we're saving now
+  clearTimeout(autoSaveTimer);
   var btn = $('save-btn');
+  var origText = btn.textContent;
   btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
   var token = getToken();
   if (token) {
     try {
-      var res = await fetch(API + '/selections', {
+      var res = await fetchWithTimeout(API + '/selections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ selections: selections })
-      });
-      if (res.ok) savedSnapshot = JSON.stringify(selections);
-    } catch(e) { console.error('[NutriFood] Save error:', e); }
+      }, 10000);
+      if (res.ok) {
+        savedSnapshot = JSON.stringify(selections);
+        showToast('Sauvegardé', 'success');
+      } else {
+        showToast('Erreur de sauvegarde', 'error');
+      }
+    } catch(e) {
+      console.error('[NutriFood] Save error:', e);
+      showToast('Erreur de sauvegarde: ' + e.message, 'error');
+    }
   }
   btn.textContent = '💾 Sauvegarder';
   updateSaveBar();

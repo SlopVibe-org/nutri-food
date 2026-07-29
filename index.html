@@ -479,6 +479,112 @@
     border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
   }
   .api-error button:hover { background: var(--accent); }
+
+  /* ─── Feature 1: Floating suggestions badge ─── */
+  .suggestions-fab {
+    position: fixed; bottom: 80px; right: 20px; width: 52px; height: 52px;
+    border-radius: 50%; background: var(--accent-dim); color: #0f1117;
+    border: 2px solid var(--accent); font-size: 1.5rem; cursor: pointer;
+    z-index: 150; display: none; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .suggestions-fab.visible { display: flex; }
+  .suggestions-fab:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(74,222,128,0.4); }
+  .suggestions-fab.pulsing { animation: suggestionPulse 2s infinite; }
+  @keyframes suggestionPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.5); }
+    50% { box-shadow: 0 0 0 12px rgba(251,191,36,0); }
+  }
+  .suggestions-fab .fab-count {
+    position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+    border-radius: 9px; background: var(--accent-red); color: #fff;
+    font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+  }
+
+  /* ─── Feature 2: Seasonal banner ─── */
+  .seasonal-banner {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
+    border-radius: var(--radius); padding: 10px 16px; margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .seasonal-banner.hidden { display: none; }
+  .seasonal-banner .sb-text { font-size: 0.88rem; color: var(--text); flex: 1; }
+  .seasonal-banner .sb-text strong { color: var(--accent); }
+  .seasonal-banner .sb-item {
+    display: inline-block; padding: 2px 10px; background: rgba(74,222,128,0.12);
+    border: 1px solid rgba(74,222,128,0.3); border-radius: 12px;
+    font-size: 0.8rem; color: var(--accent); cursor: pointer; transition: background 0.15s;
+    margin: 2px;
+  }
+  .seasonal-banner .sb-item:hover { background: rgba(74,222,128,0.25); }
+  .seasonal-banner .sb-close {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 1.1rem; padding: 0 4px; opacity: 0.7; transition: opacity 0.15s;
+  }
+  .seasonal-banner .sb-close:hover { opacity: 1; }
+
+  /* ─── Feature 3 & 4: Goals & History modals ─── */
+  .modal.wide { max-width: 520px; }
+  .modal .goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .modal .goal-field { display: flex; flex-direction: column; gap: 4px; }
+  .modal .goal-field label { font-size: 0.78rem; color: var(--text-dim); }
+  .modal .goal-field input { width: 100%; padding: 8px 10px; background: #12141c; color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+  .modal .goal-field input:focus { outline: none; border-color: var(--accent); }
+
+  .modal .cancel-link {
+    display: block; text-align: center; margin-top: 12px;
+    color: var(--text-dim); font-size: 0.85rem; cursor: pointer; text-decoration: none;
+  }
+  .modal .cancel-link:hover { color: var(--accent-red); }
+
+  /* Suggestions modal content */
+  .suggestion-gap {
+    background: #12141c; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .suggestion-gap .sg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .suggestion-gap .sg-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .suggestion-gap .sg-pct { font-size: 0.85rem; font-weight: 700; color: var(--accent-red); }
+  .suggestion-gap .sg-bar {
+    height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 10px;
+  }
+  .suggestion-gap .sg-bar-fill {
+    height: 100%; background: var(--accent-red); border-radius: 4px; transition: width 0.4s ease;
+  }
+  .suggestion-gap .sg-bar-fill.good { background: var(--accent); }
+  .suggestion-gap .sg-bar-fill.ok { background: var(--accent-amber); }
+  .suggestion-gap .sg-food {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 6px 8px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 4px; font-size: 0.85rem;
+  }
+  .suggestion-gap .sg-food-info { flex: 1; }
+  .suggestion-gap .sg-food-name { font-weight: 600; color: var(--text); }
+  .suggestion-gap .sg-food-val { font-size: 0.75rem; color: var(--text-dim); }
+  .suggestion-gap .sg-add-btn {
+    padding: 4px 10px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .suggestion-gap .sg-add-btn:hover { background: var(--accent); }
+
+  /* History table */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .history-table th { text-align: left; padding: 8px 6px; color: var(--text-dim); border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .history-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .history-table tr { cursor: pointer; transition: background 0.1s; }
+  .history-table tbody tr:hover { background: rgba(74,222,128,0.06); }
+  .history-table .ht-week { color: var(--accent); font-weight: 700; }
+  .history-detail-back { color: var(--text-dim); font-size: 0.85rem; cursor: pointer; margin-bottom: 12px; display: inline-block; }
+  .history-detail-back:hover { color: var(--accent); }
+  .history-detail-list { list-style: none; padding: 0; }
+  .history-detail-list li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; justify-content: space-between; }
+  .history-detail-list li .hd-qty { color: var(--accent); font-weight: 700; }
+
+  /* Modal scrollable */
+  .modal.scrollable { max-height: 80vh; overflow-y: auto; }
 </style>
 </head>
 <body>
@@ -569,7 +675,49 @@
 <!-- Hidden print area for grocery list -->
 <div id="print-area-grocery" class="print-area"></div>
 
+<!-- Seasonal banner (feature 2) -->
+<div class="seasonal-banner hidden" id="seasonal-banner"></div>
+
 <div id="app"><p class="loading">Chargement…</p></div>
+
+<!-- Floating suggestions badge (feature 1) -->
+<div class="suggestions-fab" id="suggestions-fab" title="Suggestions nutritionnelles">💡<span class="fab-count" id="fab-count" style="display:none;">0</span></div>
+
+<!-- Suggestions modal (feature 1) -->
+<div class="modal-overlay hidden" id="suggestions-modal">
+  <div class="modal wide scrollable">
+    <h2>💡 Suggestions nutritionnelles</h2>
+    <div id="suggestions-content"><p class="loading">Chargement…</p></div>
+    <a class="cancel-link" id="suggestions-close">Fermer</a>
+  </div>
+</div>
+
+<!-- Goals modal (feature 3) -->
+<div class="modal-overlay hidden" id="goals-modal">
+  <div class="modal wide">
+    <h2>🎯 Mes objectifs</h2>
+    <div class="error-msg" id="goals-error"></div>
+    <div class="goals-grid">
+      <div class="goal-field"><label>Protéine (g)</label><input type="number" id="goal-protein" min="0" step="1"></div>
+      <div class="goal-field"><label>Fibres (g)</label><input type="number" id="goal-fiber" min="0" step="1"></div>
+      <div class="goal-field"><label>Fer (mg)</label><input type="number" id="goal-iron" min="0" step="1"></div>
+      <div class="goal-field"><label>Vitamine C (mg)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
+      <div class="goal-field"><label>Calcium (mg)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
+      <div class="goal-field"><label>Oméga-3 (g)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
+    </div>
+    <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
+    <a class="cancel-link" id="goals-cancel">Annuler</a>
+  </div>
+</div>
+
+<!-- History modal (feature 4) -->
+<div class="modal-overlay hidden" id="history-modal">
+  <div class="modal wide scrollable">
+    <h2>📊 Historique</h2>
+    <div id="history-content"><p class="loading">Chargement…</p></div>
+    <a class="cancel-link" id="history-close">Fermer</a>
+  </div>
+</div>
 
 <!-- Grocery list modal -->
 <div id="grocery-overlay" class="grocery-overlay hidden">
@@ -659,6 +807,10 @@ function clearAuth() {
   currentUser = null;
   selections = {};
   savedSnapshot = '{}';
+  var fab = $('suggestions-fab');
+  if (fab) fab.classList.remove('visible', 'pulsing');
+  var banner = $('seasonal-banner');
+  if (banner) banner.classList.add('hidden');
   renderUserArea();
   render();
   updateSaveBar();
@@ -673,6 +825,8 @@ function renderUserArea() {
     var menuItems = '';
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-planner"><span class="icon">📅</span> Planificateur</button>';
+    menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
+    menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-edit"><span class="icon">✏️</span> Mode édition</button>';
     menuItems += '<div class="user-menu-divider"></div>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
@@ -689,6 +843,8 @@ function renderUserArea() {
     });
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
     $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
+    $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
+    $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showHistory(); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {
@@ -759,8 +915,11 @@ async function submitAuth() {
     submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
     // Load selections and render
     await loadSelectionsFromServer();
+    await loadUserGoals();
     render();
     updateSaveBar();
+    fetchSeasonalBanner();
+    checkSuggestionsBadge();
     showToast(authMode === 'register' ? 'Compte créé!' : 'Connexion réussie', 'success');
   } catch(e) {
     console.error('[NutriFood] Auth error:', e);
@@ -772,6 +931,17 @@ async function submitAuth() {
 
 // Wire up auth modal events (no inline onclick)
 function initAuthEvents() {
+  // Feature 1: Suggestions FAB & modal
+  $('suggestions-fab').addEventListener('click', showSuggestions);
+  $('suggestions-close').addEventListener('click', function() { $('suggestions-modal').classList.add('hidden'); });
+  $('suggestions-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Feature 3: Goals modal
+  $('goals-submit').addEventListener('click', function(e) { e.preventDefault(); submitGoals(); });
+  $('goals-cancel').addEventListener('click', function() { $('goals-modal').classList.add('hidden'); });
+  $('goals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Feature 4: History modal
+  $('history-close').addEventListener('click', function() { $('history-modal').classList.add('hidden'); });
+  $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
   $('auth-submit').addEventListener('click', function(e) { e.preventDefault(); submitAuth(); });
   $('auth-switch-link').addEventListener('click', function(e) { e.preventDefault(); toggleAuthMode(); });
   $('auth-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
@@ -1419,6 +1589,318 @@ async function loadSelectionsFromServer() {
   } catch(e) { console.error('[NutriFood] Load selections error:', e); }
 }
 
+// ─── Feature 1: Suggestions ───
+var suggestionsFab = null;
+
+function hasSelections() {
+  return Object.keys(selections).some(function(catId) { return selections[catId] && selections[catId].length > 0; });
+}
+
+async function checkSuggestionsBadge() {
+  if (!currentUser || !hasSelections()) {
+    if (suggestionsFab) suggestionsFab.classList.remove('visible', 'pulsing');
+    return;
+  }
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/suggestions', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    var gaps = data.gaps || [];
+    suggestionsFab = $('suggestions-fab');
+    var countEl = $('fab-count');
+    if (gaps.length > 0) {
+      suggestionsFab.classList.add('visible', 'pulsing');
+      countEl.textContent = gaps.length;
+      countEl.style.display = 'flex';
+    } else {
+      suggestionsFab.classList.add('visible');
+      suggestionsFab.classList.remove('pulsing');
+      countEl.style.display = 'none';
+    }
+  } catch(e) { console.error('[NutriFood] Suggestions check error:', e); }
+}
+
+async function showSuggestions() {
+  var content = $('suggestions-content');
+  content.innerHTML = '<p class="loading">Chargement…</p>';
+  $('suggestions-modal').classList.remove('hidden');
+  var token = getToken();
+  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
+  try {
+    var res = await fetchWithTimeout(API + '/suggestions', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
+    var data = await res.json();
+    var gaps = data.gaps || [];
+    if (gaps.length === 0) {
+      content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
+      return;
+    }
+    var html = '';
+    gaps.forEach(function(gap) {
+      var pct = Math.round(gap.percentage || 0);
+      var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+      html += '<div class="suggestion-gap">';
+      html += '<div class="sg-header"><span class="sg-name">' + esc(gap.nutrient || gap.name || '') + '</span><span class="sg-pct">' + pct + '%</span></div>';
+      html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
+      var foods = gap.foods || gap.suggestions || [];
+      foods.forEach(function(f) {
+        var fName = f.name || f.food || '';
+        var fVal = f.value || f.amount || '';
+        var fCat = f.category || f.cat || '';
+        html += '<div class="sg-food">';
+        html += '<div class="sg-food-info"><div class="sg-food-name">' + esc(fName) + '</div>';
+        if (fVal) html += '<div class="sg-food-val">' + esc(String(fVal)) + (fCat ? ' · ' + esc(fCat) : '') + '</div>';
+        html += '</div>';
+        html += '<button class="sg-add-btn" data-suggest-add="' + esc(fName) + '" data-suggest-cat="' + esc(fCat) + '">+</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    content.innerHTML = html;
+    // Wire add buttons
+    content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var name = btn.dataset.suggestAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        addSuggestedFood(name, btn.dataset.suggestCat);
+        btn.textContent = '✓';
+        btn.style.background = 'var(--accent)';
+        setTimeout(function() { btn.textContent = '+'; btn.style.background = ''; }, 1500);
+      });
+    });
+  } catch(e) {
+    console.error('[NutriFood] Suggestions error:', e);
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
+function addSuggestedFood(name, catHint) {
+  // Search in DATA for this food
+  var found = false;
+  for (var i = 0; i < DATA.categories.length; i++) {
+    var cat = DATA.categories[i];
+    var food = cat.foods.find(function(f) { return f.name === name; });
+    if (food) {
+      // If catHint provided, try to match it, otherwise use found cat
+      var useCatId = cat.id;
+      if (catHint) {
+        var hintedCat = DATA.categories.find(function(c) { return c.id === catHint || c.name === catHint; });
+        if (hintedCat) {
+          var inHinted = hintedCat.foods.find(function(f) { return f.name === name; });
+          if (inHinted) { useCatId = hintedCat.id; food = inHinted; }
+        }
+      }
+      addItem(useCatId, { name: food.name, density: food.density, nutrients: food.nutrients || '' });
+      found = true;
+      break;
+    }
+  }
+  if (!found) showToast('Aliment introuvable: ' + name, 'warning');
+  else showToast(name + ' ajouté', 'success');
+}
+
+// ─── Feature 2: Seasonal banner ───
+async function fetchSeasonalBanner() {
+  if (!currentUser) return;
+  if (sessionStorage.getItem('nutrifood_seasonal_dismissed')) return;
+  try {
+    var res = await fetchWithTimeout(API + '/seasonal', {}, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    var foods = data.foods || data.seasonal || [];
+    if (!foods || foods.length === 0) return;
+    var names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
+    if (names.length === 0) return;
+    var display = names.slice(0, 6);
+    var extra = names.length > 6 ? '…' : '';
+    var banner = $('seasonal-banner');
+    var html = '<span class="sb-text">🌱 <strong>De saison cette semaine:</strong> ';
+    display.forEach(function(n) {
+      html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '">' + esc(n) + '</span>';
+    });
+    if (extra) html += ' <span style="color:var(--text-dim);">' + extra + '</span>';
+    html += '</span>';
+    html += '<button class="sb-close" id="seasonal-close">✕</button>';
+    banner.innerHTML = html;
+    banner.classList.remove('hidden');
+    // Wire close
+    $('seasonal-close').addEventListener('click', function() {
+      banner.classList.add('hidden');
+      sessionStorage.setItem('nutrifood_seasonal_dismissed', '1');
+    });
+    // Wire food clicks
+    banner.querySelectorAll('[data-seasonal-food]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        addSuggestedFood(name);
+      });
+    });
+  } catch(e) { console.error('[NutriFood] Seasonal error:', e); }
+}
+
+// ─── Feature 3: Goals ───
+var userGoals = null;
+var defaultGoals = { protein: 50, fiber: 25, iron: 18, vitamin_c: 90, calcium: 1000, omega3: 1.6 };
+
+async function loadUserGoals() {
+  var token = getToken();
+  if (!token) { userGoals = Object.assign({}, defaultGoals); return; }
+  try {
+    var res = await fetchWithTimeout(API + '/goals', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (res.ok) {
+      var data = await res.json();
+      userGoals = data.goals || Object.assign({}, defaultGoals);
+    } else {
+      userGoals = Object.assign({}, defaultGoals);
+    }
+  } catch(e) { userGoals = Object.assign({}, defaultGoals); }
+}
+
+async function showGoals() {
+  $('goals-error').textContent = '';
+  if (!userGoals) await loadUserGoals();
+  $('goal-protein').value = userGoals.protein || defaultGoals.protein;
+  $('goal-fiber').value = userGoals.fiber || defaultGoals.fiber;
+  $('goal-iron').value = userGoals.iron || defaultGoals.iron;
+  $('goal-vitamin_c').value = userGoals.vitamin_c || defaultGoals.vitamin_c;
+  $('goal-calcium').value = userGoals.calcium || defaultGoals.calcium;
+  $('goal-omega3').value = userGoals.omega3 || defaultGoals.omega3;
+  $('goals-modal').classList.remove('hidden');
+}
+
+async function submitGoals() {
+  var goals = {
+    protein: parseFloat($('goal-protein').value) || 0,
+    fiber: parseFloat($('goal-fiber').value) || 0,
+    iron: parseFloat($('goal-iron').value) || 0,
+    vitamin_c: parseFloat($('goal-vitamin_c').value) || 0,
+    calcium: parseFloat($('goal-calcium').value) || 0,
+    omega3: parseFloat($('goal-omega3').value) || 0
+  };
+  var token = getToken();
+  if (!token) { $('goals-error').textContent = 'Non connecté'; return; }
+  $('goals-submit').disabled = true;
+  $('goals-submit').textContent = 'Sauvegarde…';
+  try {
+    var res = await fetchWithTimeout(API + '/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ goals: goals })
+    }, 10000);
+    if (res.ok) {
+      userGoals = goals;
+      $('goals-modal').classList.add('hidden');
+      showToast('Objectifs sauvegardés', 'success');
+      render();
+      checkSuggestionsBadge();
+    } else {
+      var data = await res.json().catch(function() { return {}; });
+      $('goals-error').textContent = data.error || 'Erreur';
+    }
+  } catch(e) {
+    $('goals-error').textContent = 'Erreur: ' + e.message;
+  }
+  $('goals-submit').disabled = false;
+  $('goals-submit').textContent = '💾 Sauvegarder';
+}
+
+// ─── Feature 4: History ───
+async function showHistory() {
+  var content = $('history-content');
+  content.innerHTML = '<p class="loading">Chargement…</p>';
+  $('history-modal').classList.remove('hidden');
+  var token = getToken();
+  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir l\'historique.</p>'; return; }
+  try {
+    var res = await fetchWithTimeout(API + '/history', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
+    var data = await res.json();
+    var weeks = data.weeks || data.history || [];
+    if (!weeks || weeks.length === 0) {
+      content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun historique encore. Vos semaines sauvegardées apparaîtront ici.</p>';
+      return;
+    }
+    var html = '<table class="history-table"><thead><tr>';
+    html += '<th>Semaine</th><th>Aliments</th><th>Prot.</th><th>Fib.</th><th>Fer</th><th>Vit C</th><th>Calcium</th>';
+    html += '</tr></thead><tbody>';
+    weeks.forEach(function(w) {
+      var week = w.week || w.week_key || '';
+      var total = w.total_foods || w.total || 0;
+      var prot = w.protein || 0;
+      var fib = w.fiber || 0;
+      var iron = w.iron || 0;
+      var vitC = w.vit_c || w.vitamin_c || 0;
+      var calc = w.calcium || 0;
+      html += '<tr data-history-week="' + esc(String(week)) + '">';
+      html += '<td class="ht-week">' + esc(String(week)) + '</td>';
+      html += '<td>' + total + '</td>';
+      html += '<td>' + Math.round(prot) + '</td>';
+      html += '<td>' + Math.round(fib) + '</td>';
+      html += '<td>' + Math.round(iron) + '</td>';
+      html += '<td>' + Math.round(vitC) + '</td>';
+      html += '<td>' + Math.round(calc) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    content.innerHTML = html;
+    // Wire row clicks
+    content.querySelectorAll('[data-history-week]').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var weekKey = row.dataset.historyWeek;
+        showHistoryDetail(weekKey);
+      });
+    });
+  } catch(e) {
+    console.error('[NutriFood] History error:', e);
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function showHistoryDetail(weekKey) {
+  var content = $('history-content');
+  content.innerHTML = '<p class="loading">Chargement de ' + esc(weekKey) + '…</p>';
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/history/' + encodeURIComponent(weekKey), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur.</p>'; return; }
+    var data = await res.json();
+    var sels = data.selections || data.data || {};
+    var html = '<span class="history-detail-back" id="history-back">← Retour à l\'historique</span>';
+    html += '<h3 style="color:var(--accent);margin-bottom:12px;">Semaine ' + esc(weekKey) + '</h3>';
+    var total = 0;
+    html += '<ul class="history-detail-list">';
+    Object.keys(sels).forEach(function(catId) {
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      var catName = cat ? cat.name : catId;
+      var catIcon = cat ? cat.icon : '📦';
+      sels[catId].forEach(function(item) {
+        var qty = item.qty || 1;
+        total += qty;
+        html += '<li><span>' + catIcon + ' ' + esc(item.name) + ' <span style="color:var(--text-dim);font-size:0.78rem;">(' + esc(catName) + ')</span></span><span class="hd-qty">×' + qty + '</span></li>';
+      });
+    });
+    html += '</ul>';
+    if (total === 0) html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Aucune sélection cette semaine.</p>';
+    html += '<p style="margin-top:8px;color:var(--text-dim);font-size:0.82rem;">Total: ' + total + ' aliment(s)</p>';
+    content.innerHTML = html;
+    $('history-back').addEventListener('click', showHistory);
+  } catch(e) {
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
 // ─── Init ───
 async function init() {
   try {
@@ -1457,6 +1939,12 @@ async function init() {
       $('search-bar-container').style.display = 'block';
       render();
       updateSaveBar();
+      // Feature 2: seasonal banner
+      fetchSeasonalBanner();
+      // Feature 3: load goals
+      await loadUserGoals();
+      // Feature 1: check suggestions badge
+      checkSuggestionsBadge();
     } else if (window._shareToken) {
       $('search-bar-container').style.display = 'none';
       await loadSharedView(window._shareToken);
@@ -1728,6 +2216,7 @@ function addItem(catId, item) {
   if (existing) existing.qty = (existing.qty || 1) + 1;
   else selections[catId].push(Object.assign({}, item, { qty: 1 }));
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
+  if (currentUser) checkSuggestionsBadge();
 }
 
 function removeItem(catId, name) {
@@ -1738,6 +2227,7 @@ function removeItem(catId, name) {
   var cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
   if (cb) cb.checked = false;
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
+  if (currentUser) checkSuggestionsBadge();
 }
 
 function changeQty(catId, name, delta) {
@@ -1746,7 +2236,7 @@ function changeQty(catId, name, delta) {
   if (!item) return;
   item.qty = (item.qty || 1) + delta;
   if (item.qty <= 0) removeItem(catId, name);
-  else { refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave(); }
+  else { refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave(); if (currentUser) checkSuggestionsBadge(); }
 }
 
 function refreshCard(catId) {

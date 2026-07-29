@@ -184,6 +184,18 @@ def init_db():
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_share_links_token ON share_links(token);
+        CREATE TABLE IF NOT EXISTS user_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            protein REAL DEFAULT 350,
+            fiber REAL DEFAULT 175,
+            iron REAL DEFAULT 56,
+            vitamin_c REAL DEFAULT 280,
+            calcium REAL DEFAULT 700,
+            omega3 REAL DEFAULT 3.5,
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id)
+        );
     ''')
     conn.commit()
     conn.close()
@@ -701,6 +713,223 @@ def me():
     return jsonify({
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
+
+# ─── Nutrition Summary ───
+
+def compute_nutrition_totals(user_id, foods_data):
+    """Compute weekly nutrition totals from user's selections."""
+    db = get_db()
+    row = db.execute('SELECT data FROM selections WHERE user_id = ?', (user_id,)).fetchone()
+    if not row:
+        return {'protein': 0, 'fiber': 0, 'iron': 0, 'vitamin_c': 0, 'calcium': 0, 'omega3': 0}
+
+    selections_data = json.loads(row['data']) if row['data'] else {}
+    totals = {'protein': 0, 'fiber': 0, 'iron': 0, 'vitamin_c': 0, 'calcium': 0, 'omega3': 0}
+
+    categories = foods_data.get('categories', [])
+    for cat in categories:
+        cat_id = cat.get('id')
+        cat_selections = selections_data.get(cat_id, [])
+        if not cat_selections:
+            continue
+        # Build a lookup for this category's foods
+        food_map = {f['name']: f for f in cat.get('foods', [])}
+        for item in cat_selections:
+            food_name = item.get('name', '')
+            qty = item.get('qty', 1)
+            food = food_map.get(food_name)
+            if not food:
+                continue
+            n = food.get('nutrition', {})
+            totals['protein'] += n.get('protein', 0) * qty
+            totals['fiber'] += n.get('fiber', 0) * qty
+            totals['iron'] += n.get('iron', 0) * qty
+            totals['vitamin_c'] += n.get('vit_c', 0) * qty
+            totals['calcium'] += n.get('calcium', 0) * qty
+            totals['omega3'] += n.get('omega3', 0) * qty
+
+    return totals
+
+DEFAULT_TARGETS = {'protein': 350, 'fiber': 175, 'iron': 56, 'vitamin_c': 280, 'calcium': 700, 'omega3': 3.5}
+
+def get_user_targets(user_id):
+    """Get user's weekly targets (custom or default)."""
+    db = get_db()
+    row = db.execute('SELECT protein, fiber, iron, vitamin_c, calcium, omega3 FROM user_goals WHERE user_id = ?', (user_id,)).fetchone()
+    if row:
+        return {
+            'protein': row['protein'],
+            'fiber': row['fiber'],
+            'iron': row['iron'],
+            'vitamin_c': row['vitamin_c'],
+            'calcium': row['calcium'],
+            'omega3': row['omega3']
+        }
+    return dict(DEFAULT_TARGETS)
+
+@app.route('/api/nutrition-summary', methods=['GET'])
+def nutrition_summary():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    foods_data = load_foods()
+    totals = compute_nutrition_totals(user['id'], foods_data)
+    targets = get_user_targets(user['id'])
+
+    percentages = {}
+    for key in DEFAULT_TARGETS:
+        t = targets.get(key, DEFAULT_TARGETS[key])
+        if t > 0:
+            percentages[key] = round((totals.get(key, 0) / t) * 100)
+        else:
+            percentages[key] = 0
+
+    return jsonify({
+        'totals': {k: round(v, 2) for k, v in totals.items()},
+        'targets': targets,
+        'percentages': percentages
+    })
+
+# ─── Suggestions ───
+
+NUTRIENT_LABELS = {
+    'protein': 'protéines',
+    'fiber': 'fibres',
+    'iron': 'fer',
+    'vitamin_c': 'vitamine C',
+    'calcium': 'calcium',
+    'omega3': 'oméga-3'
+}
+
+@app.route('/api/suggestions', methods=['GET'])
+def suggestions():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    foods_data = load_foods()
+    totals = compute_nutrition_totals(user['id'], foods_data)
+    targets = get_user_targets(user['id'])
+
+    # Find nutrients below 80% of target
+    deficient = []
+    for key in DEFAULT_TARGETS:
+        t = targets.get(key, DEFAULT_TARGETS[key])
+        if t > 0:
+            pct = (totals.get(key, 0) / t) * 100
+            if pct < 80:
+                deficient.append((key, pct))
+
+    if not deficient:
+        return jsonify({'suggestions': []})
+
+    # Get user's currently selected food names
+    db = get_db()
+    row = db.execute('SELECT data FROM selections WHERE user_id = ?', (user['id'],)).fetchone()
+    selected_names = set()
+    if row and row['data']:
+        selections_data = json.loads(row['data'])
+        for cat_id, items in selections_data.items():
+            for item in items:
+                selected_names.add(item.get('name', ''))
+
+    # Build suggestion list
+    all_suggestions = []
+    categories = foods_data.get('categories', [])
+
+    # Map nutrient keys to foods.json nutrition keys
+    nutrient_key_map = {'vitamin_c': 'vit_c'}
+
+    for nutrient_key, pct in sorted(deficient, key=lambda x: x[1]):
+        json_key = nutrient_key_map.get(nutrient_key, nutrient_key)
+        candidates = []
+        for cat in categories:
+            for food in cat.get('foods', []):
+                if food['name'] in selected_names:
+                    continue
+                n = food.get('nutrition', {})
+                val = n.get(json_key, 0)
+                if val > 0:
+                    candidates.append({
+                        'food': food['name'],
+                        'category': cat.get('name', ''),
+                        'nutrient': nutrient_key,
+                        'nutrient_value': val,
+                        'current_pct': round(pct),
+                        'reason': f"Manque de {NUTRIENT_LABELS.get(nutrient_key, nutrient_key)} ({round(pct)}% de l'objectif)"
+                    })
+        # Sort by nutrient density descending, take top 3
+        candidates.sort(key=lambda x: x['nutrient_value'], reverse=True)
+        all_suggestions.extend(candidates[:3])
+        if len(all_suggestions) >= 8:
+            break
+
+    return jsonify({'suggestions': all_suggestions[:8]})
+
+# ─── Seasonal ───
+
+@app.route('/api/seasonal', methods=['GET'])
+def seasonal():
+    foods_data = load_foods()
+    current_month = date.today().month
+    seasonal_foods = []
+    for cat in foods_data.get('categories', []):
+        for food in cat.get('foods', []):
+            season = food.get('season', [])
+            if season and current_month in season:
+                seasonal_foods.append(food['name'])
+    return jsonify({'month': current_month, 'foods': seasonal_foods})
+
+# ─── User Goals ───
+
+@app.route('/api/goals', methods=['GET'])
+def get_goals():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    targets = get_user_targets(user['id'])
+    return jsonify({'goals': targets})
+
+@app.route('/api/goals', methods=['POST'])
+def update_goals():
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+
+    data = request.get_json() or {}
+    goals = data.get('goals', {})
+
+    # Validate and extract allowed fields
+    allowed = ['protein', 'fiber', 'iron', 'vitamin_c', 'calcium', 'omega3']
+    values = {}
+    for key in allowed:
+        if key in goals:
+            try:
+                val = float(goals[key])
+                if val < 0:
+                    return jsonify({'error': f'{key} doit être positif'}), 400
+                values[key] = val
+            except (ValueError, TypeError):
+                return jsonify({'error': f'{key} doit être un nombre'}), 400
+
+    db = get_db()
+    # Build upsert query dynamically
+    columns = ['user_id'] + list(values.keys())
+    placeholders = ['?'] * len(columns)
+    updates = ', '.join(f"{k} = excluded.{k}" for k in values.keys())
+    query = f"""
+        INSERT INTO user_goals ({', '.join(columns)})
+        VALUES ({', '.join(placeholders)})
+        ON CONFLICT(user_id) DO UPDATE SET {updates}
+    """
+    params = [user['id']] + list(values.values())
+    db.execute(query, params)
+    db.commit()
+
+    # Return updated goals
+    targets = get_user_targets(user['id'])
+    return jsonify({'goals': targets})
 
 # Initialize DB on import
 init_db()

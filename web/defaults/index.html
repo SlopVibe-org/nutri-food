@@ -139,6 +139,7 @@
   .chip[title] { cursor: pointer; }
   .chip[data-detail-cat] { cursor: pointer; transition: filter 0.15s, background 0.15s; }
   .chip[data-detail-cat]:hover { filter: brightness(1.25); background: rgba(74,222,128,0.22); }
+  .remove-product-item:hover { background: rgba(255,100,100,0.08); border-color: var(--accent-red) !important; }
 
   #save-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
@@ -886,6 +887,7 @@
       <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
       <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
       <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
+      <div class="goal-field"><label>Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50"></div>
     </div>
     <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
     <a class="cancel-link" id="goals-cancel">Annuler</a>
@@ -910,11 +912,15 @@
   </div>
 </div>
 
-<!-- Add product modal (CNF search) -->
-<div class="modal-overlay hidden" id="add-product-modal">
+<!-- Manage products modal (tabs: add / remove) -->
+<div class="modal-overlay hidden" id="manage-products-modal">
   <div class="modal wide scrollable">
-    <h2>➕ Ajouter un produit</h2>
-    <div id="add-product-content">
+    <h2>📦 Gérer les produits</h2>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
+      <button id="tab-add" class="product-tab active" style="flex:1;padding:10px;background:none;border:none;color:var(--accent);font-size:0.95rem;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;">➕ Ajouter</button>
+      <button id="tab-remove" class="product-tab" style="flex:1;padding:10px;background:none;border:none;color:var(--text-dim);font-size:0.95rem;font-weight:600;cursor:pointer;">🗑️ Retirer</button>
+    </div>
+    <div id="tab-add-content">
       <div style="display:flex;gap:8px;margin-bottom:16px;">
         <input type="text" id="cnf-search-input" placeholder="Rechercher un aliment (ex: saumon, bleuet, cheval)…" autocomplete="off" style="flex:1;padding:10px 14px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
         <button class="login-cta" id="cnf-search-btn" style="padding:10px 20px;">Rechercher</button>
@@ -922,7 +928,11 @@
       <div id="cnf-results" style="margin-bottom:16px;"></div>
       <div id="cnf-details"></div>
     </div>
-    <a class="cancel-link" id="add-product-close">Annuler</a>
+    <div id="tab-remove-content" style="display:none;">
+      <p style="color:var(--text-dim);margin-bottom:12px;">Cliquez sur un aliment pour le masquer des listes.</p>
+      <div id="remove-product-list" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <a class="cancel-link" id="manage-products-close">Fermer</a>
   </div>
 </div>
 
@@ -1038,7 +1048,7 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
     menuItems += '<button class="user-menu-item" id="menu-journal"><span class="icon">📝</span> Journal</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
-    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-add-product"><span class="icon">➕</span> Ajouter un produit</button>';
+    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-refresh-deals"><span class="icon">🔄</span> Spéciaux</button>';
     menuItems += '<div class="user-menu-divider"></div>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
@@ -1061,7 +1071,7 @@ function renderUserArea() {
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {
-      $('menu-add-product').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showAddProductModal(); });
+      $('menu-manage-products').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showManageProducts(); });
       $('menu-refresh-deals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); refreshDeals(); });
     }
 
@@ -1150,6 +1160,7 @@ function initAuthEvents() {
   $('suggestions-fab').addEventListener('click', showSuggestions);
   $('suggestions-close').addEventListener('click', function() { $('suggestions-modal').classList.add('hidden'); });
   $('suggestions-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('manage-products-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
   // Feature 3: Goals modal
   $('goals-submit').addEventListener('click', function(e) { e.preventDefault(); submitGoals(); });
   $('goals-cancel').addEventListener('click', function() { $('goals-modal').classList.add('hidden'); });
@@ -1462,18 +1473,91 @@ function guessCategory(groupCode, nutrients) {
   return CNF_GROUP_MAP[groupCode] || null;
 }
 
+function showManageProducts() {
+  // Default to add tab
+  switchProductTab('add');
+  $('manage-products-modal').classList.remove('hidden');
+  $('manage-products-close').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
+  // Tab handlers
+  $('tab-add').onclick = function() { switchProductTab('add'); };
+  $('tab-remove').onclick = function() { switchProductTab('remove'); };
+}
+
+function switchProductTab(tab) {
+  if (tab === 'add') {
+    $('tab-add').classList.add('active');
+    $('tab-add').style.color = 'var(--accent)';
+    $('tab-add').style.borderBottom = '2px solid var(--accent)';
+    $('tab-add').style.marginBottom = '-2px';
+    $('tab-remove').classList.remove('active');
+    $('tab-remove').style.color = 'var(--text-dim)';
+    $('tab-remove').style.borderBottom = 'none';
+    $('tab-remove').style.marginBottom = '0';
+    $('tab-add-content').style.display = 'block';
+    $('tab-remove-content').style.display = 'none';
+    // Init add tab
+    cnfSelectedId = null;
+    cnfSelectedFood = null;
+    cnfSelectedNutrients = null;
+    $('cnf-search-input').value = '';
+    $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Entrez un terme de recherche et cliquez sur Rechercher.</p>';
+    $('cnf-details').innerHTML = '';
+    $('cnf-search-input').focus();
+    $('cnf-search-btn').onclick = cnfDoSearch;
+    $('cnf-search-input').onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); cnfDoSearch(); } };
+  } else {
+    $('tab-remove').classList.add('active');
+    $('tab-remove').style.color = 'var(--accent)';
+    $('tab-remove').style.borderBottom = '2px solid var(--accent)';
+    $('tab-remove').style.marginBottom = '-2px';
+    $('tab-add').classList.remove('active');
+    $('tab-add').style.color = 'var(--text-dim)';
+    $('tab-add').style.borderBottom = 'none';
+    $('tab-add').style.marginBottom = '0';
+    $('tab-add-content').style.display = 'none';
+    $('tab-remove-content').style.display = 'block';
+    loadRemoveProductList();
+  }
+}
+
+function loadRemoveProductList() {
+  var html = '';
+  (DATA.sections || []).forEach(function(sec) {
+    var cats = (DATA.categories || []).filter(function(c) { return c.section === sec.id; });
+    if (cats.length === 0) return;
+    cats.forEach(function(cat) {
+      var count = (cat.foods || []).length;
+      if (count === 0) return;
+      html += '<div class="remove-cat-header" data-remove-cat="' + cat.id + '" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;margin-bottom:4px;cursor:pointer;user-select:none;">';
+      html += '<span style="font-size:0.9rem;font-weight:600;">' + cat.icon + ' ' + esc(cat.name) + '</span>';
+      html += '<span style="font-size:0.78rem;color:var(--text-dim);">' + count + ' <span class="remove-cat-arrow">\u25BC</span></span>';
+      html += '</div>';
+      html += '<div class="remove-cat-items" data-remove-cat-items="' + cat.id + '" style="display:none;margin-bottom:8px;">';
+      (cat.foods || []).forEach(function(food) {
+        html += '<div class="remove-product-item" data-hide-cat="' + cat.id + '" data-hide-name="' + esc(food.name) + '" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:background 0.15s;">';
+        html += '<span style="font-size:0.85rem;">' + esc(food.name) + '</span>';
+        html += '<span style="font-size:0.75rem;color:var(--accent-red);">Masquer</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+  });
+  $('remove-product-list').innerHTML = html;
+}
+
 function showAddProductModal() {
+  showManageProducts();
   cnfSelectedId = null;
   cnfSelectedFood = null;
   cnfSelectedNutrients = null;
   $('cnf-search-input').value = '';
   $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Entrez un terme de recherche et cliquez sur Rechercher.</p>';
   $('cnf-details').innerHTML = '';
-  $('add-product-modal').classList.remove('hidden');
+  $('manage-products-modal').classList.remove('hidden');
   $('cnf-search-input').focus();
   $('cnf-search-btn').onclick = cnfDoSearch;
   $('cnf-search-input').onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); cnfDoSearch(); } };
-  $('add-product-close').onclick = function() { $('add-product-modal').classList.add('hidden'); };
+  $('manage-products-close').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
 }
 
 async function cnfDoSearch() {
@@ -1541,7 +1625,7 @@ async function cnfDoSearch() {
       });
     });
     
-    $('exist-cancel-btn').onclick = function() { $('add-product-modal').classList.add('hidden'); };
+    $('exist-cancel-btn').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
     $('exist-continue-btn').onclick = function() { cnfCnfSearch(q); };
     return;
   }
@@ -1700,7 +1784,7 @@ async function cnfSaveToDatabase(food, nutrition) {
     // Reload DATA from server to get the updated list
     var foodsRes = await fetchWithTimeout(API + '/foods', {}, 10000);
     if (foodsRes.ok) { DATA = await foodsRes.json(); }
-    $('add-product-modal').classList.add('hidden');
+    $('manage-products-modal').classList.add('hidden');
     showToast(name + ' ajouté!', 'success');
     render();
     updateSaveBar();
@@ -2387,11 +2471,13 @@ async function checkSuggestionsBadge() {
     if (!res.ok) return;
     var data = await res.json();
     var gaps = data.gaps || [];
+    var portionGaps = data.portion_gaps || [];
+    var totalCount = gaps.length + portionGaps.length;
     suggestionsFab = $('suggestions-fab');
     var countEl = $('fab-count');
-    if (gaps.length > 0) {
+    if (totalCount > 0) {
       suggestionsFab.classList.add('visible', 'pulsing');
-      countEl.textContent = gaps.length;
+      countEl.textContent = totalCount;
       countEl.style.display = 'flex';
     } else {
       suggestionsFab.classList.add('visible');
@@ -2415,7 +2501,9 @@ async function showSuggestions() {
     if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
     var data = await res.json();
     var gaps = data.gaps || [];
-    if (gaps.length === 0) {
+    var portionGaps = data.portion_gaps || [];
+    var suggestions = data.suggestions || [];
+    if (gaps.length === 0 && portionGaps.length === 0) {
       var allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
       var seasHtml = await buildSeasonalHtml();
       if (seasHtml) allGoodHtml += seasHtml;
@@ -2423,6 +2511,22 @@ async function showSuggestions() {
       return;
     }
     var html = '';
+    // Portion gaps section
+    if (portionGaps.length > 0) {
+      html += '<h3 style="margin:0 0 8px;font-size:0.9rem;color:var(--accent-amber);">🍽️ Portions par catégorie</h3>';
+      portionGaps.forEach(function(pg) {
+        var pct = pg.percentage || 0;
+        var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+        html += '<div class="suggestion-gap">';
+        html += '<div class="sg-header"><span class="sg-name">' + esc(pg.icon || '') + ' ' + esc(pg.category || '') + '</span><span class="sg-pct">' + pg.current + '/' + pg.target + '</span></div>';
+        html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+        html += '</div>';
+      });
+    }
+    // Nutrient gaps section
+    if (gaps.length > 0) {
+      html += '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:var(--accent);">📊 Nutriments</h3>';
+    }
     gaps.forEach(function(gap) {
       var pct = Math.round(gap.percentage || 0);
       var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
@@ -2443,6 +2547,17 @@ async function showSuggestions() {
       });
       html += '</div>';
     });
+    // Food suggestions
+    if (suggestions.length > 0) {
+      html += '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:var(--accent);">💡 Aliments suggérés</h3>';
+      suggestions.forEach(function(s) {
+        html += '<div class="sg-food">';
+        html += '<div class="sg-food-info"><div class="sg-food-name">' + esc(s.food || '') + '</div>';
+        html += '<div class="sg-food-val">' + esc(s.reason || '') + (s.category ? ' · ' + esc(s.category) : '') + '</div></div>';
+        html += '<button class="sg-add-btn" data-suggest-add="' + esc(s.food || '') + '" data-suggest-cat="' + esc(s.category || '') + '">+</button>';
+        html += '</div>';
+      });
+    }
     // Add seasonal at the end of suggestions
     var seasHtml = await buildSeasonalHtml();
     if (seasHtml) html += seasHtml;
@@ -2546,7 +2661,7 @@ document.addEventListener('click', function(e) {
 
 // ─── Feature 3: Goals ───
 var userGoals = null;
-var defaultGoals = { protein: 50, fiber: 25, iron: 18, vitamin_c: 90, calcium: 1000, omega3: 1.6 };
+var defaultGoals = { protein: 350, fiber: 175, iron: 56, vitamin_c: 280, calcium: 700, omega3: 3.5, calories: 14000 };
 
 async function loadUserGoals() {
   var token = getToken();
@@ -2573,6 +2688,7 @@ async function showGoals() {
   $('goal-vitamin_c').value = userGoals.vitamin_c || defaultGoals.vitamin_c;
   $('goal-calcium').value = userGoals.calcium || defaultGoals.calcium;
   $('goal-omega3').value = userGoals.omega3 || defaultGoals.omega3;
+  $('goal-calories').value = userGoals.calories || defaultGoals.calories;
   $('goals-modal').classList.remove('hidden');
 }
 
@@ -2583,7 +2699,8 @@ async function submitGoals() {
     iron: parseFloat($('goal-iron').value) || 0,
     vitamin_c: parseFloat($('goal-vitamin_c').value) || 0,
     calcium: parseFloat($('goal-calcium').value) || 0,
-    omega3: parseFloat($('goal-omega3').value) || 0
+    omega3: parseFloat($('goal-omega3').value) || 0,
+    calories: parseFloat($('goal-calories').value) || 0
   };
   var token = getToken();
   if (!token) { $('goals-error').textContent = 'Non connecté'; return; }
@@ -3128,12 +3245,13 @@ function renderDailyNutrition(totals) {
   var resetDays = daysUntilReset();
 
   var nutrients = [
-    { key: 'protein',  label: 'Proteine g', unit: 'g',  weekly: totals.protein },
-    { key: 'fiber',    label: 'Fibres g',   unit: 'g',  weekly: totals.fiber },
-    { key: 'iron',     label: 'Fer mg',     unit: 'mg', weekly: totals.iron },
-    { key: 'vit_c',    label: 'Vit C mg',   unit: 'mg', weekly: totals.vit_c },
-    { key: 'calcium',  label: 'Calcium mg', unit: 'mg', weekly: totals.calcium },
-    { key: 'omega3',   label: 'O-3 g',      unit: 'g',  weekly: totals.omega3 }
+    { key: 'calories', label: 'Calories',   unit: 'kcal', weekly: totals.calories || 0, goalKey: 'calories' },
+    { key: 'protein',  label: 'Proteine g', unit: 'g',    weekly: totals.protein,  goalKey: 'protein' },
+    { key: 'fiber',    label: 'Fibres g',   unit: 'g',    weekly: totals.fiber,    goalKey: 'fiber' },
+    { key: 'iron',     label: 'Fer mg',     unit: 'mg',   weekly: totals.iron,     goalKey: 'iron' },
+    { key: 'vit_c',    label: 'Vit C mg',   unit: 'mg',   weekly: totals.vit_c,    goalKey: 'vitamin_c' },
+    { key: 'calcium',  label: 'Calcium mg', unit: 'mg',   weekly: totals.calcium,  goalKey: 'calcium' },
+    { key: 'omega3',   label: 'O-3 g',      unit: 'g',    weekly: totals.omega3,   goalKey: 'omega3' }
   ];
 
   var html = '<div class="nutri-summary-header">';
@@ -3146,11 +3264,12 @@ function renderDailyNutrition(totals) {
     var daily = n.weekly / 7;
     var dailyStr = n.unit === 'g' ? (Math.round(daily * 10) / 10) + '' : Math.round(daily) + '';
     html += '<div class="nutri-stat">';
-    html += '<span class="ns-value">' + Math.round(n.weekly) + '</span>';
+    html += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(n.weekly).toLocaleString() : Math.round(n.weekly)) + '</span>';
     html += '<span class="ns-label">' + n.label + '</span>';
     html += '<span class="ns-daily">' + dailyStr + n.unit + '/j</span>';
-    if (hasGoals && userGoals[n.key]) {
-      var dailyTarget = userGoals[n.key] / 7;
+    var goalVal = userGoals ? userGoals[n.goalKey || n.key] : null;
+    if (goalVal) {
+      var dailyTarget = goalVal / 7;
       var pct = dailyTarget > 0 ? Math.round((daily / dailyTarget) * 100) : 0;
       var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
       html += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
@@ -3167,7 +3286,7 @@ function render() {
   var app = $('app');
 
   // Compute nutrition totals FIRST (used for score ring)
-  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0 };
+  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
   Object.keys(selections).forEach(function(catId) {
     selections[catId].forEach(function(item) {
       var cat = DATA.categories.find(function(c) { return c.id === catId; });
@@ -3181,6 +3300,7 @@ function render() {
           totals.vit_c += (food.nutrition.vit_c || 0) * qty;
           totals.calcium += (food.nutrition.calcium || 0) * qty;
           totals.omega3 += (food.nutrition.omega3 || 0) * qty;
+          totals.calories += (food.nutrition.calories || 0) * qty;
         }
       }
     });
@@ -3374,6 +3494,33 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     return;
   }
+  // 1b. Hide product from manage tab
+  var hideItem = e.target.closest('[data-hide-cat]');
+  if (hideItem) {
+    var hideCat = hideItem.dataset.hideCat;
+    var hideName = hideItem.dataset.hideName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    hideFood(hideCat, hideName);
+    return;
+  }
+  // 1c. Toggle category accordion in remove tab
+  var catHeader = e.target.closest('[data-remove-cat]');
+  if (catHeader) {
+    var catId = catHeader.dataset.removeCat;
+    var items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
+    var arrow = catHeader.querySelector('.remove-cat-arrow');
+    if (items) {
+      var shown = items.style.display !== 'none';
+      // Close all others
+      document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
+      document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
+      // Toggle this one
+      if (!shown) {
+        items.style.display = 'block';
+        if (arrow) arrow.textContent = '\u25B2';
+      }
+    }
+    return;
+  }
   // 2. Deals toggle in modal
   var toggle = e.target.closest('#deals-toggle');
   if (toggle) {
@@ -3496,7 +3643,7 @@ function updateScoreBar() {
   var bar = document.querySelector('.score-bar');
   if (!bar) return;
   // Compute nutrition totals
-  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0 };
+  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
   Object.keys(selections).forEach(function(catId) {
     selections[catId].forEach(function(item) {
       var cat = DATA.categories.find(function(c) { return c.id === catId; });
@@ -3510,6 +3657,7 @@ function updateScoreBar() {
           totals.vit_c += (food.nutrition.vit_c || 0) * qty;
           totals.calcium += (food.nutrition.calcium || 0) * qty;
           totals.omega3 += (food.nutrition.omega3 || 0) * qty;
+          totals.calories += (food.nutrition.calories || 0) * qty;
         }
       }
     });
@@ -3603,6 +3751,34 @@ function adminRemoveFood(catId, name) {
 
 async function saveFoodsToServer() {
   // Deprecated — foods are now managed via /api/admin/food/show and /api/admin/food/hide
+}
+
+async function hideFood(catId, name) {
+  var token = getToken();
+  if (!token) { showToast('Non connecté', 'error'); return; }
+  try {
+    var res = await fetchWithTimeout(API + '/admin/food/hide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ name: name })
+    }, 10000);
+    if (res.ok) {
+      // Remove from DATA locally
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      if (cat) cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
+      // Remove from selections
+      if (selections[catId]) {
+        selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
+        if (selections[catId].length === 0) delete selections[catId];
+      }
+      render();
+      updateSaveBar();
+      loadRemoveProductList();
+      showToast(name + ' masqué', 'success');
+    } else {
+      showToast('Erreur lors du masquage', 'error');
+    }
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
 }
 
 function updateSaveBar() {

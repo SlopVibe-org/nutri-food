@@ -9,6 +9,7 @@ import base64
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+import re
 from datetime import datetime, timedelta, date
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -21,12 +22,29 @@ CORS(app, origins=[
 ])
 
 DB_PATH = os.environ.get('DB_PATH', '/data/nutrifood.db')
+EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+
+RATE_LIMIT = {}  # key: ip+endpoint, value: [count, first_attempt_time]
+RATE_WINDOW = 60  # seconds
+RATE_MAX = 10  # requests per window
+
+def check_rate_limit(key):
+    now = time.time()
+    if key in RATE_LIMIT:
+        count, first = RATE_LIMIT[key]
+        if now - first < RATE_WINDOW:
+            if count >= RATE_MAX:
+                return False
+            RATE_LIMIT[key][0] += 1
+            return True
+    RATE_LIMIT[key] = [1, now]
+    return True
 JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
 JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.fastmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
 SMTP_USER = os.environ.get('SMTP_USER', 'ai@slopvibe.org')
-SMTP_PASS = os.environ.get('SMTP_PASS', '3q6q6a76769d6r5c')
+SMTP_PASS = os.environ.get('SMTP_PASS', '')
 MAIL_FROM = os.environ.get('MAIL_FROM', 'ai@slopvibe.org')
 APP_URL = os.environ.get('APP_URL', 'https://slopvibe.org/nutri-food/')
 
@@ -153,6 +171,14 @@ def init_db():
             UNIQUE(user_id, week_key)
         );
         CREATE INDEX IF NOT EXISTS idx_history_snapshots_user ON history_snapshots(user_id);
+        CREATE TABLE IF NOT EXISTS share_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            token TEXT UNIQUE NOT NULL,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_share_links_token ON share_links(token);
     ''')
     conn.commit()
     conn.close()
@@ -215,6 +241,8 @@ def health():
 
 @app.route('/api/register', methods=['POST'])
 def register():
+    if not check_rate_limit(request.remote_addr + ':register'):
+        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
     data = request.get_json() or {}
     email = (data.get('email') or '').strip().lower()
     name = (data.get('name') or '').strip()
@@ -224,7 +252,7 @@ def register():
         return jsonify({'error': 'Email, nom et mot de passe requis'}), 400
     if len(password) < 6:
         return jsonify({'error': 'Le mot de passe doit faire au moins 6 caractères'}), 400
-    if '@' not in email:
+    if not EMAIL_RE.match(email):
         return jsonify({'error': 'Email invalide'}), 400
 
     db = get_db()
@@ -251,6 +279,8 @@ def register():
 
 @app.route('/api/login', methods=['POST'])
 def login():
+    if not check_rate_limit(request.remote_addr + ':login'):
+        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
     password = data.get('password') or ''
@@ -300,6 +330,8 @@ def save_foods():
 
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
+    if not check_rate_limit(request.remote_addr + ':forgot-password'):
+        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
 
@@ -576,14 +608,6 @@ def create_share():
 
     share_token = secrets.token_urlsafe(16)
     db = get_db()
-    # Store share token in a simple table
-    db.execute('''CREATE TABLE IF NOT EXISTS share_links (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        token TEXT UNIQUE NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )''')
     db.execute('INSERT OR REPLACE INTO share_links (user_id, token) VALUES (?, ?)', (user['id'], share_token))
     db.commit()
 
@@ -592,13 +616,6 @@ def create_share():
 @app.route('/api/shared/<token>', methods=['GET'])
 def get_shared(token):
     db = get_db()
-    db.execute('''CREATE TABLE IF NOT EXISTS share_links (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        token TEXT UNIQUE NOT NULL,
-        created_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    )''')
     row = db.execute('SELECT user_id FROM share_links WHERE token = ?', (token,)).fetchone()
     if not row:
         return jsonify({'error': 'Lien invalide'}), 404
@@ -617,8 +634,7 @@ def get_shared(token):
     except:
         pass
 
-    import datetime
-    current_month = datetime.datetime.now().month
+    current_month = date.today().month
 
     for cat_id, items in selections_data.items():
         cat_name = cat_id

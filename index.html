@@ -334,7 +334,7 @@
     border-radius: 10px; padding: 1px 6px; margin: 1px; font-size: 0.68rem; cursor: pointer;
   }
   .planner-chip:hover { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); }
-  .planner-Week-nav {
+  .planner-week-nav {
     display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;
   }
   .planner-week-nav button {
@@ -522,18 +522,6 @@
 
 <div id="app"><p class="loading">Chargement…</p></div>
 
-<div id="search-overlay" class="modal-overlay hidden" style="align-items:flex-start;padding-top:60px;">
-  <div style="width:100%;max-width:560px;padding:0 16px;">
-    <div class="search-bar">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="search-input" placeholder="Rechercher un aliment…" autocomplete="off">
-      <div class="search-results" id="search-results"></div>
-    </div>
-    <div style="text-align:center;margin-top:8px;">
-      <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="search-close">Fermer</a>
-    </div>
-  </div>
-</div>
 <!-- Grocery list modal -->
 <div id="grocery-overlay" class="grocery-overlay hidden">
   <div class="grocery-modal">
@@ -596,6 +584,7 @@ function clearAuth() {
   updateSaveBar();
 }
 
+var globalClickListenersAttached = false;
 function renderUserArea() {
   const area = $('user-area');
   if (!area) return;
@@ -618,15 +607,22 @@ function renderUserArea() {
       e.stopPropagation();
       $('user-menu-dropdown').classList.toggle('visible');
     });
-    document.addEventListener('click', function(e) {
-      if (!e.target.closest('.user-menu')) $('user-menu-dropdown').classList.remove('visible');
-    });
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
     $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {
       $('menu-edit').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); toggleEditMode(); });
+    }
+
+    if (!globalClickListenersAttached) {
+      globalClickListenersAttached = true;
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.user-menu')) {
+          var dd = $('user-menu-dropdown');
+          if (dd) dd.classList.remove('visible');
+        }
+      });
     }
   } else {
     area.innerHTML = '<button class="auth-btn" id="login-btn">Connexion</button>';
@@ -722,11 +718,13 @@ var plannerSelectedFood = null;
 function getWeekKey(offset) {
   var d = new Date();
   d.setDate(d.getDate() + (offset || 0) * 7);
-  var iso = new Date(d.getFullYear(), d.getMonth(), d.getDate() - d.getDay() + 1);
-  var year = iso.getFullYear();
-  var firstJan = new Date(year, 0, 1);
-  var weekNum = Math.ceil((((iso - firstJan) / 86400000) + firstJan.getDay() + 1) / 7);
-  return year + '-W' + String(weekNum).padStart(2, '0');
+  // Use proper ISO 8601 week calculation to match Python's date.isocalendar()
+  var tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  var weekNum = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+  return tmp.getUTCFullYear() + '-W' + String(weekNum).padStart(2, '0');
 }
 
 async function showPlanner() {
@@ -768,9 +766,9 @@ function renderPlanner(weekKey) {
 
   var html = '<div style="margin-bottom:16px;">';
   html += '<div class="planner-week-nav">';
-  html += '<button onclick="plannerPrevWeek()">←</button>';
+  html += '<button data-planner-action="prev-week">←</button>';
   html += '<span class="planner-week-label">' + weekKey + '</span>';
-  html += '<button onclick="plannerNextWeek()">→</button>';
+  html += '<button data-planner-action="next-week">→</button>';
   html += '</div>';
 
   // Food palette
@@ -778,7 +776,7 @@ function renderPlanner(weekKey) {
     html += '<div class="planner-food-palette"><div class="label">Cliquez un aliment puis cliquez sur un repas pour l\'ajouter:</div>';
     allFoods.forEach(function(name) {
       var sel = plannerSelectedFood === name ? 'border-color:var(--accent);background:rgba(74,222,128,0.2);' : '';
-      html += '<span class="planner-chip" style="' + sel + '" onclick="plannerSelectFood(\'' + name.replace(/'/g, "\\'") + '\')">' + name + '</span>';
+      html += '<span class="planner-chip" style="' + sel + '" data-planner-action="select" data-food="' + esc(name) + '">' + esc(name) + '</span>';
     });
     html += '</div>';
   } else {
@@ -794,9 +792,9 @@ function renderPlanner(weekKey) {
     meals.forEach(function(meal) {
       var items = (plannerData[day] && plannerData[day][meal]) || [];
       var itemsHtml = items.map(function(name) {
-        return '<span class="planner-chip" onclick="plannerRemoveFood(\'' + day + '\',\'' + meal + '\',\'' + name.replace(/'/g, "\\'") + '\')">' + name + ' ×</span>';
+        return '<span class="planner-chip" data-planner-action="remove" data-day="' + day + '" data-meal="' + meal + '" data-food="' + esc(name) + '">' + esc(name) + ' ×</span>';
       }).join(' ');
-      html += '<div class="planner-meal-slot" onclick="plannerAddToSlot(\'' + day + '\',\'' + meal + '\')">';
+      html += '<div class="planner-meal-slot" data-planner-action="add" data-day="' + day + '" data-meal="' + meal + '">';
       html += '<div class="planner-meal-label">' + mealLabels[meal] + '</div>';
       html += '<div class="planner-meal-items">' + itemsHtml + '</div>';
       html += '</div>';
@@ -804,7 +802,7 @@ function renderPlanner(weekKey) {
     html += '</div>';
   });
   html += '</div>';
-  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="saveMealPlan()">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="plannerPrint()">🖨️ Imprimer</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="closePlanner()">← Retour</a></p>';
+  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="save">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="print">🖨️ Imprimer</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="close">← Retour</a></p>';
 
   $('app').innerHTML = html;
   $('save-bar').classList.remove('visible');
@@ -832,9 +830,27 @@ function plannerRemoveFood(day, meal, name) {
   renderPlanner(getWeekKey(plannerWeek));
 }
 
-function plannerPrevWeek() { plannerWeek--; showPlanner(); }
-function plannerNextWeek() { plannerWeek++; showPlanner(); }
 function closePlanner() { plannerWeek = 0; render(); updateSaveBar(); }
+
+// Event delegation for planner actions
+function initPlannerDelegation() {
+  $('app').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-planner-action]');
+    if (!el) return;
+    var action = el.dataset.plannerAction;
+    var food = el.dataset.food ? el.dataset.food.replace(/&#39;/g, "'").replace(/&quot;/g, '"') : '';
+    var day = el.dataset.day || '';
+    var meal = el.dataset.meal || '';
+    if (action === 'select') { plannerSelectFood(food); }
+    else if (action === 'add') { plannerAddToSlot(day, meal); }
+    else if (action === 'remove') { plannerRemoveFood(day, meal, food); }
+    else if (action === 'prev-week') { plannerWeek--; showPlanner(); }
+    else if (action === 'next-week') { plannerWeek++; showPlanner(); }
+    else if (action === 'save') { saveMealPlan(); }
+    else if (action === 'print') { plannerPrint(); }
+    else if (action === 'close') { closePlanner(); }
+  });
+}
 
 function plannerPrint() {
   var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -1048,7 +1064,6 @@ function showGroceryList() {
   // Wire print button
   var printBtn = $('grocery-print-btn');
   if (printBtn) {
-  if (printBtn) {
     printBtn.onclick = function() {
       var items = [];
       Object.keys(selections).forEach(function(catId) {
@@ -1068,7 +1083,6 @@ function showGroceryList() {
       $('print-area-grocery').innerHTML = html;
       window.print();
     };
-  }
   }
 
   $('grocery-overlay').classList.remove('hidden');
@@ -1094,7 +1108,12 @@ function copyGroceryList() {
 }
 
 // ─── Search ───
+var searchTimer = null;
 function performSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(actualSearch, 150);
+}
+function actualSearch() {
   var query = $('search-input').value.trim().toLowerCase();
   var results = $('search-results');
   if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
@@ -1119,7 +1138,6 @@ function performSearch() {
         // Switch to that tab
         var cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
         if (cat) { activeTab = cat.section; render(); }
-        $('search-overlay').classList.add('hidden');
         $('search-input').value = '';
         results.classList.remove('visible');
       });
@@ -1255,6 +1273,7 @@ async function init() {
 
     // Wire up events
     initAuthEvents();
+    initPlannerDelegation();
 
     // Restore session
     var savedUser = null;

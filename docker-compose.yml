@@ -1,0 +1,31 @@
+services:
+  nutrifood-api:
+    build: ./backend
+    container_name: nutrifood-api
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    environment:
+      - DB_PATH=/data/nutrifood.db
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS:-2160}
+      - SMTP_HOST=${SMTP_HOST}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USER=${SMTP_USER}
+      - SMTP_PASS=${SMTP_PASS}
+      - MAIL_FROM=${MAIL_FROM}
+      - APP_URL=${APP_URL}
+
+  nutrifood-web:
+    build: ./web
+    container_name: nutrifood-web
+    restart: unless-stopped
+    ports:
+      - "5011:80"
+    volumes:
+      - ./config:/usr/share/nginx/html
+    depends_on:
+      - nutrifood-api

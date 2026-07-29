@@ -136,7 +136,9 @@
   }
   .chip .remove-btn:hover { opacity: 1; }
   @keyframes chipIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
-  .chip[title] { cursor: help; }
+  .chip[title] { cursor: pointer; }
+  .chip[data-detail-cat] { cursor: pointer; transition: filter 0.15s, background 0.15s; }
+  .chip[data-detail-cat]:hover { filter: brightness(1.25); background: rgba(74,222,128,0.22); }
 
   #save-bar {
     position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
@@ -587,7 +589,8 @@
     text-decoration: none; transition: transform 0.15s;
   }
   .deal-badge:hover { transform: scale(1.15); }
-  .deal-badges { display: inline-flex; margin-left: 4px; align-items: center; }
+  .deal-badges { display: inline-flex; margin-left: 4px; align-items: center; cursor: pointer; transition: filter 0.15s; border-radius: 4px; padding: 1px 2px; }
+  .deal-badges:hover { filter: brightness(1.3); background: rgba(255,255,255,0.08); }
   .deal-badges-extra { font-size: 0.65rem; color: var(--text-dim); margin-left: 2px; font-weight: 700; }
   .chip .deal-tag { font-size: 0.7rem; cursor: help; }
 
@@ -857,18 +860,15 @@
 <!-- Hidden print area for grocery list -->
 <div id="print-area-grocery" class="print-area"></div>
 
-<!-- Seasonal banner (feature 2) -->
-<div class="seasonal-banner hidden" id="seasonal-banner"></div>
-
 <div id="app"><p class="loading">Chargement…</p></div>
 
 <!-- Floating suggestions badge (feature 1) -->
 <div class="suggestions-fab" id="suggestions-fab" title="Suggestions nutritionnelles">💡<span class="fab-count" id="fab-count" style="display:none;">0</span></div>
 
-<!-- Suggestions modal (feature 1) -->
+<!-- Modal (suggestions + food info) -->
 <div class="modal-overlay hidden" id="suggestions-modal">
   <div class="modal wide scrollable">
-    <h2>💡 Suggestions nutritionnelles</h2>
+    <h2 id="suggestions-title">💡 Suggestions nutritionnelles</h2>
     <div id="suggestions-content"><p class="loading">Chargement…</p></div>
     <a class="cancel-link" id="suggestions-close">Fermer</a>
   </div>
@@ -880,12 +880,12 @@
     <h2>🎯 Mes objectifs</h2>
     <div class="error-msg" id="goals-error"></div>
     <div class="goals-grid">
-      <div class="goal-field"><label>Protéine (g)</label><input type="number" id="goal-protein" min="0" step="1"></div>
-      <div class="goal-field"><label>Fibres (g)</label><input type="number" id="goal-fiber" min="0" step="1"></div>
-      <div class="goal-field"><label>Fer (mg)</label><input type="number" id="goal-iron" min="0" step="1"></div>
-      <div class="goal-field"><label>Vitamine C (mg)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
-      <div class="goal-field"><label>Calcium (mg)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
-      <div class="goal-field"><label>Oméga-3 (g)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
+      <div class="goal-field"><label>Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1"></div>
+      <div class="goal-field"><label>Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1"></div>
+      <div class="goal-field"><label>Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1"></div>
+      <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
+      <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
+      <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
     </div>
     <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
     <a class="cancel-link" id="goals-cancel">Annuler</a>
@@ -1133,7 +1133,7 @@ async function submitAuth() {
     loadDeals();
     render();
     updateSaveBar();
-    fetchSeasonalBanner();
+    // Seasonal now in suggestions panel
     checkSuggestionsBadge();
     showToast(authMode === 'register' ? 'Compte créé!' : 'Connexion réussie', 'success');
   } catch(e) {
@@ -1802,110 +1802,91 @@ function getNutritionTips(food) {
   return tips;
 }
 
-function showChipTooltip(catId, name, x, y) {
+function openFoodModal(catId, name) {
   var cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
   var food = cat.foods.find(function(f) { return f.name === name; });
   if (!food) return;
+  $('suggestions-title').textContent = '📋 Informations nutritionnelles';
   var alsoIn = [];
   DATA.categories.forEach(function(c) {
     if (c.id !== catId && c.foods.some(function(f) { return f.name === name; })) alsoIn.push(c.icon + ' ' + c.name);
   });
-  // Check season
   var month = new Date().getMonth() + 1;
-  var seasonHtml = '';
+  var html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
+  html += '<div style="color:var(--accent);font-weight:700;margin-bottom:8px;">Densité nutritionnelle: ' + food.density + '%</div>';
+  if (food.nutrients) html += '<div style="margin-bottom:8px;color:var(--text);">' + food.nutrients + '</div>';
+  // Nutrition per 100g
+  if (food.nutrition) {
+    var n = food.nutrition;
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
+    if (n.protein) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Protéines</span><br><strong>' + n.protein + 'g</strong></div>';
+    if (n.fiber) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fibres</span><br><strong>' + n.fiber + 'g</strong></div>';
+    if (n.iron) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fer</span><br><strong>' + n.iron + 'mg</strong></div>';
+    if (n.vit_c) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Vit C</span><br><strong>' + n.vit_c + 'mg</strong></div>';
+    if (n.calcium) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calcium</span><br><strong>' + n.calcium + 'mg</strong></div>';
+    if (n.omega3) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Oméga-3</span><br><strong>' + n.omega3 + 'g</strong></div>';
+    if (n.calories) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calories</span><br><strong>' + Math.round(n.calories) + '</strong></div>';
+    html += '</div>';
+  }
+  // Season
   if (food.season && food.season.length > 0) {
     if (food.season.indexOf(month) !== -1) {
-      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge in-season">🌱 De saison</span></div>';
+      html += '<div style="margin-bottom:8px;"><span class="season-badge in-season">🌱 De saison</span></div>';
     } else if (food.import_season && food.import_season.indexOf(month) !== -1) {
-      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
-    }
-  } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
-    if (food.import_season.indexOf(month) !== -1) {
-      seasonHtml = '<div style="margin-top:6px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
+      html += '<div style="margin-bottom:8px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
     }
   }
-  if (!tooltipEl) { tooltipEl = $('chip-tooltip'); }
-  var html = '<div class="ct-title">' + food.name + '</div>';
-  html += '<div class="ct-density">Densité: ' + food.density + '%</div>';
-  html += '<div class="ct-nutrients">' + food.nutrients + '</div>';
-  if (food.nutrition) {
-    html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:6px;">Prot ' + (food.nutrition.protein||0) + 'g · Fib ' + (food.nutrition.fiber||0) + 'g · Fer ' + (food.nutrition.iron||0) + 'mg · Vit C ' + (food.nutrition.vit_c||0) + 'mg</div>';
-  }
-  html += seasonHtml;
-  // Nutrition tips
+  // Tips
   var tips = getNutritionTips(food);
   if (tips.length > 0) {
-    html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);">';
+    html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
     tips.forEach(function(t) {
-      html += '<div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;margin-top:3px;">' + t.icon + ' ' + esc(t.text) + '</div>';
+      html += '<div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;margin-top:4px;">' + t.icon + ' ' + esc(t.text) + '</div>';
     });
     html += '</div>';
   }
-  // Category-level tips (absorption + warnings)
   if (cat.tips) {
-    if (cat.tips.absorption) {
-      html += '<div style="margin-top:6px;padding-top:6px;border-top:1px solid var(--border);"><div style="font-size:0.7rem;color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Absorption</div><div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.absorption) + '</div></div>';
-    }
-    if (cat.tips.warnings) {
-      html += '<div style="margin-top:6px;"><div style="font-size:0.7rem;color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Attention</div><div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.warnings) + '</div></div>';
-    }
+    if (cat.tips.absorption) html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);"><div style="color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Absorption</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.absorption) + '</div></div>';
+    if (cat.tips.warnings) html += '<div style="margin-top:6px;"><div style="color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Attention</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.warnings) + '</div></div>';
   }
-  // Food-specific tips (override/addition)
   if (food.tips) {
-    if (food.tips.absorption) {
-      html += '<div style="margin-top:6px;"><div style="font-size:0.7rem;color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Spécifique</div><div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.absorption) + '</div></div>';
-    }
-    if (food.tips.warnings) {
-      html += '<div style="margin-top:6px;"><div style="font-size:0.7rem;color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Spécifique</div><div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.warnings) + '</div></div>';
-    }
+    if (food.tips.absorption) html += '<div style="margin-top:6px;"><div style="color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.absorption) + '</div></div>';
+    if (food.tips.warnings) html += '<div style="margin-top:6px;"><div style="color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.warnings) + '</div></div>';
   }
-  // Deals tooltip
-  html += buildDealTooltipHtml(name);
-  if (alsoIn.length > 0) html += '<div class="ct-also">Aussi dans: ' + alsoIn.join(', ') + '</div>';
-  tooltipEl.innerHTML = html;
-  // Position tooltip, flip above if near bottom of viewport
-  var tooltipWidth = 280;
-  var left = Math.min(x + 12, window.innerWidth - tooltipWidth - 20);
-  if (left < 10) left = 10;
-  tooltipEl.style.left = left + 'px';
-  // Render temporarily to measure height
-  tooltipEl.style.top = '-9999px';
-  tooltipEl.classList.add('visible');
-  var tooltipHeight = tooltipEl.offsetHeight;
-  var spaceBelow = window.innerHeight - y - 20;
-  var spaceAbove = y - 10;
-  if (spaceBelow < tooltipHeight && spaceAbove > tooltipHeight) {
-    // Show above the cursor
-    tooltipEl.style.top = (y - tooltipHeight - 5) + 'px';
-  } else {
-    // Show below the cursor
-    tooltipEl.style.top = (y + 20) + 'px';
+  // Deals (collapsible)
+  var deals = (DEALS[food.name] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length > 0) {
+    html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
+    html += '<h3 id="deals-toggle" style="margin:0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;">🏷️ Voir les spéciaux (' + deals.length + ') <span id="deals-arrow" style="font-size:0.7rem;">▼</span></h3>';
+    html += '<div id="deals-content" style="display:none;margin-top:8px;">';
+    deals.forEach(function(d) {
+      var si = STORE_META[d.store] || {};
+      var color = si.color || '#666';
+      var sn = si.name || d.store || '?';
+      var letter = sn.charAt(0).toUpperCase();
+      html += '<div style="border-left:3px solid ' + color + ';padding-left:10px;margin-left:4px;margin-bottom:8px;">';
+      html += '<div style="font-weight:600;">' + esc(d.name || food.name) + '</div>';
+      html += '<div style="font-size:1.05rem;color:var(--accent);font-weight:700;margin:2px 0;">' + (d.price || '') + '$</div>';
+      if (d.size) html += '<div style="font-size:0.78rem;color:var(--text-dim);">Format: ' + esc(d.size) + '</div>';
+      html += '<div style="font-size:0.82rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + color + ';color:#fff;font-size:0.65rem;font-weight:700;margin-right:4px;">' + letter + '</span>' + esc(sn) + '</div>';
+      if (d.link) html += '<a href="' + esc(d.link) + '" target="_blank" rel="noopener" style="font-size:0.82rem;color:var(--accent);">Voir sur le site →</a>';
+      html += '</div>';
+    });
+    html += '</div></div>';
   }
-}
-function hideChipTooltip() {
-  if (tooltipEl) tooltipEl.classList.remove('visible');
+  if (alsoIn.length > 0) html += '<div style="font-size:0.82rem;color:var(--text-dim);margin-top:8px;">Aussi dans: ' + alsoIn.join(', ') + '</div>';
+  // Show in suggestions modal (reuse)
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = html;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
 }
 
-// Show deal-specific tooltip
-function showDealTooltip(foodName, x, y) {
-  if (!tooltipEl) { tooltipEl = $('chip-tooltip'); }
-  var html = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + '</div>';
-  html += buildDealTooltipHtml(foodName);
-  tooltipEl.innerHTML = html;
-  var tooltipWidth = 280;
-  var left = Math.min(x + 12, window.innerWidth - tooltipWidth - 20);
-  if (left < 10) left = 10;
-  tooltipEl.style.left = left + 'px';
-  tooltipEl.style.top = '-9999px';
-  tooltipEl.classList.add('visible');
-  var tooltipHeight = tooltipEl.offsetHeight;
-  var spaceBelow = window.innerHeight - y - 20;
-  if (spaceBelow < tooltipHeight && y > tooltipHeight) {
-    tooltipEl.style.top = (y - tooltipHeight - 5) + 'px';
-  } else {
-    tooltipEl.style.top = (y + 20) + 'px';
-  }
+// Show deals in modal instead of tooltip
+function showDealTooltip(foodName) {
+  openDealModal(foodName);
 }
 
 // ─── Grocery list ───
@@ -2315,27 +2296,62 @@ function buildDealBadges(foodName) {
 }
 
 // Helper: build deal tooltip HTML
-function buildDealTooltipHtml(foodName) {
-  var deals = DEALS[foodName];
-  if (!deals || deals.length === 0) return '';
-  var sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
-  var html = '<div class="ct-deals-title">\uD83C\uDFF7\uFE0F Spéciaux en vigueur</div>';
-  sorted.forEach(function(d) {
-    var storeInfo = STORE_META[d.store] || {};
-    var color = storeInfo.color || '#666';
-    var storeName = storeInfo.name || d.store || '?';
-    var letter = storeName.charAt(0).toUpperCase();
-    html += '<div class="ct-deal-item" style="border-left: 3px solid ' + color + '; padding-left: 8px; margin-left: 4px;">';
-    html += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
-    html += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
-    if (d.size) html += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
-    if (d.unit_price) html += '<div class="ct-deal-meta">Prix unitaire: ' + esc(d.unit_price) + '</div>';
-    html += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(storeName) + '</div>';
-    if (d.link) html += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
-    html += '</div>';
+// Deals are shown in modal on click, not in tooltip
+function buildDealTooltipHtml(foodName) { return ''; }
+
+// Open deal modal with full list
+function openDealModal(foodName) {
+  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length === 0) return;
+  var mHtml = '<h2 style="margin-bottom:12px;">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</h2>';
+  deals.forEach(function(d) {
+    var si = STORE_META[d.store] || {};
+    var color = si.color || '#666';
+    var sn = si.name || d.store || '?';
+    var letter = sn.charAt(0).toUpperCase();
+    mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:12px;margin-left:4px;margin-bottom:12px;">';
+    mHtml += '<div class="ct-deal-name" style="font-weight:600;font-size:0.95rem;">' + esc(d.name || foodName) + '</div>';
+    mHtml += '<div class="ct-deal-price" style="font-size:1.1rem;color:var(--accent);font-weight:700;margin:4px 0;">' + (d.price || '') + '$</div>';
+    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    if (d.unit_price) mHtml += '<div class="ct-deal-meta">Prix unitaire: ' + esc(d.unit_price) + '</div>';
+    mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
+    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    mHtml += '</div>';
   });
-  return html;
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = mHtml;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
 }
+
+// Deal modal: click 'voir plus' opens full list in suggestions modal
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-deal-modal-food]');
+  if (!el) return;
+  var foodName = el.dataset.dealModalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length === 0) return;
+  var mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';
+  deals.forEach(function(d) {
+    var si = STORE_META[d.store] || {};
+    var color = si.color || '#666';
+    var sn = si.name || d.store || '?';
+    var letter = sn.charAt(0).toUpperCase();
+    mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:8px;margin-left:4px;margin-bottom:8px;">';
+    mHtml += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
+    mHtml += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
+    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
+    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    mHtml += '</div>';
+  });
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = mHtml;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
+});
 
 async function loadSelectionsFromServer() {
   var token = getToken();
@@ -2388,6 +2404,7 @@ async function checkSuggestionsBadge() {
 async function showSuggestions() {
   var content = $('suggestions-content');
   content.innerHTML = '<p class="loading">Chargement…</p>';
+  $('suggestions-title').textContent = '💡 Suggestions nutritionnelles';
   $('suggestions-modal').classList.remove('hidden');
   var token = getToken();
   if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
@@ -2399,7 +2416,10 @@ async function showSuggestions() {
     var data = await res.json();
     var gaps = data.gaps || [];
     if (gaps.length === 0) {
-      content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
+      var allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
+      var seasHtml = await buildSeasonalHtml();
+      if (seasHtml) allGoodHtml += seasHtml;
+      content.innerHTML = allGoodHtml;
       return;
     }
     var html = '';
@@ -2423,6 +2443,9 @@ async function showSuggestions() {
       });
       html += '</div>';
     });
+    // Add seasonal at the end of suggestions
+    var seasHtml = await buildSeasonalHtml();
+    if (seasHtml) html += seasHtml;
     content.innerHTML = html;
     // Wire add buttons
     content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
@@ -2465,61 +2488,61 @@ function addSuggestedFood(name, catHint) {
   else showToast(name + ' ajouté', 'success');
 }
 
-// ─── Feature 2: Seasonal banner ───
-async function fetchSeasonalBanner() {
-  if (!currentUser) return;
-  if (sessionStorage.getItem('nutrifood_seasonal_dismissed')) return;
+// ─── Feature 2: Seasonal (now inside suggestions panel) ───
+var _seasonalCache = null;
+async function fetchSeasonalData() {
+  if (_seasonalCache) return _seasonalCache;
   try {
     var res = await fetchWithTimeout(API + '/seasonal', {}, 10000);
-    if (!res.ok) return;
+    if (!res.ok) return null;
     var data = await res.json();
     var foods = data.foods || data.seasonal || [];
-    if (!foods || foods.length === 0) return;
     var names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
-    if (names.length === 0) return;
-    var display = names.slice(0, 6);
-    var extraCount = names.length - 6;
-    var banner = $('seasonal-banner');
-    var html = '<span class="sb-text">🌱 <strong>De saison cette semaine:</strong> ';
-    display.forEach(function(n) {
-      html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '">' + esc(n) + '</span>';
-    });
-    if (extraCount > 0) html += ' <span class="sb-item sb-more" id="seasonal-more">+' + extraCount + '</span>';
-    html += '</span>';
-    html += '<button class="sb-close" id="seasonal-close">✕</button>';
-    if (extraCount > 0) {
-      html += '<div class="sb-extra" id="seasonal-extra">';
-      names.slice(6).forEach(function(n) {
-        html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '">' + esc(n) + '</span>';
-      });
-      html += '</div>';
-    }
-    banner.innerHTML = html;
-    banner.classList.remove('hidden');
-    // Wire close
-    $('seasonal-close').addEventListener('click', function() {
-      banner.classList.add('hidden');
-      sessionStorage.setItem('nutrifood_seasonal_dismissed', '1');
-    });
-    // Wire expand/collapse extra seasonal items
-    var moreBtn = $('seasonal-more');
-    if (moreBtn) {
-      moreBtn.addEventListener('click', function() {
-        var extraDiv = $('seasonal-extra');
-        if (!extraDiv) return;
-        var isShown = extraDiv.classList.toggle('show');
-        moreBtn.textContent = isShown ? '−' : '+' + extraCount;
-      });
-    }
-    // Wire food clicks
-    banner.querySelectorAll('[data-seasonal-food]').forEach(function(el) {
-      el.addEventListener('click', function() {
-        var name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-        addSuggestedFood(name);
-      });
-    });
-  } catch(e) { console.error('[NutriFood] Seasonal error:', e); }
+    _seasonalCache = names;
+    return names;
+  } catch(e) { console.error('[NutriFood] Seasonal error:', e); return null; }
 }
+
+async function buildSeasonalHtml() {
+  var names = await fetchSeasonalData();
+  if (!names || names.length === 0) return '';
+  var display = names.slice(0, 8);
+  var extraCount = names.length - 8;
+  var html = '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:#4ade80;">\uD83C\uDF31 De saison ce mois-ci</h3>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+  display.forEach(function(n) {
+    html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">' + esc(n) + '</span>';
+  });
+  if (extraCount > 0) {
+    html += '<span id="seasonal-more-btn" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.06);border:1px dashed rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">+' + extraCount + '</span>';
+    html += '<div id="seasonal-extra-list" style="display:none;margin-top:4px;flex-wrap:wrap;gap:4px;">';
+    names.slice(8).forEach(function(n) {
+      html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">' + esc(n) + '</span>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// Delegated clicks for seasonal items and expand/collapse
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-seasonal-food]');
+  if (el) {
+    var name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    addSuggestedFood(name);
+    return;
+  }
+  if (e.target.id === 'seasonal-more-btn') {
+    var extra = $('seasonal-extra-list');
+    if (extra) {
+      var shown = extra.style.display !== 'none';
+      extra.style.display = shown ? 'none' : 'flex';
+      var count = e.target.textContent.match(/\d+/);
+      e.target.textContent = shown ? '+' + (count ? count[0] : '') : '\u2212';
+    }
+  }
+});
 
 // ─── Feature 3: Goals ───
 var userGoals = null;
@@ -3038,8 +3061,7 @@ async function init() {
       updateSaveBar();
       // Load deals
       loadDeals().then(function() { render(); });
-      // Feature 2: seasonal banner
-      fetchSeasonalBanner();
+      // Seasonal now in suggestions panel
       // Feature 3: load goals
       await loadUserGoals();
       // Feature 1: check suggestions badge
@@ -3333,28 +3355,59 @@ function renderChips(catId, selected) {
   }).join('');
 }
 
-function esc(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+function esc(s) { return String(s == null ? '' : s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 
-// ─── Event delegation for dynamic content ───
+// ─── Unified event delegation ───
 document.addEventListener('click', function(e) {
-  // Deal show-all: click on +N to see all deals
-  var dealShowAll = e.target.closest('.deal-show-all');
-  if (dealShowAll) {
-    var dealFoodName = dealShowAll.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var rect = dealShowAll.getBoundingClientRect();
-    showDealTooltip(dealFoodName, rect.left, rect.bottom);
+  // 1. Action buttons (qty +, qty -, remove, admin) — highest priority
+  var btn = e.target.closest('[data-action]');
+  if (btn) {
+    var catId = btn.dataset.cat;
+    var name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var action = btn.dataset.action;
+    if (action === 'inc') changeQty(catId, name, 1);
+    else if (action === 'dec') changeQty(catId, name, -1);
+    else if (action === 'remove') removeItem(catId, name);
+    else if (action === 'add-food') adminAddFood(catId);
+    else if (action === 'remove-food') adminRemoveFood(catId, name);
+    e.stopPropagation();
+    e.preventDefault();
     return;
   }
-  var btn = e.target.closest('[data-action]');
-  if (!btn) return;
-  var catId = btn.dataset.cat;
-  var name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-  var action = btn.dataset.action;
-  if (action === 'inc') changeQty(catId, name, 1);
-  else if (action === 'dec') changeQty(catId, name, -1);
-  else if (action === 'remove') removeItem(catId, name);
-  else if (action === 'add-food') adminAddFood(catId);
-  else if (action === 'remove-food') adminRemoveFood(catId, name);
+  // 2. Deals toggle in modal
+  var toggle = e.target.closest('#deals-toggle');
+  if (toggle) {
+    var content = document.getElementById('deals-content');
+    var arrow = document.getElementById('deals-arrow');
+    if (content) {
+      var shown = content.style.display !== 'none';
+      content.style.display = shown ? 'none' : 'block';
+      if (arrow) arrow.textContent = shown ? '\u2193' : '\u2191';
+    }
+    return;
+  }
+  // 3. Deal badges inside chips -> open food modal
+  var dealBadges = e.target.closest('[data-deal-food]');
+  if (dealBadges) {
+    e.preventDefault();
+    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    for (var i = 0; i < DATA.categories.length; i++) {
+      var cat = DATA.categories[i];
+      if (cat.foods.some(function(f) { return f.name === dealName; })) {
+        openFoodModal(cat.id, dealName);
+        return;
+      }
+    }
+    return;
+  }
+  // 4. Chip click -> open food modal
+  var chip = e.target.closest('[data-detail-cat]');
+  if (chip) {
+    e.preventDefault();
+    var chipName = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    openFoodModal(chip.dataset.detailCat, chipName);
+    return;
+  }
 });
 
 document.addEventListener('change', function(e) {
@@ -3374,60 +3427,10 @@ document.addEventListener('change', function(e) {
   }
 });
 
-// Mouse hover/move for chip tooltips
+// Mouse hover: highlight chips
 document.addEventListener('mouseover', function(e) {
   var chip = e.target.closest('[data-detail-cat]');
-  if (chip && !e.target.closest('[data-action]')) {
-    var name = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var rect = chip.getBoundingClientRect();
-    showChipTooltip(chip.dataset.detailCat, name, rect.left, rect.bottom);
-  }
-  // Deal badge hover - show tooltip with deal details
-  var dealBadges = e.target.closest('[data-deal-food]');
-  if (dealBadges && !chip) {
-    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var rect2 = dealBadges.getBoundingClientRect();
-    showDealTooltip(dealName, rect2.left, rect2.bottom);
-  }
-});
-document.addEventListener('mouseout', function(e) {
-  var chip = e.target.closest('[data-detail-cat]');
-  var dealBadges = e.target.closest('[data-deal-food]');
-  if (chip || dealBadges) hideChipTooltip();
-});
-
-// Touch support for mobile (tap to show/hide tooltip)
-document.addEventListener('click', function(e) {
-  var chip = e.target.closest('[data-detail-cat]');
-  var dealBadges = e.target.closest('[data-deal-food]');
-  if (chip && !e.target.closest('[data-action]')) {
-    e.preventDefault();
-    if (tooltipEl && tooltipEl.classList.contains('visible') && tooltipEl.dataset.shownFor === chip.dataset.detailName) {
-      hideChipTooltip();
-      return;
-    }
-    var name = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var rect = chip.getBoundingClientRect();
-    showChipTooltip(chip.dataset.detailCat, name, rect.left, rect.bottom);
-    tooltipEl.dataset.shownFor = chip.dataset.detailName;
-    return;
-  }
-  if (dealBadges && !chip) {
-    e.preventDefault();
-    if (tooltipEl && tooltipEl.classList.contains('visible') && tooltipEl.dataset.shownFor === dealBadges.dataset.dealFood) {
-      hideChipTooltip();
-      return;
-    }
-    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var rect2 = dealBadges.getBoundingClientRect();
-    showDealTooltip(dealName, rect2.left, rect2.bottom);
-    tooltipEl.dataset.shownFor = dealBadges.dataset.dealFood;
-    return;
-  }
-  // Tap outside closes tooltip
-  if (tooltipEl && !e.target.closest('#chip-tooltip') && !e.target.closest('[data-detail-cat]') && !e.target.closest('[data-deal-food]')) {
-    hideChipTooltip();
-  }
+  if (chip) chip.style.cursor = 'pointer';
 });
 
 // ─── Actions ───

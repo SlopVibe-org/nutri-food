@@ -1149,7 +1149,7 @@ def fetch_deals_for_food(food_name, query=None):
             'endpoint': 'search',
             'q': search_query,
             'discounted': 'true',
-            'limit': '5',
+            'limit': '10',
             'sort': 'price_asc',
         })
         url = f'https://epiceries.ca/api?{params}'
@@ -1160,8 +1160,35 @@ def fetch_deals_for_food(food_name, query=None):
         if not data.get('ok') or not data.get('data'):
             return []
         results = data['data'].get('results', [])
+        # Build keywords from food name
+        food_keywords = [w.strip().lower().rstrip('s') for w in food_name.replace(',', ' ').split() if len(w.strip()) >= 3]
+        generic = {'les', 'des', 'de', 'et', 'la', 'le', 'un', 'une', 'aux', 'crue', 'cuit', 'cru'}
+        food_keywords = [w for w in food_keywords if w not in generic]
+        # Words that indicate the food is just an ingredient/flavour, not the main product
+        transform_words = {
+            'saveur', 'arome', 'arôme', 'style', 'facon', 'façon', 'recette',
+            'instantane', 'instantané', 'poudre', 'bouillon', 'chips', 'croustilles',
+            'biscuits', 'barre', 'soupe', 'nouilles', 'pates', 'pâtes', 'cereales',
+            'céréales', 'condiment', 'melange', 'mélange', 'sauce', 'marinade',
+            'boisson', 'the', 'thé', 'cafe', 'café', 'jus', 'yaourt', 'yogourt',
+            'fromage fondu', 'tartine', 'galette', 'crepe', 'crêpe', 'desse', 'dessert',
+            'glace', 'sorbet', 'chocolat', 'bonbon', 'confiserie', 'sirop',
+            'plat', 'repas', 'microwave', 'micro-ondes', 'congele', 'surgelé',
+        }
+        # Pet food exclusion
+        pet_indicators = {'chat', 'chien', 'animal', 'pet', 'special kitty', 'friskies', 'whiskas', 'purina cat'}
         deals = []
         for r in results:
+            r_name = (r.get('name') or '').lower()
+            # Must contain at least one food keyword
+            if not any(kw in r_name for kw in food_keywords):
+                continue
+            # Exclude pet food
+            if any(ind in r_name for ind in pet_indicators):
+                continue
+            # Exclude transformed/derived products
+            if any(tw in r_name for tw in transform_words):
+                continue
             deals.append({
                 'name': r.get('name', ''),
                 'store': r.get('store', ''),

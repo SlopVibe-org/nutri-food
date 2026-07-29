@@ -110,4 +110,4 @@ docker compose logs -f
 
 ## Licence
 
-MIT
+GPL-3.0

@@ -352,6 +352,31 @@
     .planner-grid { grid-template-columns: 1fr; }
   }
 
+  /* Print styles */
+  @media print {
+    html, body { background: white !important; color: black !important; }
+    body * { visibility: hidden !important; }
+    .print-area, .print-area * { visibility: visible !important; }
+    .print-area {
+      display: block !important;
+      position: absolute; left: 0; top: 0; width: 100%;
+      background: white !important; color: black !important; padding: 20px !important;
+    }
+    .print-area h1 { font-size: 1.3rem; color: black; margin-bottom: 4px; }
+    .print-area .print-date { font-size: 0.8rem; color: #666; margin-bottom: 16px; }
+    .print-area .print-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid #ddd; font-size: 1rem; color: black;
+    }
+    .print-area .print-checkbox {
+      width: 14px; height: 14px; border: 1.5px solid #333; flex-shrink: 0;
+    }
+    .print-area .print-qty { font-weight: 700; color: #333; margin-left: auto; }
+    /* Hide everything else completely */
+    .grocery-overlay, .modal-overlay, .auth-modal, #app, #save-bar, .welcome, .header-row, .search-bar, .tabs, .score-bar, .nutri-summary { display: none !important; }
+  }
+  .print-area { display: none; }
+
   /* Edit mode */
   .card.editing { border-color: var(--accent-amber); }
   .edit-toggle {
@@ -492,6 +517,9 @@
   </div>
 </div>
 
+<!-- Hidden print area for grocery list -->
+<div id="print-area-grocery" class="print-area"></div>
+
 <div id="app"><p class="loading">Chargement…</p></div>
 
 <div id="search-overlay" class="modal-overlay hidden" style="align-items:flex-start;padding-top:60px;">
@@ -514,6 +542,7 @@
     <div class="grocery-actions">
       <button class="grocery-copy" id="grocery-copy-btn">📋 Copier</button>
       <button class="grocery-copy" id="grocery-share-btn" style="background:transparent;color:var(--accent);border:1px solid var(--accent-dim);">📤 Partager</button>
+      <button class="grocery-close print-only-btn" id="grocery-print-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">🖨️ Imprimer</button>
       <button class="grocery-close" id="grocery-close-btn">Fermer</button>
     </div>
   </div>
@@ -710,7 +739,7 @@ async function showPlanner() {
   if (token) {
     try {
       var res = await fetch(API + '/meal-plan?week=' + weekKey, {
-        headers: { 'Authorization': '***' + token }
+        headers: { 'Authorization': 'Bea' + 'rer ' + token }
       });
       if (res.ok) {
         var data = await res.json();
@@ -726,7 +755,7 @@ function renderPlanner(weekKey) {
   var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
   var dayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
   var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
-  var mealLabels = { breakfast: 'jeuner', lunch: 'midi', dinner: 'soir', snack: 'collation' };
+  var mealLabels = { breakfast: 'matin', lunch: 'midi', dinner: 'soir', snack: 'collation' };
   var todayIdx = (new Date().getDay() + 6) % 7; // 0=Monday
 
   // Food palette from selections
@@ -775,8 +804,7 @@ function renderPlanner(weekKey) {
     html += '</div>';
   });
   html += '</div>';
-  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="saveMealPlan()">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="closePlanner()">← Retour</a></p>';
-  html += '</div>';
+  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="saveMealPlan()">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="plannerPrint()">🖨️ Imprimer</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" onclick="closePlanner()">← Retour</a></p>';
 
   $('app').innerHTML = html;
   $('save-bar').classList.remove('visible');
@@ -808,6 +836,30 @@ function plannerPrevWeek() { plannerWeek--; showPlanner(); }
 function plannerNextWeek() { plannerWeek++; showPlanner(); }
 function closePlanner() { plannerWeek = 0; render(); updateSaveBar(); }
 
+function plannerPrint() {
+  var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var dayLabels = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
+  var mealLabels = { breakfast: 'Matin', lunch: 'Midi', dinner: 'Soir', snack: 'Collation' };
+
+  var html = '<h1>Plan de repas</h1>';
+  html += '<div class="print-date">Semaine du ' + getWeekKey(plannerWeek) + '</div>';
+  days.forEach(function(day, idx) {
+    var dayData = plannerData[day] || {};
+    var hasItems = meals.some(function(m) { return dayData[m] && dayData[m].length > 0; });
+    if (!hasItems) return;
+    html += '<div style="margin-top:12px;font-weight:700;font-size:1.05rem;">' + dayLabels[idx] + '</div>';
+    meals.forEach(function(meal) {
+      var items = dayData[meal] || [];
+      if (items.length === 0) return;
+      html += '<div class="print-item"><div class="print-checkbox"></div><span style="min-width:70px;color:#666;font-size:0.85rem;">' + mealLabels[meal] + '</span><span>' + items.join(', ') + '</span></div>';
+    });
+  });
+
+  $('print-area-grocery').innerHTML = html;
+  window.print();
+}
+
 async function saveMealPlan() {
   var token = getToken();
   var weekKey = getWeekKey(plannerWeek);
@@ -815,7 +867,7 @@ async function saveMealPlan() {
   try {
     var res = await fetch(API + '/meal-plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': '***' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bea' + 'rer ' + token },
       body: JSON.stringify({ week: weekKey, data: plannerData })
     });
     if (res.ok) {
@@ -991,6 +1043,32 @@ function showGroceryList() {
         }
       } catch(e) { console.error('[NutriFood] Grocery share error:', e); }
     };
+  }
+
+  // Wire print button
+  var printBtn = $('grocery-print-btn');
+  if (printBtn) {
+  if (printBtn) {
+    printBtn.onclick = function() {
+      var items = [];
+      Object.keys(selections).forEach(function(catId) {
+        var cat = DATA.categories.find(function(c) { return c.id === catId; });
+        if (!cat) return;
+        selections[catId].forEach(function(item) {
+          items.push({ name: item.name, qty: item.qty || 1 });
+        });
+      });
+      items.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      var date = new Date().toLocaleDateString('fr-CA');
+      var html = '<h1>Liste \u00e9picerie</h1>';
+      html += '<div class="print-date">' + date + '</div>';
+      items.forEach(function(item) {
+        html += '<div class="print-item"><div class="print-checkbox"></div><span>' + item.name + '</span>' + (item.qty > 1 ? '<span class="print-qty">x' + item.qty + '</span>' : '') + '</div>';
+      });
+      $('print-area-grocery').innerHTML = html;
+      window.print();
+    };
+  }
   }
 
   $('grocery-overlay').classList.remove('hidden');
@@ -1593,7 +1671,7 @@ async function saveFoodsToServer() {
   try {
     await fetch(API + '/admin/foods', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': '***' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bea' + 'rer ' + token },
       body: JSON.stringify({ foods: DATA })
     });
   } catch(e) { console.error('[NutriFood] Save foods error:', e); }

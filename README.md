@@ -8,8 +8,10 @@ NutriFood permet de:
 - **Visualiser** les aliments classés par densité nutritionnelle (du plus nutritif au moins nutritif)
 - **Sélectionner** les aliments consommés dans une semaine avec compteurs de portions
 - **Suivre** les apports nutritionnels (protéines, fibres, fer, vitamine C, calcium, Ω-3)
-- **Voir la saisonnalité** des fruits et légumes (Québec)
+- **Voir la saisonnalité** des fruits et légumes (Québec) — 🌱 de saison, ✈️ importé
+- **Planifier** les repas de la semaine (matin, midi, soir, collation)
 - **Générer et partager** des listes d'épicerie
+- **Imprimer** listes d'épicerie et plans de repas
 - **Rechercher** rapidement un aliment
 - **Administrer** les listes d'aliments (admins)
 
@@ -78,7 +80,8 @@ nutri-food/
 
 **Champs:**
 - `nutrition` — valeurs par portion (protéine, fibres, fer, vitamine C, calcium, Ω-3)
-- `season` — mois (1-12) de saisonnalité au Québec (fruits/légumes seulement)
+- `season` — mois (1-12) de saisonnalité locale au Québec (fruits/légumes seulement)
+- `import_season` — mois (1-12) de disponibilité en importation (fruits/légumes seulement)
 
 ## API Endpoints
 
@@ -94,6 +97,9 @@ nutri-food/
 | `/api/selections` | GET/POST | Sélections de l'utilisateur |
 | `/api/share` | POST | Crée un lien de partage (liste d'épicerie) |
 | `/api/shared/<token>` | GET | Récupère la liste d'épicerie partagée |
+| `/api/meal-plan` | GET/POST | Planificateur de repas par semaine (ISO) |
+| `/api/history` | GET | Liste des snapshots hebdomadaires |
+| `/api/history/<week>` | GET | Détail d'une semaine spécifique |
 | `/api/admin/foods` | POST | Modifier foods.json (admin only) |
 
 ## Sections nutritionnelles
@@ -173,9 +179,10 @@ Le backend utilise SQLite (volume `./data/`), JWT pour l'auth, et Fastmail SMTP 
 - [x] Partage de liste d'épicerie (lien cochable)
 - [x] Mode édition admin (ajouter/retirer des aliments)
 - [x] Calcul automatique des apports nutritionnels
-- [x] Indicateurs de saisonnalité (Québec)
-- [ ] Planificateur de repas (drag vers jours de la semaine)
-- [ ] Historique (snapshots semaine par semaine)
+- [x] Indicateurs de saisonnalité (🌱 local, ✈️ importé)
+- [x] Planificateur de repas (7 jours, 4 repas/jour)
+- [x] Historique (snapshots automatiques par semaine ISO)
+- [x] Impression (liste d'épicerie et planificateur, noir sur blanc)
 
 ## Licence
 

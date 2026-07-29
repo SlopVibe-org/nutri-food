@@ -1678,21 +1678,28 @@ async function cnfSaveToDatabase(food, nutrition) {
   }
   var densityScore = Math.round((nutrition.protein * 2 + nutrition.fiber * 3 + nutrition.iron * 2 + nutrition.vit_c + nutrition.calcium * 0.1 + nutrition.omega3 * 10) / 3);
   densityScore = Math.max(10, Math.min(100, densityScore));
-  var newFood = { name: name, density: densityScore, nutrients: highlights || 'À compléter', nutrition: nutrition };
-  if (aliases.length > 0) newFood.aliases = aliases;
-  cat.foods = cat.foods || [];
-  cat.foods.push(newFood);
   var token = getToken();
   if (!token) { showToast('Session expirée', 'error'); return; }
   $('cnf-save-btn').textContent = 'Sauvegarde…';
   $('cnf-save-btn').disabled = true;
   try {
-    var res = await fetchWithTimeout(API + '/admin/foods', {
+    var res = await fetchWithTimeout(API + '/admin/food/show', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ foods: DATA })
+      body: JSON.stringify({
+        source_type: 1,
+        source_id: food.food_id,
+        nf_category: catId,
+        name: name,
+        density: densityScore,
+        highlights: highlights || 'À compléter',
+        aliases: aliases
+      })
     }, 10000);
     var data = await res.json();
     if (!res.ok) { showToast(data.error || 'Erreur', 'error'); $('cnf-save-btn').textContent = '✓ Ajouter'; $('cnf-save-btn').disabled = false; return; }
+    // Reload DATA from server to get the updated list
+    var foodsRes = await fetchWithTimeout(API + '/foods', {}, 10000);
+    if (foodsRes.ok) { DATA = await foodsRes.json(); }
     $('add-product-modal').classList.add('hidden');
     showToast(name + ' ajouté!', 'success');
     render();
@@ -1857,9 +1864,24 @@ function showChipTooltip(catId, name, x, y) {
   html += buildDealTooltipHtml(name);
   if (alsoIn.length > 0) html += '<div class="ct-also">Aussi dans: ' + alsoIn.join(', ') + '</div>';
   tooltipEl.innerHTML = html;
-  tooltipEl.style.left = Math.min(x + 12, window.innerWidth - 300) + 'px';
-  tooltipEl.style.top = (y - 10) + 'px';
+  // Position tooltip, flip above if near bottom of viewport
+  var tooltipWidth = 280;
+  var left = Math.min(x + 12, window.innerWidth - tooltipWidth - 20);
+  if (left < 10) left = 10;
+  tooltipEl.style.left = left + 'px';
+  // Render temporarily to measure height
+  tooltipEl.style.top = '-9999px';
   tooltipEl.classList.add('visible');
+  var tooltipHeight = tooltipEl.offsetHeight;
+  var spaceBelow = window.innerHeight - y - 20;
+  var spaceAbove = y - 10;
+  if (spaceBelow < tooltipHeight && spaceAbove > tooltipHeight) {
+    // Show above the cursor
+    tooltipEl.style.top = (y - tooltipHeight - 5) + 'px';
+  } else {
+    // Show below the cursor
+    tooltipEl.style.top = (y + 20) + 'px';
+  }
 }
 function hideChipTooltip() {
   if (tooltipEl) tooltipEl.classList.remove('visible');
@@ -1871,9 +1893,19 @@ function showDealTooltip(foodName, x, y) {
   var html = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + '</div>';
   html += buildDealTooltipHtml(foodName);
   tooltipEl.innerHTML = html;
-  tooltipEl.style.left = Math.min(x + 12, window.innerWidth - 300) + 'px';
-  tooltipEl.style.top = (y - 10) + 'px';
+  var tooltipWidth = 280;
+  var left = Math.min(x + 12, window.innerWidth - tooltipWidth - 20);
+  if (left < 10) left = 10;
+  tooltipEl.style.left = left + 'px';
+  tooltipEl.style.top = '-9999px';
   tooltipEl.classList.add('visible');
+  var tooltipHeight = tooltipEl.offsetHeight;
+  var spaceBelow = window.innerHeight - y - 20;
+  if (spaceBelow < tooltipHeight && y > tooltipHeight) {
+    tooltipEl.style.top = (y - tooltipHeight - 5) + 'px';
+  } else {
+    tooltipEl.style.top = (y + 20) + 'px';
+  }
 }
 
 // ─── Grocery list ───
@@ -3364,6 +3396,40 @@ document.addEventListener('mouseout', function(e) {
   if (chip || dealBadges) hideChipTooltip();
 });
 
+// Touch support for mobile (tap to show/hide tooltip)
+document.addEventListener('click', function(e) {
+  var chip = e.target.closest('[data-detail-cat]');
+  var dealBadges = e.target.closest('[data-deal-food]');
+  if (chip && !e.target.closest('[data-action]')) {
+    e.preventDefault();
+    if (tooltipEl && tooltipEl.classList.contains('visible') && tooltipEl.dataset.shownFor === chip.dataset.detailName) {
+      hideChipTooltip();
+      return;
+    }
+    var name = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var rect = chip.getBoundingClientRect();
+    showChipTooltip(chip.dataset.detailCat, name, rect.left, rect.bottom);
+    tooltipEl.dataset.shownFor = chip.dataset.detailName;
+    return;
+  }
+  if (dealBadges && !chip) {
+    e.preventDefault();
+    if (tooltipEl && tooltipEl.classList.contains('visible') && tooltipEl.dataset.shownFor === dealBadges.dataset.dealFood) {
+      hideChipTooltip();
+      return;
+    }
+    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var rect2 = dealBadges.getBoundingClientRect();
+    showDealTooltip(dealName, rect2.left, rect2.bottom);
+    tooltipEl.dataset.shownFor = dealBadges.dataset.dealFood;
+    return;
+  }
+  // Tap outside closes tooltip
+  if (tooltipEl && !e.target.closest('#chip-tooltip') && !e.target.closest('[data-detail-cat]') && !e.target.closest('[data-deal-food]')) {
+    hideChipTooltip();
+  }
+});
+
 // ─── Actions ───
 function addItem(catId, item) {
   if (!selections[catId]) selections[catId] = [];
@@ -3533,15 +3599,7 @@ function adminRemoveFood(catId, name) {
 }
 
 async function saveFoodsToServer() {
-  var token = getToken();
-  if (!token) return;
-  try {
-    await fetchWithTimeout(API + '/admin/foods', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ foods: DATA })
-    }, 10000);
-  } catch(e) { console.error('[NutriFood] Save foods error:', e); showToast('Erreur sauvegarde aliments', 'error'); }
+  // Deprecated — foods are now managed via /api/admin/food/show and /api/admin/food/hide
 }
 
 function updateSaveBar() {

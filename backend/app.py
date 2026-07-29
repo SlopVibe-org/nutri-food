@@ -353,62 +353,161 @@ def login():
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
 
-# ─── Admin: edit foods ───
+# ─── NutriFood foods (SQLite-backed) ───
 
-FOODS_PATH = os.environ.get('FOODS_PATH', '/data/foods.json')
+NF_DB_PATH = os.environ.get('NF_DB_PATH', '/data/nutrifood.db')
 
-_FOODS_CACHE = None
-_FOODS_MTIME = 0
+NUTRIENT_MAP = {
+    203: 'protein', 291: 'fiber', 303: 'iron', 401: 'vit_c', 301: 'calcium',
+}
+
+def get_nf_db():
+    db = sqlite3.connect(NF_DB_PATH)
+    db.row_factory = sqlite3.Row
+    return db
 
 def load_foods():
-    global _FOODS_CACHE, _FOODS_MTIME
-    try:
-        mtime = os.path.getmtime(FOODS_PATH)
-        if _FOODS_CACHE is None or mtime != _FOODS_MTIME:
-            with open(FOODS_PATH, 'r') as f:
-                _FOODS_CACHE = json.load(f)
-            _FOODS_MTIME = mtime
-    except Exception:
-        return {}
-    return _FOODS_CACHE if _FOODS_CACHE is not None else {}
+    """Return foods dict from SQLite, same format as old foods.json."""
+    db = get_nf_db()
+    sections = db.execute('SELECT id, name, icon FROM nf_sections ORDER BY rowid').fetchall()
+    categories = db.execute('''
+        SELECT id, name, icon, section_id as section, type, weekly_min, weekly_max, daily,
+               absorption_tip, warning_tip
+        FROM nf_categories ORDER BY rowid
+    ''').fetchall()
+    
+    result = {
+        'sections': [{'id': s['id'], 'name': s['name'], 'icon': s['icon']} for s in sections],
+        'categories': []
+    }
+    for cat in categories:
+        foods = db.execute('''
+            SELECT f.id, f.name_fr, f.name_en, f.density, f.highlights,
+                   f.absorption_tip, f.warning_tip, f.season, f.import_season
+            FROM nf_foods f WHERE f.nf_category = ? AND f.visible = 1 ORDER BY f.id
+        ''', (cat['id'],)).fetchall()
+        cat_data = {
+            'id': cat['id'], 'name': cat['name'], 'icon': cat['icon'],
+            'section': cat['section'], 'type': cat['type'] or 'select',
+            'weekly_min': cat['weekly_min'] or 0, 'weekly_max': cat['weekly_max'] or 0,
+        }
+        if cat['daily']:
+            cat_data['daily'] = True
+        cat_tips = {}
+        if cat['absorption_tip']:
+            cat_tips['absorption'] = cat['absorption_tip']
+        if cat['warning_tip']:
+            cat_tips['warnings'] = cat['warning_tip']
+        if cat_tips:
+            cat_data['tips'] = cat_tips
+        food_list = []
+        for f in foods:
+            fd = {'name': f['name_fr'] or f['name_en'], 'density': f['density'] or 50,
+                  'nutrients': f['highlights'] or ''}
+            aliases = db.execute('SELECT alias FROM nf_foods_aliases WHERE nf_food_id = ?', (f['id'],)).fetchall()
+            if aliases:
+                fd['aliases'] = [a['alias'] for a in aliases]
+            nutr_vals = db.execute('SELECT nutrient_code, amount FROM nf_foods_nutrients WHERE nf_food_id = ?', (f['id'],)).fetchall()
+            nutrition = {}
+            for nv in nutr_vals:
+                field = NUTRIENT_MAP.get(nv['nutrient_code'])
+                if field:
+                    nutrition[field] = round(nv['amount'], 2)
+            omega3_codes = [629, 621, 631, 851]
+            o3_vals = [nv for nv in nutr_vals if nv['nutrient_code'] in omega3_codes]
+            if o3_vals:
+                nutrition['omega3'] = round(sum(nv['amount'] for nv in o3_vals), 2)
+            if nutrition:
+                fd['nutrition'] = nutrition
+            if f['season']:
+                try: fd['season'] = json.loads(f['season'])
+                except Exception: pass
+            if f['import_season']:
+                try: fd['import_season'] = json.loads(f['import_season'])
+                except Exception: pass
+            ft = {}
+            if f['absorption_tip']: ft['absorption'] = f['absorption_tip']
+            if f['warning_tip']: ft['warnings'] = f['warning_tip']
+            if ft: fd['tips'] = ft
+            food_list.append(fd)
+        cat_data['foods'] = food_list
+        result['categories'].append(cat_data)
+    db.close()
+    return result
 
 @app.route('/api/foods', methods=['GET'])
 def get_foods():
     return jsonify(load_foods())
 
-@app.route('/api/admin/foods', methods=['POST'])
-def save_foods():
+@app.route('/api/admin/food/show', methods=['POST'])
+def admin_show_food():
     user = get_auth_user()
     if not user or not user['is_admin']:
         return jsonify({'error': 'Accès refusé'}), 403
     data = request.get_json() or {}
-    foods_data = data.get('foods')
-    if not foods_data or not isinstance(foods_data, dict):
-        return jsonify({'error': 'Données invalides'}), 400
-    try:
-        with open(FOODS_PATH, 'w') as f:
-            json.dump(foods_data, f, ensure_ascii=False, indent=2)
-        return jsonify({'status': 'ok'})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    source_id = data.get('source_id')
+    source_type = data.get('source_type', 1)
+    nf_category = data.get('nf_category')
+    name = data.get('name')
+    density = data.get('density', 50)
+    highlights = data.get('highlights', '')
+    aliases = data.get('aliases', [])
+    if not nf_category:
+        return jsonify({'error': 'Catégorie requise'}), 400
+    db = get_nf_db()
+    existing = db.execute('SELECT id FROM nf_foods WHERE source_type = ? AND source_id = ?', (source_type, source_id)).fetchone()
+    if existing:
+        db.close()
+        return jsonify({'error': 'Cet aliment est déjà affiché'}), 409
+    cnf_nutrients = []
+    if source_type == 1 and source_id:
+        cnf = db.execute('SELECT name_fr, name_en FROM food WHERE food_id = ?', (source_id,)).fetchone()
+        if cnf:
+            name = name or cnf['name_fr'] or cnf['name_en']
+            cnf_nutrients = db.execute('SELECT nutrient_code, amount FROM nutrient_amount WHERE food_id = ?', (source_id,)).fetchall()
+    cur = db.cursor()
+    cur.execute('''INSERT INTO nf_foods
+        (source_type, source_id, visible, nf_category, density, highlights, name_fr, name_en)
+        VALUES (?,?,?,?,?,?,?,?)''',
+        (source_type, source_id, 1, nf_category, density, highlights, name, name))
+    new_id = cur.lastrowid
+    for nv in cnf_nutrients:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_nutrients (nf_food_id, nutrient_code, amount) VALUES (?,?,?)',
+                    (new_id, nv['nutrient_code'], nv['amount']))
+    for a in aliases:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, a))
+    if name:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, name))
+    db.commit()
+    db.close()
+    return jsonify({'status': 'ok', 'id': new_id})
 
-# ─── CNF (Canadian Nutrient File) search ───
+@app.route('/api/admin/food/hide', methods=['POST'])
+def admin_hide_food():
+    user = get_auth_user()
+    if not user or not user['is_admin']:
+        return jsonify({'error': 'Accès refusé'}), 403
+    data = request.get_json() or {}
+    food_id = data.get('id')
+    if not food_id:
+        return jsonify({'error': 'ID requis'}), 400
+    db = get_nf_db()
+    db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (food_id,))
+    db.commit()
+    db.close()
+    return jsonify({'status': 'ok'})
 
-CNF_DB_PATH = os.environ.get('CNF_DB_PATH', '/data/cnf.db')
-
-def get_cnf_db():
-    db = sqlite3.connect(CNF_DB_PATH)
-    db.row_factory = sqlite3.Row
-    return db
+# ─── CNF search (original CNF tables) ───
 
 @app.route('/api/cnf/search', methods=['GET'])
 def cnf_search():
     q = (request.args.get('q') or '').strip()
     if len(q) < 2:
         return jsonify({'error': 'Minimum 2 caractères'}), 400
-    db = get_cnf_db()
+    db = get_nf_db()
     rows = db.execute(
-        '''SELECT f.food_id, f.name_fr, f.name_en, g.name_fr as group_fr
+        '''SELECT f.food_id, f.name_fr, f.name_en, g.name_fr as group_fr,
+               (SELECT 1 FROM nf_foods nf WHERE nf.source_type = 1 AND nf.source_id = f.food_id AND nf.visible = 1 LIMIT 1) as already_visible
            FROM food f
            LEFT JOIN food_group g ON f.group_code = g.code
            WHERE f.name_fr LIKE ? OR f.name_en LIKE ?
@@ -422,25 +521,20 @@ def cnf_search():
 
 @app.route('/api/cnf/product/<int:food_id>', methods=['GET'])
 def cnf_product(food_id):
-    db = get_cnf_db()
+    db = get_nf_db()
     food = db.execute('SELECT * FROM food WHERE food_id = ?', (food_id,)).fetchone()
     if not food:
+        db.close()
         return jsonify({'error': 'Aliment introuvable'}), 404
     nutrients = db.execute(
         '''SELECT n.name_fr, n.unit, ROUND(na.amount, 2) as amount, n.code
-           FROM nutrient_amount na
-           JOIN nutrient_name n ON na.nutrient_code = n.code
-           WHERE na.food_id = ? AND na.amount > 0
-           ORDER BY n.name_fr''',
+           FROM nutrient_amount na JOIN nutrient_name n ON na.nutrient_code = n.code
+           WHERE na.food_id = ? AND na.amount > 0 ORDER BY n.name_fr''',
         (food_id,)
     ).fetchall()
     group = db.execute('SELECT * FROM food_group WHERE code = ?', (food['group_code'],)).fetchone() if food['group_code'] else None
     db.close()
-    return jsonify({
-        'food': dict(food),
-        'group': dict(group) if group else None,
-        'nutrients': [dict(n) for n in nutrients]
-    })
+    return jsonify({'food': dict(food), 'group': dict(group) if group else None, 'nutrients': [dict(n) for n in nutrients]})
 
 # ─── Password reset ───
 

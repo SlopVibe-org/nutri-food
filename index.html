@@ -2787,29 +2787,7 @@ function renderDailyNutrition(totals) {
 function render() {
   var app = $('app');
 
-  // Score bar
-  var totalSelected = 0, totalMin = 0, totalMax = 0;
-  var catDots = [];
-  DATA.categories.forEach(function(cat) {
-    var sel = selections[cat.id] || [];
-    var count = sel.reduce(function(s, i) { return s + i.qty; }, 0);
-    totalSelected += count;
-    totalMin += cat.weekly_min;
-    totalMax += cat.weekly_max;
-    var dotCls = count < cat.weekly_min ? 'under' : (count > cat.weekly_max ? 'over' : 'in-range');
-    if (count > 0) catDots.push('<span class="score-cat-dot ' + dotCls + '" title="' + cat.name + '"></span>');
-  });
-  var pct = totalMin > 0 ? Math.round(Math.min(totalSelected / totalMin, 1) * 100) : 0;
-  var circumference = 2 * Math.PI * 22;
-  var dashOffset = circumference - (pct / 100) * circumference;
-
-  var html = '<div class="score-bar">';
-  if (editMode) html = '<div class="score-bar" style="border-color:var(--accent-amber);">';
-  html += '<div class="score-ring"><svg width="52" height="52"><circle class="bg-circle" cx="26" cy="26" r="22"></circle><circle class="fg-circle" cx="26" cy="26" r="22" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + dashOffset + '"></circle></svg><div class="score-text">' + pct + '%</div></div>';
-  html += '<div class="score-details"><div class="score-title">Objectifs nutritionnels</div><div class="score-sub">' + totalSelected + ' / ' + totalMin + ' portions cette semaine</div><div class="score-cat-dots">' + catDots.join('') + '</div></div>';
-  html += '</div>';
-
-  // Nutrition summary
+  // Compute nutrition totals FIRST (used for score ring)
   var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0 };
   Object.keys(selections).forEach(function(catId) {
     selections[catId].forEach(function(item) {
@@ -2828,6 +2806,35 @@ function render() {
       }
     });
   });
+  // Nutrient-based score ring
+  var _g = userGoals || defaultGoals || { protein: 350, fiber: 175, iron: 56, vitamin_c: 630, calcium: 7000, omega3: 14 };
+  var _nuts = [
+    { key: 'protein', goal: _g.protein || 350, label: 'Protéines' },
+    { key: 'fiber', goal: _g.fiber || 175, label: 'Fibres' },
+    { key: 'iron', goal: _g.iron || 56, label: 'Fer' },
+    { key: 'vit_c', goal: _g.vitamin_c || _g.vit_c || 630, label: 'Vit C' },
+    { key: 'calcium', goal: _g.calcium || 7000, label: 'Calcium' },
+    { key: 'omega3', goal: _g.omega3 || 14, label: 'Oméga-3' }
+  ];
+  var _sumPct = 0, _nutriParts = [], _nutriDots = [];
+  _nuts.forEach(function(n) {
+    var val = totals[n.key] || 0;
+  var np = n.goal > 0 ? Math.min(val / n.goal, 1) : 0;
+    _sumPct += np;
+  var p = Math.round(np * 100);
+    _nutriParts.push(n.label + ' ' + p + '%');
+    var dotCls = p < 50 ? 'under' : (p > 100 ? 'over' : 'in-range');
+    _nutriDots.push('<span class="score-cat-dot ' + dotCls + '" title="' + n.label + ': ' + p + '%"></span>');
+  });
+  var pct = _nuts.length > 0 ? Math.round((_sumPct / _nuts.length) * 100) : 0;
+  var circumference = 2 * Math.PI * 22;
+  var dashOffset = circumference - (pct / 100) * circumference;
+
+  var html = '<div class="score-bar">';
+  if (editMode) html = '<div class="score-bar" style="border-color:var(--accent-amber);">';
+  html += '<div class="score-ring"><svg width="52" height="52"><circle class="bg-circle" cx="26" cy="26" r="22"></circle><circle class="fg-circle" cx="26" cy="26" r="22" stroke-dasharray="' + circumference + '" stroke-dashoffset="' + dashOffset + '"></circle></svg><div class="score-text">' + pct + '%</div></div>';
+  html += '<div class="score-details"><div class="score-title">Objectifs nutritionnels</div><div class="score-sub">' + _nutriParts.join(' · ') + '</div><div class="score-cat-dots">' + _nutriDots.join('') + '</div></div>';
+  html += '</div>';
   html += '<div class="nutri-summary">';
   html += renderDailyNutrition(totals);
   html += '</div>';
@@ -3110,15 +3117,7 @@ function updateTabDots() {
 function updateScoreBar() {
   var bar = document.querySelector('.score-bar');
   if (!bar) return;
-  // Per-category portion dots (still useful for variety)
-  var catDots = [];
-  DATA.categories.forEach(function(cat) {
-    var sel = selections[cat.id] || [];
-    var count = sel.reduce(function(s, i) { return s + i.qty; }, 0);
-    var dotCls = count < cat.weekly_min ? 'under' : (count > cat.weekly_max ? 'over' : 'in-range');
-    if (count > 0) catDots.push('<span class="score-cat-dot ' + dotCls + '" title="' + cat.name + '"></span>');
-  });
-  // Compute actual nutrition totals from selections
+  // Compute nutrition totals
   var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0 };
   Object.keys(selections).forEach(function(catId) {
     selections[catId].forEach(function(item) {
@@ -3137,22 +3136,24 @@ function updateScoreBar() {
       }
     });
   });
-  // Compare against goals (userGoals or defaults)
   var goals = userGoals || defaultGoals || { protein: 350, fiber: 175, iron: 56, vitamin_c: 630, calcium: 7000, omega3: 14 };
   var nutrientKeys = [
-    { key: 'protein', goal: goals.protein || 350, label: 'Prot' },
-    { key: 'fiber', goal: goals.fiber || 175, label: 'Fib' },
+    { key: 'protein', goal: goals.protein || 350, label: 'Protéines' },
+    { key: 'fiber', goal: goals.fiber || 175, label: 'Fibres' },
     { key: 'iron', goal: goals.iron || 56, label: 'Fer' },
     { key: 'vit_c', goal: goals.vitamin_c || goals.vit_c || 630, label: 'Vit C' },
-    { key: 'calcium', goal: goals.calcium || 7000, label: 'Ca' },
-    { key: 'omega3', goal: goals.omega3 || 14, label: 'Ω-3' }
+    { key: 'calcium', goal: goals.calcium || 7000, label: 'Calcium' },
+    { key: 'omega3', goal: goals.omega3 || 14, label: 'Oméga-3' }
   ];
-  // Average % across all nutrients (capped at 100%)
-  var totalPct = 0;
+  var totalPct = 0, parts = [], dots = [];
   nutrientKeys.forEach(function(n) {
     var val = totals[n.key] || 0;
-    var pct = n.goal > 0 ? Math.min(val / n.goal, 1) : 0;
-    totalPct += pct;
+    var np = n.goal > 0 ? Math.min(val / n.goal, 1) : 0;
+    totalPct += np;
+    var p = Math.round(np * 100);
+    parts.push(n.label + ' ' + p + '%');
+    var dotCls = p < 50 ? 'under' : (p > 100 ? 'over' : 'in-range');
+    dots.push('<span class="score-cat-dot ' + dotCls + '" title="' + n.label + ': ' + p + '%"></span>');
   });
   var avgPct = nutrientKeys.length > 0 ? Math.round((totalPct / nutrientKeys.length) * 100) : 0;
   var circumference = 2 * Math.PI * 22;
@@ -3162,19 +3163,9 @@ function updateScoreBar() {
   var text = bar.querySelector('.score-text');
   if (text) text.textContent = avgPct + '%';
   var sub = bar.querySelector('.score-sub');
-  if (sub) {
-    // Show brief nutrition summary
-    var parts = [];
-    nutrientKeys.forEach(function(n) {
-      var val = totals[n.key] || 0;
-      var goal = n.goal;
-      var p = goal > 0 ? Math.round((val / goal) * 100) : 0;
-      parts.push(n.label + ' ' + p + '%');
-    });
-    sub.textContent = parts.join(' · ');
-  }
+  if (sub) sub.textContent = parts.join(' · ');
   var dotsContainer = bar.querySelector('.score-cat-dots');
-  if (dotsContainer) dotsContainer.innerHTML = catDots.join('');
+  if (dotsContainer) dotsContainer.innerHTML = dots.join('');
 }
 
 // ─── Persistence ───

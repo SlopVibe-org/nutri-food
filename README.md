@@ -111,3 +111,11 @@ docker compose logs -f
 ## Licence
 
 GPL-3.0
+
+## Source de données nutritionnelles
+
+Les données nutritionnelles proviennent du **Fichier canadien sur les éléments nutritifs (FCÉN)** de Santé Canada, mis à jour en 2026.
+
+🔗 [Fichier canadien sur les éléments nutritifs — Santé Canada](https://www.canada.ca/fr/sante-canada/services/aliments-nutrition/saine-alimentation/donnees-nutritionnelles/fichier-canadien-elements-nutritifs-propos-nous.html)
+
+Licence: [Licence du gouvernement ouvert — Canada](https://open.canada.ca/fr/licence-du-gouvernement-ouvert-canada)

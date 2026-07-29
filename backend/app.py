@@ -392,6 +392,56 @@ def save_foods():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+# ─── CNF (Canadian Nutrient File) search ───
+
+CNF_DB_PATH = os.environ.get('CNF_DB_PATH', '/data/cnf.db')
+
+def get_cnf_db():
+    db = sqlite3.connect(CNF_DB_PATH)
+    db.row_factory = sqlite3.Row
+    return db
+
+@app.route('/api/cnf/search', methods=['GET'])
+def cnf_search():
+    q = (request.args.get('q') or '').strip()
+    if len(q) < 2:
+        return jsonify({'error': 'Minimum 2 caractères'}), 400
+    db = get_cnf_db()
+    rows = db.execute(
+        '''SELECT f.food_id, f.name_fr, f.name_en, g.name_fr as group_fr
+           FROM food f
+           LEFT JOIN food_group g ON f.group_code = g.code
+           WHERE f.name_fr LIKE ? OR f.name_en LIKE ?
+              OR f.alt_name_fr LIKE ? OR f.alt_name_en LIKE ?
+              OR f.scientific_name LIKE ?
+           LIMIT 20''',
+        (f'%{q}%', f'%{q}%', f'%{q}%', f'%{q}%', f'%{q}%')
+    ).fetchall()
+    db.close()
+    return jsonify({'results': [dict(r) for r in rows]})
+
+@app.route('/api/cnf/product/<int:food_id>', methods=['GET'])
+def cnf_product(food_id):
+    db = get_cnf_db()
+    food = db.execute('SELECT * FROM food WHERE food_id = ?', (food_id,)).fetchone()
+    if not food:
+        return jsonify({'error': 'Aliment introuvable'}), 404
+    nutrients = db.execute(
+        '''SELECT n.name_fr, n.unit, ROUND(na.amount, 2) as amount, n.code
+           FROM nutrient_amount na
+           JOIN nutrient_name n ON na.nutrient_code = n.code
+           WHERE na.food_id = ? AND na.amount > 0
+           ORDER BY n.name_fr''',
+        (food_id,)
+    ).fetchall()
+    group = db.execute('SELECT * FROM food_group WHERE code = ?', (food['group_code'],)).fetchone() if food['group_code'] else None
+    db.close()
+    return jsonify({
+        'food': dict(food),
+        'group': dict(group) if group else None,
+        'nutrients': [dict(n) for n in nutrients]
+    })
+
 # ─── Password reset ───
 
 @app.route('/api/forgot-password', methods=['POST'])

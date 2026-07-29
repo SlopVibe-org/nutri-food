@@ -635,6 +635,60 @@
   }
   .admin-refresh-btn:hover { background: rgba(74,222,128,0.1); border-color: var(--accent); }
   .admin-refresh-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ─── Daily nutrition panel & reset badge ─── */
+  .nutri-summary {
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 16px;
+  }
+  .nutri-summary-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .nutri-summary-title {
+    font-size: 0.9rem; font-weight: 700; color: var(--text);
+  }
+  .nutri-summary-title strong { color: var(--accent); }
+  .reset-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; white-space: nowrap;
+    background: rgba(56,189,248,0.1); color: #38bdf8;
+    border: 1px solid rgba(56,189,248,0.3);
+  }
+  .nutri-stats-row {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .nutri-stat {
+    display: flex; flex-direction: column; align-items: center; min-width: 60px;
+  }
+  .nutri-stat .ns-value {
+    font-size: 1.1rem; font-weight: 700; color: var(--accent);
+  }
+  .nutri-stat .ns-label {
+    font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .nutri-stat .ns-daily {
+    font-size: 0.72rem; color: var(--text-dim); margin-top: 1px;
+  }
+  .nutri-stat .ns-pct {
+    font-size: 0.68rem; font-weight: 700; margin-top: 1px;
+  }
+  .nutri-stat .ns-pct.good { color: var(--accent); }
+  .nutri-stat .ns-pct.ok { color: var(--accent-amber); }
+  .nutri-stat .ns-pct.low { color: var(--accent-red); }
+  .nutri-progress {
+    width: 100%; min-width: 48px; height: 5px;
+    background: var(--border); border-radius: 3px; overflow: hidden;
+    margin-top: 3px;
+  }
+  .nutri-progress-fill {
+    height: 100%; border-radius: 3px; transition: width 0.4s ease;
+  }
+  .nutri-progress-fill.good { background: var(--accent); }
+  .nutri-progress-fill.ok { background: var(--accent-amber); }
+  .nutri-progress-fill.low { background: var(--accent-red); }
 </style>
 </head>
 <body>
@@ -1305,6 +1359,58 @@ async function loadSharedView(shareToken) {
 
 // ─── Food detail (hover tooltip) ───
 var tooltipEl = null;
+function getNutritionTips(food) {
+  var tips = [];
+  var n = food.nutrition || {};
+  var nutrientsStr = (food.nutrients || '').toLowerCase();
+
+  // ─── Absorption tips (from food.absorption or auto-generated) ───
+  if (food.absorption) {
+    tips.push({ icon: '💡', text: food.absorption });
+  } else {
+    // Auto-generate based on nutrition profile
+    if (n.iron > 2 && n.vit_c < 5) {
+      tips.push({ icon: '💡', text: 'Ajouter vitamine C (citron, poivrons) pour absorber le fer' });
+    }
+    if (nutrientsStr.indexOf('lycopène') !== -1 || food.name.toLowerCase().indexOf('tomate') !== -1) {
+      tips.push({ icon: '💡', text: 'Cuire légèrement pour amplifier le lycopène' });
+    }
+    if (nutrientsStr.indexOf('β-carotène') !== -1 || nutrientsStr.indexOf('beta-carotene') !== -1 || food.name.toLowerCase().indexOf('carotte') !== -1) {
+      tips.push({ icon: '💡', text: 'Cuire avec un corps gras pour absorber le β-carotène' });
+    }
+    if ((nutrientsStr.indexOf('vit c') !== -1 || n.vit_c > 20) && food.name.toLowerCase().indexOf('poivron') !== -1) {
+      tips.push({ icon: '💡', text: 'Manger cru pour préserver la vitamine C' });
+    }
+  }
+
+  // ─── Combination suggestions ───
+  if (n.iron > 1) {
+    tips.push({ icon: '🔗', text: 'Fer + Vitamine C (agrumes, poivrons) = meilleure absorption' });
+  }
+  if (nutrientsStr.indexOf('vit a') !== -1 || nutrientsStr.indexOf('vit d') !== -1 || nutrientsStr.indexOf('vit e') !== -1 || nutrientsStr.indexOf('vit k') !== -1) {
+    tips.push({ icon: '🔗', text: 'Vit. liposolubles + bons gras (huile d\'olive, avocat) = +absorption' });
+  }
+  if (n.omega3 > 0.5 || nutrientsStr.indexOf('oméga') !== -1 || nutrientsStr.indexOf('omega') !== -1) {
+    tips.push({ icon: '🔗', text: 'Oméga-3 + antioxydants (thé vert, baies) = effet synergique' });
+  }
+  if (n.calcium > 50) {
+    tips.push({ icon: '🔗', text: 'Calcium + Vitamine D (soleil, poisson gras) = +absorption' });
+  }
+
+  // ─── Warnings ───
+  if (n.iron > 1) {
+    tips.push({ icon: '⚠️', text: 'Thé/café éloignés des repas = inhibe l\'absorption du fer' });
+  }
+  if (n.calcium > 50 && n.fiber > 5) {
+    tips.push({ icon: '⚠️', text: 'Excès de fibres avec calcium = absorption réduite' });
+  }
+  if (n.vit_c > 20) {
+    tips.push({ icon: '⚠️', text: 'Cuisson à très haute température détruit la vitamine C' });
+  }
+
+  return tips;
+}
+
 function showChipTooltip(catId, name, x, y) {
   var cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
@@ -1336,6 +1442,15 @@ function showChipTooltip(catId, name, x, y) {
     html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:6px;">Prot ' + (food.nutrition.protein||0) + 'g · Fib ' + (food.nutrition.fiber||0) + 'g · Fer ' + (food.nutrition.iron||0) + 'mg · Vit C ' + (food.nutrition.vit_c||0) + 'mg</div>';
   }
   html += seasonHtml;
+  // Nutrition tips
+  var tips = getNutritionTips(food);
+  if (tips.length > 0) {
+    html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid var(--border);">';
+    tips.forEach(function(t) {
+      html += '<div style="font-size:0.72rem;color:var(--text-dim);line-height:1.4;margin-top:3px;">' + t.icon + ' ' + esc(t.text) + '</div>';
+    });
+    html += '</div>';
+  }
   // Deals tooltip
   html += buildDealTooltipHtml(name);
   if (alsoIn.length > 0) html += '<div class="ct-also">Aussi dans: ' + alsoIn.join(', ') + '</div>';
@@ -1534,15 +1649,27 @@ function updateSearchActive(items) {
     items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
   }
 }
+function normalizeForSearch(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .replace(/Œ/g, 'oe')
+    .replace(/Æ/g, 'ae')
+    .replace(/[^a-z0-9\s]/g, ' ');
+}
+
 function actualSearch() {
-  var query = $('search-input').value.trim().toLowerCase();
+  var rawQuery = $('search-input').value.trim();
+  var query = normalizeForSearch(rawQuery);
   var results = $('search-results');
   searchActiveIndex = -1;
   if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
   var matches = [];
   DATA.categories.forEach(function(cat) {
     cat.foods.forEach(function(f) {
-      if (f.name.toLowerCase().indexOf(query) !== -1) {
+      if (normalizeForSearch(f.name).indexOf(query) !== -1) {
         matches.push({ cat: cat, food: f });
       }
     });
@@ -1682,6 +1809,18 @@ async function loadDeals() {
     var data = await res.json();
     DEALS = data.deals || {};
     STORE_META = data.stores || {};
+    // Filter out pet food / non-human food
+    var PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
+    function isPetFood(name) {
+      var lower = (name || '').toLowerCase();
+      return PET_KEYWORDS.some(function(kw) { return lower.indexOf(kw) !== -1; });
+    }
+    Object.keys(DEALS).forEach(function(food) {
+      DEALS[food] = DEALS[food].filter(function(d) {
+        return !isPetFood(d.name);
+      });
+      if (DEALS[food].length === 0) delete DEALS[food];
+    });
   } catch(e) { console.error('[NutriFood] Deals load error:', e); }
 }
 
@@ -1727,7 +1866,7 @@ function buildDealBadges(foodName) {
     var letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
     html += '<span class="deal-badge" style="background:' + color + ';" title="' + esc(d.name || '') + ' — ' + (d.price || '') + '$">' + letter + '</span>';
   });
-  if (extra > 0) html += '<span class="deal-badges-extra">+' + extra + '</span>';
+  if (extra > 0) html += '<span class="deal-badges-extra deal-show-all" data-deal-food="' + esc(foodName) + '" style="cursor:pointer;text-decoration:underline;" title="Voir tous les spéciaux">+' + extra + '</span>';
   html += '</span>';
   return html;
 }
@@ -2165,6 +2304,64 @@ function renderWelcome() {
   $('welcome-login').addEventListener('click', function() { showAuth('login'); });
 }
 
+// ─── Daily nutrition helpers ───
+function daysUntilReset() {
+  var now = new Date();
+  var day = now.getDay(); // 0=dimanche, 1=lundi, ...
+  var daysUntilMonday = day === 0 ? 1 : (8 - day);
+  return daysUntilMonday;
+}
+
+function getISOWeek() {
+  var d = new Date();
+  var tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  var weekNum = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+  return weekNum;
+}
+
+function renderDailyNutrition(totals) {
+  var hasGoals = userGoals && (userGoals.protein || userGoals.fiber || userGoals.iron || userGoals.vitamin_c || userGoals.calcium || userGoals.omega3);
+  var weekNum = getISOWeek();
+  var resetDays = daysUntilReset();
+
+  var nutrients = [
+    { key: 'protein',  label: 'Proteine g', unit: 'g',  weekly: totals.protein },
+    { key: 'fiber',    label: 'Fibres g',   unit: 'g',  weekly: totals.fiber },
+    { key: 'iron',     label: 'Fer mg',     unit: 'mg', weekly: totals.iron },
+    { key: 'vit_c',    label: 'Vit C mg',   unit: 'mg', weekly: totals.vit_c },
+    { key: 'calcium',  label: 'Calcium mg', unit: 'mg', weekly: totals.calcium },
+    { key: 'omega3',   label: 'O-3 g',      unit: 'g',  weekly: totals.omega3 }
+  ];
+
+  var html = '<div class="nutri-summary-header">';
+  html += '<span class="nutri-summary-title">\uD83D\uDCCA Nutrition — <strong>Semaine ' + weekNum + '</strong></span>';
+  html += '<span class="reset-badge">\uD83D\uDD04 Reset dans ' + resetDays + 'j</span>';
+  html += '</div>';
+
+  html += '<div class="nutri-stats-row">';
+  nutrients.forEach(function(n) {
+    var daily = n.weekly / 7;
+    var dailyStr = n.unit === 'g' ? (Math.round(daily * 10) / 10) + '' : Math.round(daily) + '';
+    html += '<div class="nutri-stat">';
+    html += '<span class="ns-value">' + Math.round(n.weekly) + '</span>';
+    html += '<span class="ns-label">' + n.label + '</span>';
+    html += '<span class="ns-daily">' + dailyStr + n.unit + '/j</span>';
+    if (hasGoals && userGoals[n.key]) {
+      var dailyTarget = userGoals[n.key] / 7;
+      var pct = dailyTarget > 0 ? Math.round((daily / dailyTarget) * 100) : 0;
+      var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+      html += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
+      html += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 // ─── Render ───
 function render() {
   var app = $('app');
@@ -2211,12 +2408,7 @@ function render() {
     });
   });
   html += '<div class="nutri-summary">';
-  html += '<div class="nutri-stat"><span class="ns-value">' + Math.round(totals.protein) + '</span><span class="ns-label">Proteine g</span></div>';
-  html += '<div class="nutri-stat"><span class="ns-value">' + Math.round(totals.fiber) + '</span><span class="ns-label">Fibres g</span></div>';
-  html += '<div class="nutri-stat"><span class="ns-value">' + Math.round(totals.iron) + '</span><span class="ns-label">Fer mg</span></div>';
-  html += '<div class="nutri-stat"><span class="ns-value">' + Math.round(totals.vit_c) + '</span><span class="ns-label">Vit C mg</span></div>';
-  html += '<div class="nutri-stat"><span class="ns-value">' + Math.round(totals.calcium) + '</span><span class="ns-label">Calcium mg</span></div>';
-  html += '<div class="nutri-stat"><span class="ns-value">' + (Math.round(totals.omega3 * 10) / 10) + '</span><span class="ns-label">O-3 g</span></div>';
+  html += renderDailyNutrition(totals);
   html += '</div>';
 
   html += '<div class="tabs">';
@@ -2269,6 +2461,27 @@ function getSectionDotClass(sectionId) {
   return 'in-range';
 }
 
+function getPortionHint(cat) {
+  var section = cat.section || '';
+  var catId = cat.id || '';
+  var hints = {
+    'viandes-laitiers': '1 portion = paume de la main (~100g)',
+    'legumes': '1 portion = 1 tasse crue ou ½ tasse cuite',
+    'fruits': '1 portion = 1 fruit moyen ou ½ tasse',
+    'feculents': '1 portion = ½ tasse cuite ou 1 tranche',
+    'habitudes': 'Consommer avec modération'
+  };
+  // Also check by category id for more specific hints
+  var idHints = {
+    'noix-graines': '1 portion = 1 petite poignée (~30g)',
+    'lait': '1 portion = 1 tasse (250ml)',
+    'oeufs': '1 portion = 1-2 œufs'
+  };
+  if (idHints[catId]) return idHints[catId];
+  if (hints[section]) return hints[section];
+  return null;
+}
+
 function renderCard(cat) {
   var selected = selections[cat.id] || [];
   var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
@@ -2283,6 +2496,11 @@ function renderCard(cat) {
   html += '<span class="counter-badge ' + (totalCount > 0 ? cls : '') + '">' + totalCount + ' / ' + target + ' ' + suffix + '</span>';
   html += '</div>';
 
+  var portionHint = getPortionHint(cat);
+  if (portionHint) {
+    html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px;font-style:italic;">📏 ' + esc(portionHint) + '</div>';
+  }
+
   if (cat.type === 'checkbox') {
     if (editMode && currentUser && currentUser.is_admin) {
       // Edit mode for checkbox categories
@@ -2293,7 +2511,8 @@ function renderCard(cat) {
     } else {
       cat.foods.forEach(function(f) {
         var isChecked = selected.some(function(s) { return s.name === f.name; });
-        html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span></label>';
+        var dealBadgesHtml = buildDealBadges(f.name);
+        html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span>' + dealBadgesHtml + '</label>';
       });
     }
   } else {
@@ -2315,7 +2534,8 @@ function renderCard(cat) {
           var month = new Date().getMonth() + 1;
           if (f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
         }
-        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
+        var dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
+        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
       });
       html += '</select>';
     }
@@ -2348,6 +2568,14 @@ function esc(s) { return s.replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
 
 // ─── Event delegation for dynamic content ───
 document.addEventListener('click', function(e) {
+  // Deal show-all: click on +N to see all deals
+  var dealShowAll = e.target.closest('.deal-show-all');
+  if (dealShowAll) {
+    var dealFoodName = dealShowAll.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var rect = dealShowAll.getBoundingClientRect();
+    showDealTooltip(dealFoodName, rect.left, rect.bottom);
+    return;
+  }
   var btn = e.target.closest('[data-action]');
   if (!btn) return;
   var catId = btn.dataset.cat;

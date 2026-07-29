@@ -1669,6 +1669,33 @@
             11,
             12
           ]
+        },
+        {
+          "name": "Oignons rouges",
+          "density": 70,
+          "nutrients": "Anthocyanes, Quercétine, Vit C, B6, Fibres",
+          "nutrition": {
+            "protein": 1.1,
+            "fiber": 1.7,
+            "iron": 0.2,
+            "vit_c": 7.4,
+            "calcium": 23.0,
+            "omega3": 0.0
+          },
+          "season": [
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ]
         }
       ]
     },

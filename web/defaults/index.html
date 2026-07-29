@@ -524,6 +524,10 @@
     font-size: 1.1rem; padding: 0 4px; opacity: 0.7; transition: opacity 0.15s;
   }
   .seasonal-banner .sb-close:hover { opacity: 1; }
+  .seasonal-banner .sb-more { background: rgba(74,222,128,0.06); border-style: dashed; cursor: pointer; }
+  .seasonal-banner .sb-more:hover { background: rgba(74,222,128,0.25); }
+  .seasonal-banner .sb-extra { display: none; margin-top: 4px; }
+  .seasonal-banner .sb-extra.show { display: flex; flex-wrap: wrap; gap: 4px; }
 
   /* ─── Feature 3 & 4: Goals & History modals ─── */
   .modal.wide { max-width: 520px; }
@@ -2138,15 +2142,22 @@ async function fetchSeasonalBanner() {
     var names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
     if (names.length === 0) return;
     var display = names.slice(0, 6);
-    var extra = names.length > 6 ? '…' : '';
+    var extraCount = names.length - 6;
     var banner = $('seasonal-banner');
     var html = '<span class="sb-text">🌱 <strong>De saison cette semaine:</strong> ';
     display.forEach(function(n) {
       html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '">' + esc(n) + '</span>';
     });
-    if (extra) html += ' <span style="color:var(--text-dim);">' + extra + '</span>';
+    if (extraCount > 0) html += ' <span class="sb-item sb-more" id="seasonal-more">+' + extraCount + '</span>';
     html += '</span>';
     html += '<button class="sb-close" id="seasonal-close">✕</button>';
+    if (extraCount > 0) {
+      html += '<div class="sb-extra" id="seasonal-extra">';
+      names.slice(6).forEach(function(n) {
+        html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '">' + esc(n) + '</span>';
+      });
+      html += '</div>';
+    }
     banner.innerHTML = html;
     banner.classList.remove('hidden');
     // Wire close
@@ -2154,6 +2165,16 @@ async function fetchSeasonalBanner() {
       banner.classList.add('hidden');
       sessionStorage.setItem('nutrifood_seasonal_dismissed', '1');
     });
+    // Wire expand/collapse extra seasonal items
+    var moreBtn = $('seasonal-more');
+    if (moreBtn) {
+      moreBtn.addEventListener('click', function() {
+        var extraDiv = $('seasonal-extra');
+        if (!extraDiv) return;
+        var isShown = extraDiv.classList.toggle('show');
+        moreBtn.textContent = isShown ? '−' : '+' + extraCount;
+      });
+    }
     // Wire food clicks
     banner.querySelectorAll('[data-seasonal-food]').forEach(function(el) {
       el.addEventListener('click', function() {

@@ -47,7 +47,11 @@ def check_rate_limit(key):
         for k in expired:
             del RATE_LIMIT[k]
     return True
-JWT_SECRET = os.environ.get('JWT_SECRET', secrets.token_hex(32))
+JWT_SECRET = os.environ.get('JWT_SECRET')
+if not JWT_SECRET:
+    import sys
+    print('[NutriFood] FATAL: JWT_SECRET environment variable is not set. Refusing to start.')
+    sys.exit(1)
 JWT_EXPIRY_HOURS = int(os.environ.get('JWT_EXPIRY_HOURS', '2160'))
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.fastmail.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
@@ -137,6 +141,7 @@ def init_db():
             password_hash TEXT NOT NULL,
             salt TEXT NOT NULL,
             is_admin INTEGER DEFAULT 0,
+            token_version INTEGER DEFAULT 0,
             created_at TEXT DEFAULT (datetime('now')),
             updated_at TEXT DEFAULT (datetime('now'))
         );
@@ -184,6 +189,7 @@ def init_db():
             user_id INTEGER NOT NULL,
             token TEXT UNIQUE NOT NULL,
             created_at TEXT DEFAULT (datetime('now')),
+            expires_at TEXT NOT NULL,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_share_links_token ON share_links(token);
@@ -220,11 +226,12 @@ def init_db():
 def hash_password(password, salt):
     return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
 
-def make_token(user_id, email):
+def make_token(user_id, email, token_version=0):
     payload = {
         'uid': user_id,
         'email': email,
-        'exp': int(time.time()) + (JWT_EXPIRY_HOURS * 3600)
+        'exp': int(time.time()) + (JWT_EXPIRY_HOURS * 3600),
+        'tv': token_version
     }
     payload_json = json.dumps(payload, separators=(',', ':'))
     payload_b64 = base64.urlsafe_b64encode(payload_json.encode()).decode().rstrip('=')
@@ -248,6 +255,11 @@ def verify_token(token):
         payload_json = base64.urlsafe_b64decode(payload_b64 + '=' * padding).decode()
         payload = json.loads(payload_json)
         if payload.get('exp', 0) < time.time():
+            return None
+        # Check token_version against DB to invalidate old tokens after password change
+        db = get_db()
+        user = db.execute('SELECT token_version FROM users WHERE id = ?', (payload.get('uid'),)).fetchone()
+        if not user or payload.get('tv', 0) != user['token_version']:
             return None
         return payload
     except Exception:
@@ -303,7 +315,7 @@ def register():
 
     send_welcome_email(email, name)
 
-    token = make_token(cursor.lastrowid, email)
+    token = make_token(cursor.lastrowid, email, 0)
     return jsonify({
         'token': token,
         'user': {'id': cursor.lastrowid, 'email': email, 'name': name, 'is_admin': 0}
@@ -332,7 +344,7 @@ def login():
     if not secrets.compare_digest(pw_hash, user['password_hash']):
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 
-    token = make_token(user['id'], user['email'])
+    token = make_token(user['id'], user['email'], user['token_version'])
     return jsonify({
         'token': token,
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
@@ -353,7 +365,7 @@ def load_foods():
             with open(FOODS_PATH, 'r') as f:
                 _FOODS_CACHE = json.load(f)
             _FOODS_MTIME = mtime
-    except:
+    except Exception:
         return {}
     return _FOODS_CACHE if _FOODS_CACHE is not None else {}
 
@@ -443,14 +455,15 @@ def reset_password():
     new_salt = secrets.token_hex(16)
     new_hash = hash_password(new_password, new_salt)
     db.execute(
-        'UPDATE users SET password_hash = ?, salt = ?, updated_at = datetime(\'now\') WHERE id = ?',
+        'UPDATE users SET password_hash = ?, salt = ?, token_version = token_version + 1, updated_at = datetime(\'now\') WHERE id = ?',
         (new_hash, new_salt, user['id'])
     )
     db.execute('UPDATE reset_tokens SET used = 1 WHERE id = ?', (row['id'],))
     db.commit()
 
-    # Issue new login token
-    token = make_token(user['id'], user['email'])
+    # Issue new login token with updated version
+    new_version = db.execute('SELECT token_version FROM users WHERE id = ?', (user['id'],)).fetchone()['token_version']
+    token = make_token(user['id'], user['email'], new_version)
     return jsonify({
         'status': 'ok',
         'token': token,
@@ -486,12 +499,15 @@ def change_password():
     new_salt = secrets.token_hex(16)
     new_hash = hash_password(new_password, new_salt)
     db.execute(
-        'UPDATE users SET password_hash = ?, salt = ?, updated_at = datetime(\'now\') WHERE id = ?',
+        'UPDATE users SET password_hash = ?, salt = ?, token_version = token_version + 1, updated_at = datetime(\'now\') WHERE id = ?',
         (new_hash, new_salt, user['id'])
     )
     db.commit()
 
-    return jsonify({'status': 'ok'})
+    # Issue new token with updated version
+    new_version = db.execute('SELECT token_version FROM users WHERE id = ?', (user['id'],)).fetchone()['token_version']
+    token = make_token(user['id'], user['email'], new_version)
+    return jsonify({'status': 'ok', 'token': token})
 
 # ─── Selections ───
 
@@ -658,18 +674,27 @@ def create_share():
         return jsonify({'error': 'Non autorisé'}), 401
 
     share_token = secrets.token_urlsafe(16)
+    expires_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
     db = get_db()
-    db.execute('INSERT OR REPLACE INTO share_links (user_id, token) VALUES (?, ?)', (user['id'], share_token))
+    db.execute('INSERT OR REPLACE INTO share_links (user_id, token, expires_at) VALUES (?, ?, ?)', (user['id'], share_token, expires_at))
     db.commit()
 
-    return jsonify({'share_url': f'{APP_URL}#share={share_token}', 'token': share_token})
+    return jsonify({'share_url': f'{APP_URL}#share={share_token}', 'token': share_token, 'expires_at': expires_at})
 
 @app.route('/api/shared/<token>', methods=['GET'])
 def get_shared(token):
     db = get_db()
-    row = db.execute('SELECT user_id FROM share_links WHERE token = ?', (token,)).fetchone()
+    row = db.execute('SELECT user_id, expires_at FROM share_links WHERE token = ?', (token,)).fetchone()
     if not row:
         return jsonify({'error': 'Lien invalide'}), 404
+    # Check expiry
+    try:
+        if datetime.fromisoformat(row['expires_at']) < datetime.now(timezone.utc):
+            db.execute('DELETE FROM share_links WHERE token = ?', (token,))
+            db.commit()
+            return jsonify({'error': 'Lien expiré'}), 404
+    except Exception:
+        pass
 
     sel = db.execute('SELECT data FROM selections WHERE user_id = ?', (row['user_id'],)).fetchone()
     user = db.execute('SELECT name FROM users WHERE id = ?', (row['user_id'],)).fetchone()

@@ -303,6 +303,9 @@ def register():
     existing = db.execute('SELECT id FROM users WHERE email = ?', (email,)).fetchone()
     if existing:
         return jsonify({'error': 'Cet email est déjà inscrit'}), 409
+    existing_name = db.execute('SELECT id FROM users WHERE LOWER(name) = LOWER(?)', (name,)).fetchone()
+    if existing_name:
+        return jsonify({'error': 'Ce nom d\'usager est déjà pris'}), 409
 
     salt = secrets.token_hex(16)
     pw_hash = hash_password(password, salt)
@@ -550,7 +553,8 @@ def save_selections():
     db.execute(
         '''INSERT INTO history_snapshots (user_id, week_key, selections_data)
            VALUES (?, ?, ?)
-           ON CONFLICT(user_id, week_key) DO NOTHING''',
+           ON CONFLICT(user_id, week_key) DO UPDATE SET
+           selections_data = excluded.selections_data, created_at = datetime('now')''',
         (user['id'], week_key, json.dumps(selections_data))
     )
 

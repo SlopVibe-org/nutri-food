@@ -585,6 +585,56 @@
 
   /* Modal scrollable */
   .modal.scrollable { max-height: 80vh; overflow-y: auto; }
+
+  /* ─── Deal badges (epiceries.ca) ─── */
+  .deal-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 0.65rem; font-weight: 700; color: white;
+    margin-left: 2px; border: 1.5px solid rgba(255,255,255,0.2);
+    text-decoration: none; transition: transform 0.15s;
+  }
+  .deal-badge:hover { transform: scale(1.15); }
+  .deal-badges { display: inline-flex; margin-left: 4px; align-items: center; }
+  .deal-badges-extra { font-size: 0.65rem; color: var(--text-dim); margin-left: 2px; font-weight: 700; }
+  .chip .deal-tag { font-size: 0.7rem; cursor: help; }
+
+  /* Deal tooltip (inside chip-tooltip) */
+  .chip-tooltip .ct-deals-title { font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .chip-tooltip .ct-deal-item { padding: 6px 0; border-bottom: 1px solid rgba(42,45,58,0.5); }
+  .chip-tooltip .ct-deal-item:last-child { border-bottom: none; }
+  .chip-tooltip .ct-deal-name { font-weight: 600; color: var(--text); font-size: 0.82rem; }
+  .chip-tooltip .ct-deal-price { font-weight: 700; color: var(--accent); font-size: 0.88rem; }
+  .chip-tooltip .ct-deal-meta { font-size: 0.72rem; color: var(--text-dim); }
+  .chip-tooltip .ct-deal-store { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; }
+  .chip-tooltip .ct-deal-store-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 0.55rem; font-weight: 700; color: white;
+  }
+  .chip-tooltip .ct-deal-link { color: var(--accent); font-size: 0.78rem; text-decoration: none; cursor: pointer; }
+  .chip-tooltip .ct-deal-link:hover { text-decoration: underline; }
+
+  /* Grocery list deal info */
+  .grocery-item .gi-deal { font-size: 0.8rem; color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .grocery-item .gi-deal:hover { text-decoration: underline; }
+  .grocery-deal-store-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 0.55rem; font-weight: 700; color: white; margin-right: 2px;
+  }
+  .grocery-total { margin-top: 12px; padding: 10px 12px; background: #12141c; border-radius: 8px; border: 1px solid var(--border); }
+  .grocery-total .gt-amount { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .grocery-total .gt-note { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+  /* Admin refresh deals button */
+  .admin-refresh-btn {
+    display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: transparent;
+    color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 8px;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .admin-refresh-btn:hover { background: rgba(74,222,128,0.1); border-color: var(--accent); }
+  .admin-refresh-btn:disabled { opacity: 0.5; cursor: wait; }
 </style>
 </head>
 <body>
@@ -761,6 +811,10 @@ var autoSaveTimer = null;
 var searchActiveIndex = -1;
 var mobileSelectedDay = 0;
 
+// ─── Deals data (epiceries.ca) ───
+var DEALS = {};
+var STORE_META = {};
+
 // ─── DOM helpers ───
 function $(id) { return document.getElementById(id); }
 
@@ -828,6 +882,7 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-edit"><span class="icon">✏️</span> Mode édition</button>';
+    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-refresh-deals"><span class="icon">🔄</span> Spéciaux</button>';
     menuItems += '<div class="user-menu-divider"></div>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
     menuItems += '<button class="user-menu-item" id="menu-logout" style="color:var(--accent-red);"><span class="icon">🚪</span> Déconnexion</button>';
@@ -849,6 +904,7 @@ function renderUserArea() {
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {
       $('menu-edit').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); toggleEditMode(); });
+      $('menu-refresh-deals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); refreshDeals(); });
     }
 
     if (!globalClickListenersAttached) {
@@ -916,6 +972,7 @@ async function submitAuth() {
     // Load selections and render
     await loadSelectionsFromServer();
     await loadUserGoals();
+    loadDeals();
     render();
     updateSaveBar();
     fetchSeasonalBanner();
@@ -1279,6 +1336,8 @@ function showChipTooltip(catId, name, x, y) {
     html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-top:6px;">Prot ' + (food.nutrition.protein||0) + 'g · Fib ' + (food.nutrition.fiber||0) + 'g · Fer ' + (food.nutrition.iron||0) + 'mg · Vit C ' + (food.nutrition.vit_c||0) + 'mg</div>';
   }
   html += seasonHtml;
+  // Deals tooltip
+  html += buildDealTooltipHtml(name);
   if (alsoIn.length > 0) html += '<div class="ct-also">Aussi dans: ' + alsoIn.join(', ') + '</div>';
   tooltipEl.innerHTML = html;
   tooltipEl.style.left = Math.min(x + 12, window.innerWidth - 300) + 'px';
@@ -1289,10 +1348,23 @@ function hideChipTooltip() {
   if (tooltipEl) tooltipEl.classList.remove('visible');
 }
 
+// Show deal-specific tooltip
+function showDealTooltip(foodName, x, y) {
+  if (!tooltipEl) { tooltipEl = $('chip-tooltip'); }
+  var html = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + '</div>';
+  html += buildDealTooltipHtml(foodName);
+  tooltipEl.innerHTML = html;
+  tooltipEl.style.left = Math.min(x + 12, window.innerWidth - 300) + 'px';
+  tooltipEl.style.top = (y - 10) + 'px';
+  tooltipEl.classList.add('visible');
+}
+
 // ─── Grocery list ───
 function showGroceryList() {
   var month = new Date().getMonth() + 1;
   var items = [];
+  var dealTotal = 0;
+  var dealCount = 0;
   Object.keys(selections).forEach(function(catId) {
     var cat = DATA.categories.find(function(c) { return c.id === catId; });
     if (!cat) return;
@@ -1301,7 +1373,15 @@ function showGroceryList() {
       var icon = cat.icon;
       var seasonIcon = getSeasonIcon(food, month);
       if (seasonIcon) icon = seasonIcon + ' ' + icon;
-      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: icon });
+      var dealInfo = null;
+      var itemDeals = DEALS[item.name];
+      if (itemDeals && itemDeals.length > 0) {
+        var bestDeal = itemDeals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); })[0];
+        dealInfo = bestDeal;
+        dealTotal += (bestDeal.price || 0) * (item.qty || 1);
+        dealCount++;
+      }
+      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: icon, dealInfo: dealInfo });
     });
   });
   items.sort(function(a, b) { return a.name.localeCompare(b.name); });
@@ -1311,13 +1391,31 @@ function showGroceryList() {
     container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Aucun aliment sélectionné.</p>';
   } else {
     container.innerHTML = items.map(function(item) {
-      return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
+      var dealHtml = '';
+      if (item.dealInfo) {
+        var d = item.dealInfo;
+        var storeInfo = STORE_META[d.store] || {};
+        var color = storeInfo.color || '#666';
+        var storeName = storeInfo.name || d.store || '?';
+        var letter = storeName.charAt(0).toUpperCase();
+        var link = d.link || '#';
+        dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">\uD83C\uDFF7\uFE0F <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
+      }
+      return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
     }).join('');
     container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
       cb.addEventListener('change', function() {
         this.closest('.grocery-item').classList.toggle('checked', this.checked);
       });
     });
+    // Add estimated total
+    if (dealCount > 0) {
+      var totalHtml = '<div class="grocery-total">';
+      totalHtml += '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div>';
+      totalHtml += '<div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
+      totalHtml += '</div>';
+      container.innerHTML += totalHtml;
+    }
   }
 
   // Wire share button inside grocery modal
@@ -1576,6 +1674,87 @@ async function submitChangePassword() {
 }
 
 // ─── Server selections ───
+// ─── Deals (epiceries.ca) ───
+async function loadDeals() {
+  try {
+    var res = await fetchWithTimeout(API + '/deals', {}, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    DEALS = data.deals || {};
+    STORE_META = data.stores || {};
+  } catch(e) { console.error('[NutriFood] Deals load error:', e); }
+}
+
+async function refreshDeals() {
+  var token = getToken();
+  if (!token) return;
+  var btn = document.getElementById('menu-refresh-deals');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
+  try {
+    var res = await fetchWithTimeout(API + '/deals/refresh', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 30000);
+    if (res.ok) {
+      var data = await res.json();
+      var count = data.count || 0;
+      showToast(count + ' spéciaux mis à jour', 'success');
+      await loadDeals();
+      render();
+    } else {
+      showToast('Erreur lors de la mise à jour', 'error');
+    }
+  } catch(e) {
+    console.error('[NutriFood] Deals refresh error:', e);
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Spéciaux'; }
+}
+
+// Helper: build deal badges HTML for a food name
+function buildDealBadges(foodName) {
+  var deals = DEALS[foodName];
+  if (!deals || deals.length === 0) return '';
+  var sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
+  var maxShow = 3;
+  var shown = sorted.slice(0, maxShow);
+  var extra = sorted.length > maxShow ? sorted.length - maxShow : 0;
+  var html = '<span class="deal-badges" data-deal-food="' + esc(foodName) + '">';
+  html += '\uD83C\uDFF7\uFE0F';
+  shown.forEach(function(d) {
+    var storeInfo = STORE_META[d.store] || {};
+    var color = storeInfo.color || '#666';
+    var letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
+    html += '<span class="deal-badge" style="background:' + color + ';" title="' + esc(d.name || '') + ' — ' + (d.price || '') + '$">' + letter + '</span>';
+  });
+  if (extra > 0) html += '<span class="deal-badges-extra">+' + extra + '</span>';
+  html += '</span>';
+  return html;
+}
+
+// Helper: build deal tooltip HTML
+function buildDealTooltipHtml(foodName) {
+  var deals = DEALS[foodName];
+  if (!deals || deals.length === 0) return '';
+  var sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
+  var html = '<div class="ct-deals-title">\uD83C\uDFF7\uFE0F Spéciaux en vigueur</div>';
+  sorted.forEach(function(d) {
+    var storeInfo = STORE_META[d.store] || {};
+    var color = storeInfo.color || '#666';
+    var storeName = storeInfo.name || d.store || '?';
+    var letter = storeName.charAt(0).toUpperCase();
+    html += '<div class="ct-deal-item" style="border-left: 3px solid ' + color + '; padding-left: 8px; margin-left: 4px;">';
+    html += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
+    html += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
+    if (d.size) html += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    if (d.unit_price) html += '<div class="ct-deal-meta">Prix unitaire: ' + esc(d.unit_price) + '</div>';
+    html += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(storeName) + '</div>';
+    if (d.link) html += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    html += '</div>';
+  });
+  return html;
+}
+
 async function loadSelectionsFromServer() {
   var token = getToken();
   if (!token) return;
@@ -1924,6 +2103,7 @@ async function init() {
           if (meRes.ok) {
             renderUserArea();
             await loadSelectionsFromServer();
+            loadDeals();
           } else {
             console.warn('[NutriFood] Token invalid, clearing');
             clearAuth();
@@ -1939,6 +2119,8 @@ async function init() {
       $('search-bar-container').style.display = 'block';
       render();
       updateSaveBar();
+      // Load deals
+      loadDeals().then(function() { render(); });
       // Feature 2: seasonal banner
       fetchSeasonalBanner();
       // Feature 3: load goals
@@ -2158,7 +2340,7 @@ function renderChips(catId, selected) {
     var qtyControls = item.qty > 1
       ? '<span class="qty-controls"><button class="qty-btn" data-action="dec" data-cat="' + catId + '" data-name="' + esc(item.name) + '">−</button><span class="qty-num">×' + item.qty + '</span><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>'
       : '<span class="qty-controls"><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>';
-    return '<span class="chip" title="' + esc(item.nutrients) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
+    return '<span class="chip" title="' + esc(item.nutrients) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + buildDealBadges(item.name) + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
   }).join('');
 }
 
@@ -2203,10 +2385,18 @@ document.addEventListener('mouseover', function(e) {
     var rect = chip.getBoundingClientRect();
     showChipTooltip(chip.dataset.detailCat, name, rect.left, rect.bottom);
   }
+  // Deal badge hover - show tooltip with deal details
+  var dealBadges = e.target.closest('[data-deal-food]');
+  if (dealBadges && !chip) {
+    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var rect2 = dealBadges.getBoundingClientRect();
+    showDealTooltip(dealName, rect2.left, rect2.bottom);
+  }
 });
 document.addEventListener('mouseout', function(e) {
   var chip = e.target.closest('[data-detail-cat]');
-  if (chip) hideChipTooltip();
+  var dealBadges = e.target.closest('[data-deal-food]');
+  if (chip || dealBadges) hideChipTooltip();
 });
 
 // ─── Actions ───

@@ -7,9 +7,12 @@ import secrets
 import time
 import base64
 import smtplib
+import urllib.request
+import urllib.parse
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import re
+import threading
 from datetime import datetime, timedelta, date, timezone
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
@@ -930,6 +933,201 @@ def update_goals():
     # Return updated goals
     targets = get_user_targets(user['id'])
     return jsonify({'goals': targets})
+
+# ─── Grocery Deals Cache (epiceries.ca) ───
+
+DEALS_CACHE = None
+DEALS_CACHE_TIME = None
+DEALS_CACHE_TTL = 6 * 3600  # 6 hours
+DEALS_BUILDING = False  # True while background thread is fetching
+DEALS_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deals_cache.json')
+DEALS_LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deals_cache.lock')
+
+STORE_META = {
+    'maxi':    {'name': 'Maxi',     'color': '#0a6cff'},
+    'iga':     {'name': 'IGA',      'color': '#d6001c'},
+    'superc':  {'name': 'Super C',  'color': '#ff6600'},
+    'metro':   {'name': 'Metro',    'color': '#e30613'},
+    'provigo': {'name': 'Provigo',  'color': '#0066b3'},
+    'walmart': {'name': 'Walmart',  'color': '#0071ce'},
+}
+
+def fetch_deals_for_food(food_name, query=None):
+    """Fetch discounted grocery deals from epiceries.ca for a given food."""
+    search_query = query or food_name
+    try:
+        params = urllib.parse.urlencode({
+            'endpoint': 'search',
+            'q': search_query,
+            'discounted': 'true',
+            'limit': '5',
+            'sort': 'price_asc',
+        })
+        url = f'https://epiceries.ca/api?{params}'
+        req = urllib.request.Request(url, headers={'User-Agent': 'NutriFood/1.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            body = resp.read().decode('utf-8')
+        data = json.loads(body)
+        if not data.get('ok') or not data.get('data'):
+            return []
+        results = data['data'].get('results', [])
+        deals = []
+        for r in results:
+            deals.append({
+                'name': r.get('name', ''),
+                'store': r.get('store', ''),
+                'price': r.get('price'),
+                'unit_price': r.get('unitPrice', ''),
+                'size': r.get('size', ''),
+                'link': r.get('link', ''),
+                'image': r.get('image', ''),
+            })
+        # Sort by price ascending (cheapest first)
+        deals.sort(key=lambda d: d['price'] if d['price'] is not None else float('inf'))
+        return deals
+    except Exception as e:
+        print(f'[NutriFood] Deals fetch error for "{food_name}": {e}')
+        return []
+
+def refresh_deals_cache():
+    """Refresh the deals cache by querying epiceries.ca for all foods."""
+    global DEALS_CACHE, DEALS_CACHE_TIME
+    foods_data = load_foods()
+    all_deals = {}
+    total_count = 0
+    for cat in foods_data.get('categories', []):
+        for food in cat.get('foods', []):
+            food_name = food.get('name', '')
+            if not food_name:
+                continue
+            query = food.get('epiceries_query') or food_name
+            deals = fetch_deals_for_food(food_name, query)
+            if deals:
+                all_deals[food_name] = deals
+                total_count += len(deals)
+            time.sleep(0.3)  # Respect rate limit
+    # Write to file for cross-worker sharing
+    cache_data = {
+        'deals': all_deals,
+        'updated': datetime.now(timezone.utc).isoformat(),
+        'count': total_count
+    }
+    try:
+        with open(DEALS_CACHE_FILE, 'w') as f:
+            json.dump(cache_data, f, ensure_ascii=False)
+    except Exception as e:
+        print(f'[NutriFood] Deals cache file write error: {e}')
+    # Also update in-memory
+    DEALS_CACHE = all_deals
+    DEALS_CACHE_TIME = datetime.now(timezone.utc)
+    print(f'[NutriFood] Deals cache refreshed: {total_count} deals across {len(all_deals)} foods')
+    return total_count
+
+
+def _refresh_deals_thread():
+    """Background thread wrapper for refresh_deals_cache."""
+    global DEALS_BUILDING
+    try:
+        refresh_deals_cache()
+    except Exception as e:
+        print(f'[NutriFood] Background deals refresh failed: {e}')
+    finally:
+        DEALS_BUILDING = False
+        # Remove lock file
+        try:
+            if os.path.exists(DEALS_LOCK_FILE):
+                os.remove(DEALS_LOCK_FILE)
+        except Exception:
+            pass
+
+
+def load_deals_from_file():
+    """Load deals cache from file (shared across workers)."""
+    global DEALS_CACHE, DEALS_CACHE_TIME
+    try:
+        if os.path.exists(DEALS_CACHE_FILE):
+            mtime = os.path.getmtime(DEALS_CACHE_FILE)
+            file_age = (datetime.now(timezone.utc) - datetime.fromtimestamp(mtime, tz=timezone.utc)).total_seconds()
+            if file_age <= DEALS_CACHE_TTL:
+                with open(DEALS_CACHE_FILE, 'r') as f:
+                    data = json.load(f)
+                DEALS_CACHE = data.get('deals', {})
+                DEALS_CACHE_TIME = datetime.fromisoformat(data['updated'])
+                return True
+    except Exception as e:
+        print(f'[NutriFood] Deals cache file read error: {e}')
+    return False
+
+
+def trigger_deals_refresh_async():
+    """Start background refresh if not already running."""
+    global DEALS_BUILDING
+    if DEALS_BUILDING:
+        return False
+    # Check file lock (cross-worker)
+    if os.path.exists(DEALS_LOCK_FILE):
+        try:
+            lock_age = (datetime.now(timezone.utc) - datetime.fromtimestamp(os.path.getmtime(DEALS_LOCK_FILE), tz=timezone.utc)).total_seconds()
+            if lock_age < 300:  # Lock valid for 5 min
+                return False
+        except Exception:
+            pass
+    try:
+        with open(DEALS_LOCK_FILE, 'w') as f:
+            f.write(datetime.now(timezone.utc).isoformat())
+    except Exception:
+        pass
+    DEALS_BUILDING = True
+    t = threading.Thread(target=_refresh_deals_thread, daemon=True)
+    t.start()
+    return True
+
+@app.route('/api/deals', methods=['GET'])
+def get_deals():
+    global DEALS_CACHE, DEALS_CACHE_TIME
+    now = datetime.now(timezone.utc)
+
+    # Try loading from file first (cross-worker cache)
+    if DEALS_CACHE is None:
+        load_deals_from_file()
+
+    cache_expired = (
+        DEALS_CACHE is None
+        or DEALS_CACHE_TIME is None
+        or (now - DEALS_CACHE_TIME).total_seconds() > DEALS_CACHE_TTL
+    )
+    warning = None
+    if cache_expired:
+        started = trigger_deals_refresh_async()
+        if DEALS_CACHE is None:
+            # No cache yet, building in background
+            return jsonify({
+                'deals': {},
+                'stores': STORE_META,
+                'updated': None,
+                'count': 0,
+                'building': True,
+            })
+    count = sum(len(v) for v in (DEALS_CACHE or {}).values())
+    resp = {
+        'deals': DEALS_CACHE or {},
+        'stores': STORE_META,
+        'updated': DEALS_CACHE_TIME.isoformat() if DEALS_CACHE_TIME else None,
+        'count': count,
+    }
+    if warning:
+        resp['warning'] = warning
+    return jsonify(resp)
+
+@app.route('/api/deals/refresh', methods=['POST'])
+def force_refresh_deals():
+    user = get_auth_user()
+    if not user or not user['is_admin']:
+        return jsonify({'error': 'Accès refusé'}), 403
+    started = trigger_deals_refresh_async()
+    if not started:
+        return jsonify({'status': 'ok', 'count': sum(len(v) for v in (DEALS_CACHE or {}).values()), 'updated': DEALS_CACHE_TIME.isoformat() if DEALS_CACHE_TIME else None, 'message': 'Refresh déjà en cours'})
+    return jsonify({'status': 'ok', 'message': 'Refresh lancé en arrière-plan'})
 
 # Initialize DB on import
 init_db()

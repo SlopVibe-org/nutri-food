@@ -21,6 +21,12 @@ NutriFood permet de:
 
 🔗 https://slopvibe.org/nutri-food/
 
+## Documentation
+
+- 📖 [Guide utilisateur](docs/USER_GUIDE.md) — Comment utiliser NutriFood
+- 🚀 [Guide de déploiement](docs/DEPLOYMENT.md) — Installer NutriFood sur votre serveur
+- 🔧 [Guide administrateur](docs/ADMIN_GUIDE.md) — Gérer aliments, utilisateurs et système
+
 ## Architecture
 
 - **Frontend:** HTML/CSS/JS vanilla — zéro dépendance, zéro build

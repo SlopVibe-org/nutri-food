@@ -107,7 +107,3 @@ docker compose logs -f
 # Modifier le frontend (pas besoin de rebuild)
 # Éditer config/index.html → refresh du navigateur
 ```
-
-## Licence
-
-Privé — SlopVibe-org

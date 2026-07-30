@@ -1,0 +1,104 @@
+// ─── App module (init, orchestration) ───
+
+async function init() {
+  try {
+    var res = await fetchWithTimeout(API + '/foods', {}, 8000);
+    DATA = await res.json();
+    activeTab = DATA.sections[0].id;
+
+    // Wire up events
+    initAuthEvents();
+
+    // Restore session
+    var savedUser = null;
+    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage read error:', e); }
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      var token = getToken();
+      if (token) {
+        try {
+          var meRes = await fetchWithTimeout(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+          if (meRes.ok) {
+            renderUserArea();
+            await loadSelectionsFromServer();
+            planningSelections = structuredClone(selections);
+            loadScript('js/deals.js', function() { loadDeals(); });
+          } else {
+            console.warn('[NutriFood] Token invalid, clearing');
+            clearAuth();
+          }
+        } catch(e) { console.error('[NutriFood] Session check failed:', e); clearAuth(); }
+      } else { clearAuth(); }
+    }
+
+    renderUserArea();
+
+    // Apply saved mode (tracking by default)
+    if (currentMode === 'tracking') {
+      document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'tracking'); });
+      $('tracking-bar').style.display = 'flex';
+      trackingDate = getTodayISO();
+    } else {
+      document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'planning'); });
+    }
+
+    if (currentUser) {
+      // Show search bar + app
+      $('search-bar-container').style.display = 'block';
+      if (currentMode === 'tracking') {
+        loadScript('js/tracking.js', function() {
+          loadTrackingDay(trackingDate);
+        });
+      } else {
+        render();
+        updateSaveBar();
+      }
+      // Load deals
+      loadScript('js/deals.js', function() {
+        loadDeals().then(function() { render(); });
+      });
+      // Feature 3: load goals
+      await loadUserGoals();
+      // Feature 1: check suggestions badge
+      loadScript('js/suggestions.js', function() {
+        checkSuggestionsBadge();
+      });
+    } else if (window._shareToken) {
+      $('search-bar-container').style.display = 'none';
+      loadScript('js/share.js', function() {
+        loadSharedView(window._shareToken);
+      });
+    } else {
+      // Not logged in: show welcome screen
+      renderWelcome();
+    }
+  } catch (e) {
+    console.error('[NutriFood] Init error:', e);
+    $('app').innerHTML = '<div class="api-error"><h2>⚠️ Serveur indisponible</h2><p>Impossible de se connecter au serveur. Réessayez dans un moment.</p><button id="retry-init">Réessayer</button></div>';
+    $('save-bar').classList.remove('visible');
+    var retryBtn = $('retry-init');
+    if (retryBtn) retryBtn.addEventListener('click', function() {
+      $('app').innerHTML = '<p class="loading">Chargement…</p>';
+      init();
+    });
+  }
+}
+
+// Check for magic link or share link in URL before init
+if (window.location.hash) {
+  if (window.location.hash.includes('reset=')) {
+    document.addEventListener('DOMContentLoaded', function() {
+      $('reset-modal').classList.remove('hidden');
+      $('reset-password').focus();
+    });
+  } else if (window.location.hash.includes('share=')) {
+    var shareMatch = window.location.hash.match(/share=([^&]+)/);
+    if (shareMatch) {
+      var shareToken = decodeURIComponent(shareMatch[1]);
+      // Override init to load shared view
+      window._shareToken = shareToken;
+    }
+  }
+}
+
+init();

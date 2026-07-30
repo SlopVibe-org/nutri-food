@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="NutriFood — Planifiez vos repas et suivez votre nutrition basée sur le Guide alimentaire canadien.">
+<meta name="theme-color" content="#0f1117">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <title>NutriFood — Densité Nutritionnelle</title>
 <style>
@@ -308,15 +310,6 @@
   .nutri-stat .ns-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
 
   /* Grocery list */
-  .grocery-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
-    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
-  }
-  .grocery-overlay.hidden { display: none; }
-  .grocery-modal {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 28px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto;
-  }
   .grocery-modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
   .grocery-item {
     display: flex; align-items: center; gap: 10px; padding: 8px 0;
@@ -618,7 +611,7 @@
   <div class="header-search" id="search-bar-container" style="display:none;">
     <div class="search-bar">
       <span class="search-icon">🔍</span>
-      <input type="text" id="search-input" placeholder="Rechercher un aliment…" autocomplete="off">
+      <input type="text" id="search-input" placeholder="Rechercher un aliment…" autocomplete="off" aria-label="Rechercher un aliment…">
       <div class="search-results" id="search-results"></div>
     </div>
   </div>
@@ -631,15 +624,15 @@
     <div class="error-msg" id="auth-error"></div>
     <div class="field" id="name-field" style="display:none;">
       <label>Nom</label>
-      <input type="text" id="auth-name" autocomplete="name">
+      <input type="text" id="auth-name" autocomplete="name" aria-label="auth name">
     </div>
     <div class="field">
       <label>Email ou nom d'usager</label>
-      <input type="text" id="auth-email" autocomplete="username">
+      <input type="text" id="auth-email" autocomplete="username" aria-label="auth email">
     </div>
     <div class="field">
       <label>Mot de passe</label>
-      <input type="password" id="auth-password" autocomplete="current-password">
+      <input type="password" id="auth-password" autocomplete="current-password" aria-label="auth password">
     </div>
     <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
     <div class="switch-link">
@@ -659,15 +652,15 @@
     <div class="error-msg" id="pw-error"></div>
     <div class="field">
       <label>Mot de passe actuel</label>
-      <input type="password" id="pw-current" autocomplete="current-password">
+      <input type="password" id="pw-current" autocomplete="current-password" aria-label="pw current">
     </div>
     <div class="field">
       <label>Nouveau mot de passe</label>
-      <input type="password" id="pw-new" autocomplete="new-password">
+      <input type="password" id="pw-new" autocomplete="new-password" aria-label="pw new">
     </div>
     <div class="field">
       <label>Confirmer</label>
-      <input type="password" id="pw-confirm" autocomplete="new-password">
+      <input type="password" id="pw-confirm" autocomplete="new-password" aria-label="pw confirm">
     </div>
     <button type="button" class="submit-btn" id="pw-submit">Changer</button>
     <div class="switch-link" style="text-align:center;margin-top:8px;">
@@ -683,11 +676,11 @@
     <div class="error-msg" id="reset-error"></div>
     <div class="field">
       <label>Nouveau mot de passe</label>
-      <input type="password" id="reset-password" autocomplete="new-password">
+      <input type="password" id="reset-password" autocomplete="new-password" aria-label="reset password">
     </div>
     <div class="field">
       <label>Confirmer</label>
-      <input type="password" id="reset-confirm" autocomplete="new-password">
+      <input type="password" id="reset-confirm" autocomplete="new-password" aria-label="reset confirm">
     </div>
     <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
   </div>
@@ -705,7 +698,9 @@
   <span id="tracking-day-label">Aujourd'hui</span>
   <button id="tracking-next" class="tracking-nav-btn">›</button>
 </div>
+<main>
 <div id="app"><p class="loading">Chargement…</p></div>
+</main>
 
 <!-- Floating suggestions badge (feature 1) -->
 <div class="suggestions-fab" id="suggestions-fab" title="Suggestions nutritionnelles">💡<span class="fab-count" id="fab-count" style="display:none;">0</span></div>
@@ -725,13 +720,13 @@
     <h2>🎯 Mes objectifs</h2>
     <div class="error-msg" id="goals-error"></div>
     <div class="goals-grid">
-      <div class="goal-field"><label>Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1"></div>
-      <div class="goal-field"><label>Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1"></div>
-      <div class="goal-field"><label>Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1"></div>
-      <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
-      <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
-      <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
-      <div class="goal-field"><label>Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50"></div>
+      <div class="goal-field"><label>Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1" aria-label="goal protein"></div>
+      <div class="goal-field"><label>Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1" aria-label="goal fiber"></div>
+      <div class="goal-field"><label>Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1" aria-label="goal iron"></div>
+      <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1" aria-label="goal vitamin c"></div>
+      <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1" aria-label="goal calcium"></div>
+      <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1" aria-label="goal omega3"></div>
+      <div class="goal-field"><label>Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50" aria-label="goal calories"></div>
     </div>
     <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
     <a class="cancel-link" id="goals-cancel">Annuler</a>
@@ -766,7 +761,7 @@
     </div>
     <div id="tab-add-content">
       <div style="display:flex;gap:8px;margin-bottom:16px;">
-        <input type="text" id="cnf-search-input" placeholder="Rechercher un aliment (ex: saumon, bleuet, cheval)…" autocomplete="off" style="flex:1;padding:10px 14px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
+        <input type="text" id="cnf-search-input" placeholder="Rechercher un aliment (ex: saumon, bleuet, cheval)…" autocomplete="off" style="flex:1;padding:10px 14px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.95rem;" aria-label="Rechercher un aliment (ex: saumon, bleuet, cheval)…">
         <button class="login-cta" id="cnf-search-btn" style="padding:10px 20px;">Rechercher</button>
       </div>
       <div id="cnf-results" style="margin-bottom:16px;"></div>
@@ -1023,7 +1018,7 @@ async function submitAuth() {
 function switchMode(mode) {
   if (mode === currentMode) return;
   if (mode === 'tracking') {
-    planningSelections = JSON.parse(JSON.stringify(selections));
+    planningSelections = structuredClone(selections);
     currentMode = 'tracking';
     localStorage.setItem('nf-mode', 'tracking');
     trackingDate = getTodayISO();
@@ -1031,10 +1026,10 @@ function switchMode(mode) {
     $('tracking-bar').style.display = 'flex';
     loadTrackingDay(trackingDate);
   } else {
-    trackingSelections = JSON.parse(JSON.stringify(selections));
+    trackingSelections = structuredClone(selections);
     currentMode = 'planning';
     localStorage.setItem('nf-mode', 'planning');
-    selections = JSON.parse(JSON.stringify(planningSelections));
+    selections = structuredClone(planningSelections);
     savedSnapshot = JSON.stringify(selections);
     document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'planning'); });
     $('tracking-bar').style.display = 'none';
@@ -1059,7 +1054,7 @@ async function loadTrackingDay(dateStr) {
       trackingSelections = {};
     }
   } catch(e) { console.error('[NutriFood] Tracking load error:', e); trackingSelections = {}; }
-  selections = JSON.parse(JSON.stringify(trackingSelections));
+  selections = structuredClone(trackingSelections);
   Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
   trackingSnapshot = JSON.stringify(selections);
   savedSnapshot = trackingSnapshot;
@@ -1077,7 +1072,7 @@ async function saveTracking() {
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ selections: selections })
     }, 10000);
-    trackingSelections = JSON.parse(JSON.stringify(selections));
+    trackingSelections = structuredClone(selections);
     trackingSnapshot = JSON.stringify(selections);
     savedSnapshot = trackingSnapshot;
     updateSaveBar();
@@ -1369,7 +1364,7 @@ async function cnfCnfSearch(q) {
     });
     $('cnf-results').innerHTML = html;
     document.querySelectorAll('.cnf-result').forEach(function(el) {
-      el.addEventListener('click', function() { cnfSelectProduct(parseInt(el.dataset.cnfId)); });
+      el.addEventListener('click', function() { cnfSelectProduct(Number.parseInt(el.dataset.cnfId)); });
     });
   } catch(e) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>'; }
 }
@@ -1432,24 +1427,24 @@ function cnfConfirmAdd(food, nutrients, group) {
   var foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
   var html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
-  html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add name">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
   html += '<select id="cnf-add-cat" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">' + allCats + '</select>';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts</label>';
-  html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add highlights">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
   // Auto-populate aliases from CNF data + original search term
   var autoAliases = [];
   if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(cnfSearchQuery);
   if (food.name_fr && food.name_fr !== foodName) autoAliases.push(food.name_fr);
   if (food.name_en && food.name_en.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(food.name_en);
-  if (food.alt_name_fr) food.alt_name_fr.split(',').forEach(function(a) { a = a.trim(); if (a && autoAliases.indexOf(a) === -1) autoAliases.push(a); });
-  if (food.alt_name_en) food.alt_name_en.split(',').forEach(function(a) { a = a.trim(); if (a && autoAliases.indexOf(a) === -1) autoAliases.push(a); });
+  if (food.alt_name_fr) food.alt_name_fr.split(',').forEach(function(a) { a = a.trim(); if (a && !autoAliases.includes(a)) autoAliases.push(a); });
+  if (food.alt_name_en) food.alt_name_en.split(',').forEach(function(a) { a = a.trim(); if (a && !autoAliases.includes(a)) autoAliases.push(a); });
   if (food.scientific_name) autoAliases.push(food.scientific_name);
   // Dedupe
   var seen = {};
   autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) return false; seen[a] = true; return true; });
-  html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="ex: cheval, viande de cheval">';
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
   [['Protéine', nutrition.protein, 'g'], ['Fibres', nutrition.fiber, 'g'], ['Fer', nutrition.iron, 'mg'], ['Vit C', nutrition.vit_c, 'mg'], ['Calcium', nutrition.calcium, 'mg'], ['Ω-3', nutrition.omega3, 'g']].forEach(function(n) {
     html += '<div style="background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;"><div style="font-size:0.7rem;color:var(--text-dim);">' + n[0] + '</div><div style="font-size:0.9rem;font-weight:700;color:var(--accent);">' + n[1] + ' ' + n[2] + '</div></div>';
@@ -1560,13 +1555,13 @@ function getNutritionTips(food) {
     if (n.iron > 2 && n.vit_c < 5) {
       tips.push({ icon: '💡', text: 'Ajouter vitamine C (citron, poivrons) pour absorber le fer' });
     }
-    if (nutrientsStr.indexOf('lycopène') !== -1 || food.name.toLowerCase().indexOf('tomate') !== -1) {
+    if (nutrientsStr.includes('lycopène') || food.name.toLowerCase().includes('tomate')) {
       tips.push({ icon: '💡', text: 'Cuire légèrement pour amplifier le lycopène' });
     }
-    if (nutrientsStr.indexOf('β-carotène') !== -1 || nutrientsStr.indexOf('beta-carotene') !== -1 || food.name.toLowerCase().indexOf('carotte') !== -1) {
+    if (nutrientsStr.includes('β-carotène') || nutrientsStr.includes('beta-carotene') || food.name.toLowerCase().includes('carotte')) {
       tips.push({ icon: '💡', text: 'Cuire avec un corps gras pour absorber le β-carotène' });
     }
-    if ((nutrientsStr.indexOf('vit c') !== -1 || n.vit_c > 20) && food.name.toLowerCase().indexOf('poivron') !== -1) {
+    if ((nutrientsStr.includes('vit c') || n.vit_c > 20) && food.name.toLowerCase().includes('poivron')) {
       tips.push({ icon: '💡', text: 'Manger cru pour préserver la vitamine C' });
     }
   }
@@ -1575,10 +1570,10 @@ function getNutritionTips(food) {
   if (n.iron > 1) {
     tips.push({ icon: '🔗', text: 'Fer + Vitamine C (agrumes, poivrons) = meilleure absorption' });
   }
-  if (nutrientsStr.indexOf('vit a') !== -1 || nutrientsStr.indexOf('vit d') !== -1 || nutrientsStr.indexOf('vit e') !== -1 || nutrientsStr.indexOf('vit k') !== -1) {
+  if (nutrientsStr.includes('vit a') || nutrientsStr.includes('vit d') || nutrientsStr.includes('vit e') || nutrientsStr.includes('vit k')) {
     tips.push({ icon: '🔗', text: 'Vit. liposolubles + bons gras (huile d\'olive, avocat) = +absorption' });
   }
-  if (n.omega3 > 0.5 || nutrientsStr.indexOf('oméga') !== -1 || nutrientsStr.indexOf('omega') !== -1) {
+  if (n.omega3 > 0.5 || nutrientsStr.includes('oméga') || nutrientsStr.includes('omega')) {
     tips.push({ icon: '🔗', text: 'Oméga-3 + antioxydants (thé vert, baies) = effet synergique' });
   }
   if (n.calcium > 50) {
@@ -1628,9 +1623,9 @@ function openFoodModal(catId, name) {
   }
   // Season
   if (food.season && food.season.length > 0) {
-    if (food.season.indexOf(month) !== -1) {
+    if (food.season.includes(month)) {
       html += '<div style="margin-bottom:8px;"><span class="season-badge in-season">🌱 De saison</span></div>';
-    } else if (food.import_season && food.import_season.indexOf(month) !== -1) {
+    } else if (food.import_season && food.import_season.includes(month)) {
       html += '<div style="margin-bottom:8px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
     }
   }
@@ -1878,11 +1873,11 @@ function actualSearch() {
   var matches = [];
   DATA.categories.forEach(function(cat) {
     cat.foods.forEach(function(f) {
-      if (normalizeForSearch(f.name).indexOf(query) !== -1) {
+      if (normalizeForSearch(f.name).includes(query)) {
         matches.push({ cat: cat, food: f });
       } else if (f.aliases && Array.isArray(f.aliases)) {
         for (var i = 0; i < f.aliases.length; i++) {
-          if (normalizeForSearch(f.aliases[i]).indexOf(query) !== -1) {
+          if (normalizeForSearch(f.aliases[i]).includes(query)) {
             matches.push({ cat: cat, food: f });
             break;
           }
@@ -1901,7 +1896,7 @@ function actualSearch() {
     // Wire up result clicks
     results.querySelectorAll('.search-result[data-cat]').forEach(function(el) {
       el.addEventListener('click', function() {
-        addItem(el.dataset.cat, { name: el.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"'), density: parseInt(el.dataset.density), nutrients: el.dataset.nutrients.replace(/&#39;/g, "'").replace(/&quot;/g, '"') });
+        addItem(el.dataset.cat, { name: el.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"'), density: Number.parseInt(el.dataset.density), nutrients: el.dataset.nutrients.replace(/&#39;/g, "'").replace(/&quot;/g, '"') });
         // Switch to that tab
         var cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
         if (cat) { activeTab = cat.section; render(); }
@@ -1917,7 +1912,7 @@ function actualSearch() {
 function showForgotPassword() {
   var email = $('auth-email').value.trim();
   $('auth-modal').classList.add('hidden');
-  $('app').innerHTML = '<div class="welcome"><h2>🔑 Mot de passe oublié</h2><p style="color:var(--text-dim);margin-bottom:20px;">Entrez votre email ou nom d usager. Vous recevrez un lien par courriel.</p><div style="max-width:340px;margin:0 auto;"><input type="text" id="forgot-email" placeholder="Email ou nom d usager" value="' + esc(email || '') + '" style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px;"><button class="login-cta" id="forgot-submit">Envoyer le lien</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="forgot-back">← Retour</a></div></div>';
+  $('app').innerHTML = '<div class="welcome"><h2>🔑 Mot de passe oublié</h2><p style="color:var(--text-dim);margin-bottom:20px;">Entrez votre email ou nom d usager. Vous recevrez un lien par courriel.</p><div style="max-width:340px;margin:0 auto;"><input type="text" id="forgot-email" placeholder="Email ou nom d usager" value="' + esc(email || '') + '" style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px;" aria-label="Email ou nom d usager"><button class="login-cta" id="forgot-submit">Envoyer le lien</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="forgot-back">← Retour</a></div></div>';
   $('forgot-submit').addEventListener('click', submitForgotPassword);
   $('forgot-back').addEventListener('click', function() { window.location.reload(); });
   $('forgot-email').focus();
@@ -2151,7 +2146,7 @@ async function loadDeals() {
     var PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
     function isPetFood(name) {
       var lower = (name || '').toLowerCase();
-      return PET_KEYWORDS.some(function(kw) { return lower.indexOf(kw) !== -1; });
+      return PET_KEYWORDS.some(function(kw) { return lower.includes(kw); });
     }
     Object.keys(DEALS).forEach(function(food) {
       DEALS[food] = DEALS[food].filter(function(d) {
@@ -2642,7 +2637,7 @@ async function init() {
           if (meRes.ok) {
             renderUserArea();
             await loadSelectionsFromServer();
-            planningSelections = JSON.parse(JSON.stringify(selections));
+            planningSelections = structuredClone(selections);
             loadDeals();
           } else {
             console.warn('[NutriFood] Token invalid, clearing');
@@ -2720,7 +2715,7 @@ function renderWelcome() {
 // ─── Daily nutrition helpers ───
 function daysUntilReset() {
   var now = new Date();
-  var day = now.getDay(); // 0=dimanche, 1=lundi, ...
+  var day = now.getDay(); // 0=dimanche, 1=lundi, 
   var daysUntilMonday = day === 0 ? 1 : (8 - day);
   return daysUntilMonday;
 }
@@ -2816,7 +2811,7 @@ async function renderTrackingNutrition() {
 }
 
 function renderDailyNutrition(totals) {
-  var hasGoals = userGoals && (userGoals.protein || userGoals.fiber || userGoals.iron || userGoals.vitamin_c || userGoals.calcium || userGoals.omega3);
+  /* goals check inline */
   var weekNum = getISOWeek();
   var resetDays = daysUntilReset();
 
@@ -2924,10 +2919,10 @@ function render() {
 function getSeasonIcon(food, month) {
   if (!food) return '';
   if (food.season && food.season.length > 0 && food.season.length < 12) {
-    if (food.season.indexOf(month) !== -1) return '🌱';
-    if (food.import_season && food.import_season.indexOf(month) !== -1) return '✈️';
+    if (food.season.includes(month)) return '🌱';
+    if (food.import_season && food.import_season.includes(month)) return '✈️';
   } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
-    if (food.import_season.indexOf(month) !== -1) return '✈️';
+    if (food.import_season.includes(month)) return '✈️';
   }
   return '';
 }
@@ -2997,11 +2992,11 @@ function renderCard(cat) {
         var seasonPrefix = '';
         if (f.season && f.season.length > 0) {
           var month = new Date().getMonth() + 1;
-          if (f.season.indexOf(month) !== -1) seasonPrefix = '🌱 ';
-          else if (f.import_season && f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+          if (f.season.includes(month)) seasonPrefix = '🌱 ';
+          else if (f.import_season && f.import_season.includes(month)) seasonPrefix = '✈️ ';
         } else if (f.import_season && f.import_season.length > 0 && f.import_season.length < 12) {
           var month = new Date().getMonth() + 1;
-          if (f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+          if (f.import_season.includes(month)) seasonPrefix = '✈️ ';
         }
         var dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
         html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
@@ -3119,14 +3114,14 @@ document.addEventListener('change', function(e) {
   if (e.target.tagName === 'SELECT' && e.target.dataset.cat) {
     if (e.target.value) {
       var opt = e.target.selectedOptions[0];
-      addItem(e.target.dataset.cat, { name: e.target.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
+      addItem(e.target.dataset.cat, { name: e.target.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
       e.target.value = '';
     }
   }
   // Checkbox changes
   if (e.target.type === 'checkbox' && e.target.dataset.cat) {
     var name = e.target.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
+    if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: Number.parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
     else removeItem(e.target.dataset.cat, name);
   }
 });
@@ -3224,7 +3219,7 @@ function adminAddFood(catId) {
   var nutrientsEl = $('add-nutrients-' + catId);
   if (!nameEl || !nameEl.value.trim()) return;
   var name = nameEl.value.trim();
-  var density = parseInt(densityEl.value || '50');
+  var density = Number.parseInt(densityEl.value || '50');
   var nutrients = nutrientsEl.value.trim() || 'Non spécifié';
   
   // Add to DATA
@@ -3340,12 +3335,12 @@ async function saveSelections() {
 
 // Check for magic link or share link in URL before init
 if (window.location.hash) {
-  if (window.location.hash.indexOf('reset=') !== -1) {
+  if (window.location.hash.includes('reset=')) {
     document.addEventListener('DOMContentLoaded', function() {
       $('reset-modal').classList.remove('hidden');
       $('reset-password').focus();
     });
-  } else if (window.location.hash.indexOf('share=') !== -1) {
+  } else if (window.location.hash.includes('share=')) {
     var shareMatch = window.location.hash.match(/share=([^&]+)/);
     if (shareMatch) {
       var shareToken = decodeURIComponent(shareMatch[1]);

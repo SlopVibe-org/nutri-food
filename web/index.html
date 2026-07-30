@@ -179,8 +179,6 @@
   .welcome .feature strong { color: var(--accent); }
   .welcome .login-cta { padding: 14px 36px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
   .welcome .login-cta:hover { background: var(--accent); }
-
-  /* Score ring */
   /* Search bar - always visible */
   .search-bar {
     position: relative; margin-bottom: 16px;
@@ -277,23 +275,7 @@
   .grocery-close { background: transparent; color: var(--text-dim); border: 1px solid var(--border) !important; }
 
   /* Food detail tooltip */
-  .food-detail {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
-    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
-  }
   .food-detail.hidden { display: none; }
-  .food-detail-modal {
-    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 28px; width: 100%; max-width: 380px;
-  }
-  .food-detail-modal h2 { font-size: 1.3rem; margin-bottom: 4px; color: var(--accent); }
-  .food-detail-modal .fd-cat { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 16px; }
-  .food-detail-modal .fd-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
-  .food-detail-modal .fd-row:last-child { border-bottom: none; }
-  .food-detail-modal .fd-label { color: var(--text-dim); }
-  .food-detail-modal .fd-value { font-weight: 600; }
-  .food-detail-modal .fd-nutrients { margin-top: 12px; padding: 12px; background: #12141c; border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.5; }
-  .food-detail-modal .fd-close { width: 100%; margin-top: 16px; padding: 10px; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
 
   /* Chip hover tooltip */
   .chip-tooltip {
@@ -347,10 +329,6 @@
   .planner-meal-slot:hover { background: rgba(74,222,128,0.06); }
   .planner-meal-label { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; }
   .planner-meal-items { color: var(--text); }
-  .planner-meal-add {
-    font-size: 0.65rem; color: var(--accent); cursor: pointer; opacity: 0.6;
-  }
-  .planner-meal-add:hover { opacity: 1; }
   .planner-chip {
     display: inline-block; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25);
     border-radius: 10px; padding: 1px 6px; margin: 1px; font-size: 0.68rem; cursor: pointer;
@@ -395,36 +373,12 @@
     }
     .print-area .print-qty { font-weight: 700; color: #333; margin-left: auto; }
     /* Hide everything else completely */
-    .grocery-overlay, .modal-overlay, .auth-modal, #app, #save-bar, .welcome, .header-row, .search-bar, .tabs, .score-bar, .nutri-summary { display: none !important; }
+    .grocery-overlay, .modal-overlay, .auth-modal, #app, #save-bar, .welcome, .header-row, .search-bar, .tabs, .nutri-summary { display: none !important; }
   }
   .print-area { display: none; }
 
   /* Edit mode */
   .card.editing { border-color: var(--accent-amber); }
-
-  .score-bar {
-    display: flex; align-items: center; gap: 16px; background: var(--card);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 12px 18px; margin-bottom: 20px;
-  }
-  .score-ring {
-    position: relative; width: 52px; height: 52px; flex-shrink: 0;
-  }
-  .score-ring svg { transform: rotate(-90deg); }
-  .score-ring .bg-circle { fill: none; stroke: var(--border); stroke-width: 5; }
-  .score-ring .fg-circle { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
-  .score-ring .score-text {
-    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    font-size: 0.9rem; font-weight: 700; color: var(--accent);
-  }
-  .score-details { flex: 1; }
-  .score-details .score-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
-  .score-details .score-sub { font-size: 0.78rem; color: var(--text-dim); }
-  .score-cat-dots { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-  .score-cat-dot { width: 8px; height: 8px; border-radius: 50%; }
-  .score-cat-dot.under { background: var(--accent-red); }
-  .score-cat-dot.in-range { background: var(--accent); }
-  .score-cat-dot.over { background: var(--accent-amber); }
 
   @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } #save-bar { flex-direction: column; gap: 8px; text-align: center; } }
 
@@ -520,8 +474,6 @@
     animation: fadeIn 0.3s ease;
   }
   .seasonal-banner.hidden { display: none; }
-  .seasonal-banner .sb-text { font-size: 0.88rem; color: var(--text); flex: 1; }
-  .seasonal-banner .sb-text strong { color: var(--accent); }
   .seasonal-banner .sb-item {
     display: inline-block; padding: 2px 10px; background: rgba(74,222,128,0.12);
     border: 1px solid rgba(74,222,128,0.3); border-radius: 12px;
@@ -612,7 +564,6 @@
   .deal-badges { display: inline-flex; margin-left: 4px; align-items: center; cursor: pointer; transition: filter 0.15s; border-radius: 4px; padding: 1px 2px; }
   .deal-badges:hover { filter: brightness(1.3); background: rgba(255,255,255,0.08); }
   .deal-badges-extra { font-size: 0.65rem; color: var(--text-dim); margin-left: 2px; font-weight: 700; }
-  .chip .deal-tag { font-size: 0.7rem; cursor: help; }
 
   /* Deal tooltip (inside chip-tooltip) */
   .chip-tooltip .ct-deals-title { font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
@@ -643,13 +594,6 @@
   .grocery-total .gt-note { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
 
   /* Admin refresh deals button */
-  .admin-refresh-btn {
-    display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: transparent;
-    color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 8px;
-    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
-  }
-  .admin-refresh-btn:hover { background: rgba(74,222,128,0.1); border-color: var(--accent); }
-  .admin-refresh-btn:disabled { opacity: 0.5; cursor: wait; }
 
   /* ─── Daily nutrition panel & reset badge ─── */
   .nutri-summary {
@@ -1175,13 +1119,6 @@ async function saveTracking() {
   } catch(e) { console.error('[NutriFood] Tracking save error:', e); }
 }
 
-function scheduleTrackingSave() {
-  if (autoSaveTimer) clearTimeout(autoSaveTimer);
-  autoSaveTimer = setTimeout(function() {
-    if (currentMode === 'tracking') saveTracking();
-  }, 2000);
-}
-
 // Wire up auth modal events (no inline onclick)
 function initAuthEvents() {
   // Mode tabs (Planification / Suivi)
@@ -1448,32 +1385,6 @@ async function saveMealPlan() {
 // ─── Share link ───
 
 // ─── Edit mode (admin) ───
-async function showShareLink() {
-  var token = getToken();
-  if (!token) { console.error('[NutriFood] No token for share'); return; }
-  // Show loading state in app
-  $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Génération du lien…</p><p class="loading">⏳ Patientez…</p></div>';
-  try {
-    var res = await fetchWithTimeout(API + '/share', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
-    }, 10000);
-    var data = await res.json();
-    if (!res.ok) { console.error('[NutriFood] Share failed:', data); showToast('Erreur de partage', 'error'); render(); return; }
-    var url = data.share_url || '';
-    $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Lien en lecture seule :</p><div style="max-width:420px;margin:0 auto;"><input type="text" value="' + url + '" id="share-url" readonly style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.85rem;margin-bottom:12px;text-align:center;"><button class="login-cta" id="share-copy-btn">📋 Copier</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="share-back">← Retour</a></div></div>';
-    $('share-copy-btn').addEventListener('click', function() {
-      var input = $('share-url');
-      input.select();
-      navigator.clipboard.writeText(input.value).then(function() {
-        $('share-copy-btn').textContent = '✓ Copié!';
-        showToast('Lien copié!', 'success');
-        setTimeout(function() { $('share-copy-btn').textContent = '📋 Copier'; }, 2000);
-      });
-    });
-    $('share-back').addEventListener('click', function() { render(); updateSaveBar(); });
-  } catch(e) { console.error('[NutriFood] Share error:', e); showToast('Erreur: ' + e.message, 'error'); render(); updateSaveBar(); }
-}
 
 // ─── Add product modal (CNF search) ───
 var cnfSelectedId = null;
@@ -1835,7 +1746,6 @@ async function cnfSaveToDatabase(food, nutrition) {
   }
 }
 
-
 async function loadSharedView(shareToken) {
   try {
     var res = await fetch(API + '/shared/' + shareToken);
@@ -1871,8 +1781,6 @@ async function loadSharedView(shareToken) {
     $('save-bar').classList.remove('visible');
   } catch(e) { renderWelcome(); }
 }
-
-// ─── Food detail (hover tooltip) ───
 var tooltipEl = null;
 function getNutritionTips(food) {
   var tips = [];
@@ -2006,11 +1914,6 @@ function openFoodModal(catId, name) {
     content.innerHTML = html;
     document.getElementById('suggestions-modal').classList.remove('hidden');
   }
-}
-
-// Show deals in modal instead of tooltip
-function showDealTooltip(foodName) {
-  openDealModal(foodName);
 }
 
 // ─── Grocery list ───
@@ -2420,36 +2323,7 @@ function buildDealBadges(foodName) {
   html += '</span>';
   return html;
 }
-
-// Helper: build deal tooltip HTML
 // Deals are shown in modal on click, not in tooltip
-function buildDealTooltipHtml(foodName) { return ''; }
-
-// Open deal modal with full list
-function openDealModal(foodName) {
-  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
-  if (deals.length === 0) return;
-  var mHtml = '<h2 style="margin-bottom:12px;">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</h2>';
-  deals.forEach(function(d) {
-    var si = STORE_META[d.store] || {};
-    var color = si.color || '#666';
-    var sn = si.name || d.store || '?';
-    var letter = sn.charAt(0).toUpperCase();
-    mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:12px;margin-left:4px;margin-bottom:12px;">';
-    mHtml += '<div class="ct-deal-name" style="font-weight:600;font-size:0.95rem;">' + esc(d.name || foodName) + '</div>';
-    mHtml += '<div class="ct-deal-price" style="font-size:1.1rem;color:var(--accent);font-weight:700;margin:4px 0;">' + (d.price || '') + '$</div>';
-    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
-    if (d.unit_price) mHtml += '<div class="ct-deal-meta">Prix unitaire: ' + esc(d.unit_price) + '</div>';
-    mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
-    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
-    mHtml += '</div>';
-  });
-  var content = document.getElementById('suggestions-content');
-  if (content) {
-    content.innerHTML = mHtml;
-    document.getElementById('suggestions-modal').classList.remove('hidden');
-  }
-}
 
 // Deal modal: click 'voir plus' opens full list in suggestions modal
 document.addEventListener('click', function(e) {

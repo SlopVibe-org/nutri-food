@@ -1,0 +1,3604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<title>NutriFood — Densité Nutritionnelle</title>
+<style>
+  :root {
+    --bg: #0f1117; --card: #1a1d27; --accent: #4ade80; --accent-dim: #22c55e;
+    --accent-red: #f87171; --accent-amber: #fbbf24;
+    --text: #e4e4e7; --text-dim: #94a3b8; --border: #2a2d3a; --radius: 12px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); padding: 20px;
+    max-width: 900px; margin: 0 auto; padding-bottom: 100px;
+  }
+  h1 {
+    font-size: 1.8rem; margin-bottom: 4px;
+    background: linear-gradient(135deg, var(--accent), #38bdf8);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .header-row > div { display: flex; align-items: center; }
+  .header-row .header-left { flex: 0 0 auto; flex-direction: column; align-items: flex-start; }
+  .header-row .header-search { flex: 1 1 300px; min-width: 200px; }
+  .header-row .header-right { flex: 0 0 auto; }
+  .header-row .search-bar { width: 100%; margin: 0; }
+  .user-area { display: flex; align-items: center; gap: 10px; }
+  .user-name { font-size: 0.9rem; color: var(--text-dim); }
+  .auth-btn {
+    padding: 6px 14px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 0.85rem; font-weight: 700; cursor: pointer;
+  }
+  .auth-btn:hover { background: var(--accent); }
+  .auth-btn.outline { background: transparent; color: var(--accent); border: 1px solid var(--accent-dim); }
+  .auth-btn.outline:hover { background: rgba(74,222,128,0.1); }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center; z-index: 200; backdrop-filter: blur(4px);
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px; width: 100%; max-width: 360px;
+  }
+  .modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
+  .modal .field { margin-bottom: 12px; }
+  .modal label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; }
+  .modal input {
+    width: 100%; padding: 10px 12px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+  }
+  .modal input:focus { outline: none; border-color: var(--accent); }
+  .modal .error-msg { color: var(--accent-red); font-size: 0.85rem; margin-bottom: 8px; min-height: 1.2em; }
+  .modal .submit-btn {
+    width: 100%; padding: 12px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 8px;
+  }
+  .modal .submit-btn:hover { background: var(--accent); }
+  .modal .switch-link { text-align: center; margin-top: 12px; font-size: 0.85rem; color: var(--text-dim); }
+  .modal .switch-link a { color: var(--accent); cursor: pointer; text-decoration: none; }
+
+  .tabs {
+    display: flex; gap: 4px; margin-bottom: 20px;
+    border-bottom: 2px solid var(--border); flex-wrap: wrap;
+  }
+  .tab {
+    padding: 10px 16px; background: none; border: none; color: var(--text-dim);
+    font-size: 0.95rem; cursor: pointer; white-space: nowrap;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px; font-weight: 600;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .tab-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); flex-shrink: 0; }
+  .tab-dot.under { background: var(--accent-red); }
+  .tab-dot.in-range { background: var(--accent); }
+  .tab-dot.over { background: var(--accent-amber); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: border-color 0.2s; }
+  .card:hover { border-color: var(--accent-dim); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .cat-label { font-size: 0.85rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .icon { font-size: 1.3rem; margin-right: 6px; }
+  .counter-badge {
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; white-space: nowrap;
+    border: 1px solid var(--border); background: #12141c; color: var(--text-dim); transition: all 0.2s;
+  }
+  .counter-badge.under { color: var(--accent-red); border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.1); }
+  .counter-badge.in-range { color: var(--accent); border-color: rgba(74,222,128,0.4); background: rgba(74,222,128,0.1); }
+  .counter-badge.over { color: var(--accent-amber); border-color: rgba(251,191,36,0.4); background: rgba(251,191,36,0.1); }
+
+  select {
+    width: 100%; padding: 10px 12px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%234ade80' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; margin-bottom: 8px;
+  }
+  select:focus { outline: none; border-color: var(--accent); }
+  select option { background: var(--card); color: var(--text); padding: 8px; }
+
+  .checkbox-add {
+    display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #12141c;
+    border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.95rem; transition: border-color 0.15s; margin-bottom: 8px;
+  }
+  .checkbox-add:hover { border-color: var(--accent-dim); }
+  .checkbox-add input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; min-height: 4px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 10px;
+    background: rgba(74,222,128,0.12); border: 1px solid rgba(74,222,128,0.35);
+    border-radius: 20px; font-size: 0.85rem; color: var(--text); animation: chipIn 0.2s ease;
+  }
+  .chip .density-tag { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+  .chip .qty-controls { display: inline-flex; align-items: center; gap: 2px; margin-left: 4px; }
+  .chip .qty-btn {
+    background: rgba(74,222,128,0.2); border: none; color: var(--accent); cursor: pointer; font-size: 0.8rem;
+    line-height: 1; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s; font-weight: 700;
+  }
+  .chip .qty-btn:hover { background: rgba(74,222,128,0.4); }
+  .chip .qty-num { font-weight: 700; color: var(--text); min-width: 16px; text-align: center; font-size: 0.85rem; }
+  .chip .remove-btn {
+    background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 1.1rem;
+    line-height: 1; padding: 0; margin-left: 2px; opacity: 0.7; transition: opacity 0.15s;
+  }
+  .chip .remove-btn:hover { opacity: 1; }
+  @keyframes chipIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+  .chip[title] { cursor: pointer; }
+  .chip[data-detail-cat] { cursor: pointer; transition: filter 0.15s, background 0.15s; }
+  .chip[data-detail-cat]:hover { filter: brightness(1.25); background: rgba(74,222,128,0.22); }
+  .remove-product-item:hover { background: rgba(255,100,100,0.08); border-color: var(--accent-red) !important; }
+
+  #save-bar {
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100;
+    transform: translateY(100%); transition: transform 0.3s ease;
+  }
+  #save-bar.visible { transform: translateY(0); }
+  #save-bar .save-info { font-size: 0.85rem; color: var(--text-dim); }
+  #save-btn {
+    padding: 10px 24px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 8px;
+    font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: background 0.2s;
+  }
+  #save-btn:hover { background: var(--accent); }
+  #save-btn:disabled { opacity: 0.4; cursor: default; }
+  #save-btn.dirty { background: var(--accent-amber); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); } 50% { box-shadow: 0 0 0 8px rgba(251,191,36,0); } }
+  .loading { text-align: center; padding: 40px; color: var(--text-dim); }
+
+  /* Mode tabs (Planification / Suivi) */
+  .mode-tabs { display:flex; gap:0; margin-bottom:12px; border-bottom:2px solid var(--border); }
+  .mode-tab { flex:1; padding:10px; background:none; border:none; color:var(--text-dim); font-size:0.95rem; font-weight:600; cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-2px; transition: color 0.2s, border-color 0.2s; }
+  .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .mode-tab:hover:not(.active) { color:var(--text); }
+
+  /* Tracking day navigation bar */
+  .tracking-bar { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px; }
+  .tracking-nav-btn { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 12px; font-size:1.2rem; cursor:pointer; transition: background 0.15s; }
+  .tracking-nav-btn:hover { background:var(--accent); color:#fff; }
+  #tracking-day-label { font-weight:600; font-size:0.95rem; min-width:120px; text-align:center; }
+
+  /* Welcome screen */
+  .welcome { text-align: center; padding: 60px 20px; }
+  .welcome h2 { font-size: 1.8rem; margin-bottom: 8px; color: var(--text); }
+  .welcome p { color: var(--text-dim); margin-bottom: 24px; font-size: 1.05rem; }
+  .welcome .features { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 32px; }
+  .welcome .feature { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 18px; font-size: 0.9rem; color: var(--text-dim); }
+  .welcome .feature strong { color: var(--accent); }
+  .welcome .login-cta { padding: 14px 36px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+  .welcome .login-cta:hover { background: var(--accent); }
+
+  /* Score ring */
+  /* Search bar - always visible */
+  .search-bar {
+    position: relative; margin-bottom: 16px;
+  }
+  .search-bar input {
+    width: 100%; padding: 10px 12px 10px 38px; background: #12141c; color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem;
+  }
+  .search-bar input:focus { outline: none; border-color: var(--accent); }
+  .search-bar .search-icon {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 1rem; color: var(--text-dim); pointer-events: none;
+  }
+
+  /* User dropdown menu */
+  .user-menu { position: relative; flex-shrink: 0; }
+  .user-menu-btn {
+    display: flex; align-items: center; gap: 6px; padding: 6px 12px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; font-size: 0.9rem; color: var(--text); transition: border-color 0.2s;
+    max-width: 160px; overflow: hidden;
+  }
+  .user-menu-btn .uname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .user-menu-btn:hover { border-color: var(--accent-dim); }
+  .user-menu-btn .avatar {
+    width: 24px; height: 24px; border-radius: 50%; background: var(--accent-dim);
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #0f1117; flex-shrink: 0;
+  }
+  .user-menu-dropdown {
+    position: absolute; top: 100%; right: 0; margin-top: 6px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    min-width: 180px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 150;
+    display: none; overflow: hidden;
+  }
+  @media (max-width: 600px) {
+    .user-menu-btn { max-width: 90px; }
+    .user-menu-btn .uname { display: none; }
+    .user-menu-dropdown { right: 0; left: auto; min-width: 160px; }
+  }
+  .user-menu-dropdown.visible { display: block; }
+  .user-menu-item {
+    display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 14px;
+    background: none; border: none; color: var(--text); font-size: 0.9rem; cursor: pointer;
+    text-align: left; transition: background 0.1s;
+  }
+  .user-menu-item:hover { background: rgba(74,222,128,0.08); }
+  .user-menu-item .icon { font-size: 1rem; }
+  .user-menu-divider { height: 1px; background: var(--border); margin: 0; }
+  .search-results {
+    position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    margin-top: 4px; max-height: 320px; overflow-y: auto; display: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .search-results.visible { display: block; }
+  .search-result {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: background 0.1s;
+  }
+  .search-result:last-child { border-bottom: none; }
+  .search-result:hover { background: rgba(74,222,128,0.08); }
+  .search-result .sr-name { font-size: 0.95rem; }
+  .search-result .sr-meta { font-size: 0.78rem; color: var(--text-dim); }
+  .search-result .sr-cat { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+  .search-result .sr-density { font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+
+  /* Grocery list */
+  .grocery-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  }
+  .grocery-overlay.hidden { display: none; }
+  .grocery-modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 480px; max-height: 80vh; overflow-y: auto;
+  }
+  .grocery-modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
+  .grocery-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 0;
+    border-bottom: 1px solid var(--border); font-size: 0.95rem;
+  }
+  .grocery-item:last-child { border-bottom: none; }
+  .grocery-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+  .grocery-item .gi-name { flex: 1; }
+  .grocery-item .gi-qty { font-weight: 700; color: var(--accent); }
+  .grocery-item.checked .gi-name { text-decoration: line-through; color: var(--text-dim); }
+  .grocery-actions { display: flex; gap: 8px; margin-top: 16px; }
+  .grocery-actions button {
+    flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  }
+  .grocery-copy { background: var(--accent-dim); color: #0f1117; }
+  .grocery-copy:hover { background: var(--accent); }
+  .grocery-close { background: transparent; color: var(--text-dim); border: 1px solid var(--border) !important; }
+
+  /* Food detail tooltip */
+  .food-detail {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 200;
+    display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);
+  }
+  .food-detail.hidden { display: none; }
+  .food-detail-modal {
+    background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 28px; width: 100%; max-width: 380px;
+  }
+  .food-detail-modal h2 { font-size: 1.3rem; margin-bottom: 4px; color: var(--accent); }
+  .food-detail-modal .fd-cat { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 16px; }
+  .food-detail-modal .fd-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+  .food-detail-modal .fd-row:last-child { border-bottom: none; }
+  .food-detail-modal .fd-label { color: var(--text-dim); }
+  .food-detail-modal .fd-value { font-weight: 600; }
+  .food-detail-modal .fd-nutrients { margin-top: 12px; padding: 12px; background: #12141c; border-radius: 8px; font-size: 0.85rem; color: var(--text); line-height: 1.5; }
+  .food-detail-modal .fd-close { width: 100%; margin-top: 16px; padding: 10px; background: transparent; color: var(--text-dim); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 0.9rem; }
+
+  /* Chip hover tooltip */
+  .chip-tooltip {
+    position: fixed; z-index: 300; background: var(--card); border: 1px solid var(--accent-dim);
+    border-radius: 10px; padding: 12px 16px; max-width: 280px; pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; font-size: 0.85rem;
+  }
+  .chip-tooltip.visible { display: block; }
+  .chip-tooltip .ct-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .chip-tooltip .ct-density { font-size: 0.75rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
+  .chip-tooltip .ct-nutrients { color: var(--text); line-height: 1.4; }
+  .chip-tooltip .ct-also { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+
+  /* Season badge */
+  .season-badge {
+    display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
+    border-radius: 10px; margin-left: 4px; vertical-align: middle;
+  }
+  .season-badge.in-season { background: rgba(74,222,128,0.15); color: var(--accent); border: 1px solid rgba(74,222,128,0.3); }
+  .season-badge.out-season { background: rgba(148,163,184,0.1); color: var(--text-dim); border: 1px solid var(--border); }
+
+  /* Nutrition summary bar */
+  .nutri-summary {
+    display: flex; gap: 12px; flex-wrap: wrap; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 10px 16px; margin-bottom: 16px;
+  }
+  .nutri-stat { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
+  .nutri-stat .ns-value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .nutri-stat .ns-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
+
+  /* Meal planner */
+  .planner-grid {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-top: 8px;
+  }
+  .planner-day {
+    background: #12141c; border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px; min-height: 120px; display: flex; flex-direction: column; gap: 4px;
+  }
+  .planner-day-header {
+    font-size: 0.75rem; font-weight: 700; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.5px; text-align: center; padding-bottom: 4px;
+    border-bottom: 1px solid var(--border); margin-bottom: 4px;
+  }
+  .planner-day.today .planner-day-header { color: var(--accent); }
+  .planner-day.today { border-color: var(--accent-dim); }
+  .planner-meal-slot {
+    font-size: 0.72rem; min-height: 24px; padding: 2px 4px;
+    border-radius: 4px; cursor: pointer; transition: background 0.1s;
+  }
+  .planner-meal-slot:hover { background: rgba(74,222,128,0.06); }
+  .planner-meal-label { font-size: 0.62rem; color: var(--text-dim); text-transform: uppercase; }
+  .planner-meal-items { color: var(--text); }
+  .planner-meal-add {
+    font-size: 0.65rem; color: var(--accent); cursor: pointer; opacity: 0.6;
+  }
+  .planner-meal-add:hover { opacity: 1; }
+  .planner-chip {
+    display: inline-block; background: rgba(74,222,128,0.1); border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 10px; padding: 1px 6px; margin: 1px; font-size: 0.68rem; cursor: pointer;
+  }
+  .planner-chip:hover { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); }
+  .planner-week-nav {
+    display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px;
+  }
+  .planner-week-nav button {
+    padding: 4px 12px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); cursor: pointer; font-size: 0.85rem;
+  }
+  .planner-week-nav button:hover { border-color: var(--accent); }
+  .planner-week-label { font-size: 0.9rem; font-weight: 700; color: var(--text); min-width: 80px; text-align: center; }
+  .planner-food-palette {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; padding: 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  }
+  .planner-food-palette .label { font-size: 0.75rem; color: var(--text-dim); width: 100%; margin-bottom: 4px; }
+  @media (max-width: 700px) {
+    .planner-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Print styles */
+  @media print {
+    html, body { background: white !important; color: black !important; }
+    body * { visibility: hidden !important; }
+    .print-area, .print-area * { visibility: visible !important; }
+    .print-area {
+      display: block !important;
+      position: absolute; left: 0; top: 0; width: 100%;
+      background: white !important; color: black !important; padding: 20px !important;
+    }
+    .print-area h1 { font-size: 1.3rem; color: black; margin-bottom: 4px; }
+    .print-area .print-date { font-size: 0.8rem; color: #666; margin-bottom: 16px; }
+    .print-area .print-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 5px 0; border-bottom: 1px solid #ddd; font-size: 1rem; color: black;
+    }
+    .print-area .print-checkbox {
+      width: 14px; height: 14px; border: 1.5px solid #333; flex-shrink: 0;
+    }
+    .print-area .print-qty { font-weight: 700; color: #333; margin-left: auto; }
+    /* Hide everything else completely */
+    .grocery-overlay, .modal-overlay, .auth-modal, #app, #save-bar, .welcome, .header-row, .search-bar, .tabs, .score-bar, .nutri-summary { display: none !important; }
+  }
+  .print-area { display: none; }
+
+  /* Edit mode */
+  .card.editing { border-color: var(--accent-amber); }
+
+  .score-bar {
+    display: flex; align-items: center; gap: 16px; background: var(--card);
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 18px; margin-bottom: 20px;
+  }
+  .score-ring {
+    position: relative; width: 52px; height: 52px; flex-shrink: 0;
+  }
+  .score-ring svg { transform: rotate(-90deg); }
+  .score-ring .bg-circle { fill: none; stroke: var(--border); stroke-width: 5; }
+  .score-ring .fg-circle { fill: none; stroke: var(--accent); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+  .score-ring .score-text {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; font-weight: 700; color: var(--accent);
+  }
+  .score-details { flex: 1; }
+  .score-details .score-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+  .score-details .score-sub { font-size: 0.78rem; color: var(--text-dim); }
+  .score-cat-dots { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  .score-cat-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .score-cat-dot.under { background: var(--accent-red); }
+  .score-cat-dot.in-range { background: var(--accent); }
+  .score-cat-dot.over { background: var(--accent-amber); }
+
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } #save-bar { flex-direction: column; gap: 8px; text-align: center; } }
+
+  /* CNF search results */
+  .cnf-result { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #12141c; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+  .cnf-result:hover { border-color: var(--accent-dim); }
+  .cnf-result.selected { border-color: var(--accent); background: rgba(74,222,128,0.08); }
+  .cnf-result .cnf-name { flex: 1; font-size: 0.9rem; color: var(--text); }
+  .cnf-result .cnf-group { font-size: 0.75rem; color: var(--text-dim); }
+  .cnf-result .cnf-check { color: var(--accent); font-size: 1.1rem; opacity: 0; transition: opacity 0.15s; }
+  .cnf-result.selected .cnf-check { opacity: 1; }
+  .cnf-nutrients { margin-top: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px; }
+  .cnf-nutri-item { background: #12141c; border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; }
+  .cnf-nutri-item .cnf-nutri-name { font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.3px; }
+  .cnf-nutri-item .cnf-nutri-val { font-size: 0.95rem; font-weight: 700; color: var(--accent); }
+
+  /* Toast system */
+  .toast-container {
+    position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+    z-index: 400; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none;
+  }
+  .toast {
+    background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 8px; padding: 10px 18px; font-size: 0.88rem; color: var(--text);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); max-width: 380px; animation: toastSlideIn 0.3s ease;
+    pointer-events: auto;
+  }
+  .toast.info { border-left-color: #38bdf8; }
+  .toast.success { border-left-color: var(--accent); }
+  .toast.warning { border-left-color: var(--accent-amber); }
+  .toast.error { border-left-color: var(--accent-red); }
+  .toast.fade-out { animation: toastFadeOut 0.3s ease forwards; }
+  @keyframes toastSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toastFadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+
+  /* Search keyboard navigation */
+  .search-result.search-result-active { background: rgba(74,222,128,0.15); border-left: 3px solid var(--accent); }
+
+  /* Planner mobile tabs */
+  .planner-mobile-tabs { display: none; gap: 4px; margin-bottom: 8px; flex-wrap: wrap; }
+  .planner-mobile-tab {
+    padding: 6px 12px; background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text-dim); font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  }
+  .planner-mobile-tab.active { background: var(--accent-dim); color: #0f1117; border-color: var(--accent); }
+  @media (max-width: 768px) {
+    .planner-mobile-tabs { display: flex; }
+    .planner-grid { display: none; }
+    .planner-grid.mobile-active { display: grid; grid-template-columns: 1fr; }
+    .planner-day { display: none !important; }
+    .planner-day.mobile-selected { display: flex !important; }
+  }
+
+  /* API error state */
+  .api-error {
+    text-align: center; padding: 40px 20px;
+  }
+  .api-error h2 { font-size: 1.3rem; color: var(--accent-red); margin-bottom: 8px; }
+  .api-error p { color: var(--text-dim); margin-bottom: 16px; }
+  .api-error button {
+    padding: 10px 24px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 8px; font-size: 0.95rem; font-weight: 700; cursor: pointer;
+  }
+  .api-error button:hover { background: var(--accent); }
+
+  /* ─── Feature 1: Floating suggestions badge ─── */
+  .suggestions-fab {
+    position: fixed; bottom: 80px; right: 20px; width: 52px; height: 52px;
+    border-radius: 50%; background: var(--accent-dim); color: #0f1117;
+    border: 2px solid var(--accent); font-size: 1.5rem; cursor: pointer;
+    z-index: 150; display: none; align-items: center; justify-content: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4); transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .suggestions-fab.visible { display: flex; }
+  .suggestions-fab:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(74,222,128,0.4); }
+  .suggestions-fab.pulsing { animation: suggestionPulse 2s infinite; }
+  @keyframes suggestionPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.5); }
+    50% { box-shadow: 0 0 0 12px rgba(251,191,36,0); }
+  }
+  .suggestions-fab .fab-count {
+    position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px;
+    border-radius: 9px; background: var(--accent-red); color: #fff;
+    font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+  }
+
+  /* ─── Feature 2: Seasonal banner ─── */
+  .seasonal-banner {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    background: rgba(74,222,128,0.08); border: 1px solid rgba(74,222,128,0.25);
+    border-radius: var(--radius); padding: 10px 16px; margin-bottom: 16px;
+    animation: fadeIn 0.3s ease;
+  }
+  .seasonal-banner.hidden { display: none; }
+  .seasonal-banner .sb-text { font-size: 0.88rem; color: var(--text); flex: 1; }
+  .seasonal-banner .sb-text strong { color: var(--accent); }
+  .seasonal-banner .sb-item {
+    display: inline-block; padding: 2px 10px; background: rgba(74,222,128,0.12);
+    border: 1px solid rgba(74,222,128,0.3); border-radius: 12px;
+    font-size: 0.8rem; color: var(--accent); cursor: pointer; transition: background 0.15s;
+    margin: 2px;
+  }
+  .seasonal-banner .sb-item:hover { background: rgba(74,222,128,0.25); }
+  .seasonal-banner .sb-close {
+    background: none; border: none; color: var(--text-dim); cursor: pointer;
+    font-size: 1.1rem; padding: 0 4px; opacity: 0.7; transition: opacity 0.15s;
+  }
+  .seasonal-banner .sb-close:hover { opacity: 1; }
+  .seasonal-banner .sb-more { background: rgba(74,222,128,0.06); border-style: dashed; cursor: pointer; }
+  .seasonal-banner .sb-more:hover { background: rgba(74,222,128,0.25); }
+  .seasonal-banner .sb-extra { display: none; margin-top: 4px; }
+  .seasonal-banner .sb-extra.show { display: flex; flex-wrap: wrap; gap: 4px; }
+
+  /* ─── Feature 3 & 4: Goals & History modals ─── */
+  .modal.wide { max-width: 520px; }
+  .modal .goals-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .modal .goal-field { display: flex; flex-direction: column; gap: 4px; }
+  .modal .goal-field label { font-size: 0.78rem; color: var(--text-dim); }
+  .modal .goal-field input { width: 100%; padding: 8px 10px; background: #12141c; color: var(--text); border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+  .modal .goal-field input:focus { outline: none; border-color: var(--accent); }
+
+  .modal .cancel-link {
+    display: block; text-align: center; margin-top: 12px;
+    color: var(--text-dim); font-size: 0.85rem; cursor: pointer; text-decoration: none;
+  }
+  .modal .cancel-link:hover { color: var(--accent-red); }
+
+  /* Suggestions modal content */
+  .suggestion-gap {
+    background: #12141c; border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .suggestion-gap .sg-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .suggestion-gap .sg-name { font-size: 0.95rem; font-weight: 700; color: var(--text); }
+  .suggestion-gap .sg-pct { font-size: 0.85rem; font-weight: 700; color: var(--accent-red); }
+  .suggestion-gap .sg-bar {
+    height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 10px;
+  }
+  .suggestion-gap .sg-bar-fill {
+    height: 100%; background: var(--accent-red); border-radius: 4px; transition: width 0.4s ease;
+  }
+  .suggestion-gap .sg-bar-fill.good { background: var(--accent); }
+  .suggestion-gap .sg-bar-fill.ok { background: var(--accent-amber); }
+  .suggestion-gap .sg-food {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 6px 8px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 6px; margin-bottom: 4px; font-size: 0.85rem;
+  }
+  .suggestion-gap .sg-food-info { flex: 1; }
+  .suggestion-gap .sg-food-name { font-weight: 600; color: var(--text); }
+  .suggestion-gap .sg-food-val { font-size: 0.75rem; color: var(--text-dim); }
+  .suggestion-gap .sg-add-btn {
+    padding: 4px 10px; background: var(--accent-dim); color: #0f1117;
+    border: none; border-radius: 6px; font-size: 0.8rem; font-weight: 700; cursor: pointer;
+    flex-shrink: 0; transition: background 0.15s;
+  }
+  .suggestion-gap .sg-add-btn:hover { background: var(--accent); }
+
+  /* History table */
+  .history-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .history-table th { text-align: left; padding: 8px 6px; color: var(--text-dim); border-bottom: 2px solid var(--border); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+  .history-table td { padding: 8px 6px; border-bottom: 1px solid var(--border); color: var(--text); }
+  .history-table tr { cursor: pointer; transition: background 0.1s; }
+  .history-table tbody tr:hover { background: rgba(74,222,128,0.06); }
+  .history-table .ht-week { color: var(--accent); font-weight: 700; }
+  .history-detail-back { color: var(--text-dim); font-size: 0.85rem; cursor: pointer; margin-bottom: 12px; display: inline-block; }
+  .history-detail-back:hover { color: var(--accent); }
+  .history-detail-list { list-style: none; padding: 0; }
+  .history-detail-list li { padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; display: flex; justify-content: space-between; }
+  .history-detail-list li .hd-qty { color: var(--accent); font-weight: 700; }
+
+  /* Modal scrollable */
+  .modal.scrollable { max-height: 80vh; overflow-y: auto; }
+
+  /* ─── Deal badges (epiceries.ca) ─── */
+  .deal-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border-radius: 50%;
+    font-size: 0.65rem; font-weight: 700; color: white;
+    margin-left: 2px; border: 1.5px solid rgba(255,255,255,0.2);
+    text-decoration: none; transition: transform 0.15s;
+  }
+  .deal-badge:hover { transform: scale(1.15); }
+  .deal-badges { display: inline-flex; margin-left: 4px; align-items: center; cursor: pointer; transition: filter 0.15s; border-radius: 4px; padding: 1px 2px; }
+  .deal-badges:hover { filter: brightness(1.3); background: rgba(255,255,255,0.08); }
+  .deal-badges-extra { font-size: 0.65rem; color: var(--text-dim); margin-left: 2px; font-weight: 700; }
+  .chip .deal-tag { font-size: 0.7rem; cursor: help; }
+
+  /* Deal tooltip (inside chip-tooltip) */
+  .chip-tooltip .ct-deals-title { font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
+  .chip-tooltip .ct-deal-item { padding: 6px 0; border-bottom: 1px solid rgba(42,45,58,0.5); }
+  .chip-tooltip .ct-deal-item:last-child { border-bottom: none; }
+  .chip-tooltip .ct-deal-name { font-weight: 600; color: var(--text); font-size: 0.82rem; }
+  .chip-tooltip .ct-deal-price { font-weight: 700; color: var(--accent); font-size: 0.88rem; }
+  .chip-tooltip .ct-deal-meta { font-size: 0.72rem; color: var(--text-dim); }
+  .chip-tooltip .ct-deal-store { display: inline-flex; align-items: center; gap: 4px; font-size: 0.75rem; }
+  .chip-tooltip .ct-deal-store-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 0.55rem; font-weight: 700; color: white;
+  }
+  .chip-tooltip .ct-deal-link { color: var(--accent); font-size: 0.78rem; text-decoration: none; cursor: pointer; }
+  .chip-tooltip .ct-deal-link:hover { text-decoration: underline; }
+
+  /* Grocery list deal info */
+  .grocery-item .gi-deal { font-size: 0.8rem; color: var(--accent); font-weight: 600; cursor: pointer; text-decoration: none; }
+  .grocery-item .gi-deal:hover { text-decoration: underline; }
+  .grocery-deal-store-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%;
+    font-size: 0.55rem; font-weight: 700; color: white; margin-right: 2px;
+  }
+  .grocery-total { margin-top: 12px; padding: 10px 12px; background: #12141c; border-radius: 8px; border: 1px solid var(--border); }
+  .grocery-total .gt-amount { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .grocery-total .gt-note { font-size: 0.75rem; color: var(--text-dim); margin-top: 2px; }
+
+  /* Admin refresh deals button */
+  .admin-refresh-btn {
+    display: flex; align-items: center; gap: 6px; padding: 6px 14px; background: transparent;
+    color: var(--accent); border: 1px solid var(--accent-dim); border-radius: 8px;
+    font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+  .admin-refresh-btn:hover { background: rgba(74,222,128,0.1); border-color: var(--accent); }
+  .admin-refresh-btn:disabled { opacity: 0.5; cursor: wait; }
+
+  /* ─── Daily nutrition panel & reset badge ─── */
+  .nutri-summary {
+    flex-direction: column;
+    gap: 0;
+    padding: 12px 16px;
+  }
+  .nutri-summary-header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; flex-wrap: wrap; margin-bottom: 8px;
+  }
+  .nutri-summary-title {
+    font-size: 0.9rem; font-weight: 700; color: var(--text);
+  }
+  .nutri-summary-title strong { color: var(--accent); }
+  .reset-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
+    border-radius: 20px; white-space: nowrap;
+    background: rgba(56,189,248,0.1); color: #38bdf8;
+    border: 1px solid rgba(56,189,248,0.3);
+  }
+  .nutri-stats-row {
+    display: flex; gap: 12px; flex-wrap: wrap;
+  }
+  .nutri-stat {
+    display: flex; flex-direction: column; align-items: center; min-width: 60px;
+  }
+  .nutri-stat .ns-value {
+    font-size: 1.1rem; font-weight: 700; color: var(--accent);
+  }
+  .nutri-stat .ns-label {
+    font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .nutri-stat .ns-daily {
+    font-size: 0.72rem; color: var(--text-dim); margin-top: 1px;
+  }
+  .nutri-stat .ns-pct {
+    font-size: 0.68rem; font-weight: 700; margin-top: 1px;
+  }
+  .nutri-stat .ns-pct.good { color: var(--accent); }
+  .nutri-stat .ns-pct.ok { color: var(--accent-amber); }
+  .nutri-stat .ns-pct.low { color: var(--accent-red); }
+  .nutri-progress {
+    width: 100%; min-width: 48px; height: 5px;
+    background: var(--border); border-radius: 3px; overflow: hidden;
+    margin-top: 3px;
+  }
+  .nutri-progress-fill {
+    height: 100%; border-radius: 3px; transition: width 0.4s ease;
+  }
+  .nutri-progress-fill.good { background: var(--accent); }
+  .nutri-progress-fill.ok { background: var(--accent-amber); }
+  .nutri-progress-fill.low { background: var(--accent-red); }
+</style>
+</head>
+<body>
+
+<div class="header-row">
+  <div class="header-left">
+    <h1>🍎 NutriFood</h1>
+    <p class="subtitle">Aliments classés par densité nutritionnelle</p>
+  </div>
+  <div class="header-search" id="search-bar-container" style="display:none;">
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Rechercher un aliment…" autocomplete="off">
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+  <div class="header-right user-area" id="user-area"></div>
+</div>
+
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <h2 id="auth-title">Connexion</h2>
+    <div class="error-msg" id="auth-error"></div>
+    <div class="field" id="name-field" style="display:none;">
+      <label>Nom</label>
+      <input type="text" id="auth-name" autocomplete="name">
+    </div>
+    <div class="field">
+      <label>Email ou nom d'usager</label>
+      <input type="text" id="auth-email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Mot de passe</label>
+      <input type="password" id="auth-password" autocomplete="current-password">
+    </div>
+    <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
+    <div class="switch-link">
+      <span id="auth-switch-text">Pas de compte? </span>
+      <a id="auth-switch-link">S'inscrire</a>
+    </div>
+    <div id="forgot-link" style="text-align:center;margin-top:8px;">
+      <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;text-decoration:none;" id="forgot-password-link">Mot de passe oublié?</a>
+    </div>
+  </div>
+</div>
+
+<!-- Change password modal -->
+<div class="modal-overlay hidden" id="pw-modal">
+  <div class="modal">
+    <h2>🔑 Changer le mot de passe</h2>
+    <div class="error-msg" id="pw-error"></div>
+    <div class="field">
+      <label>Mot de passe actuel</label>
+      <input type="password" id="pw-current" autocomplete="current-password">
+    </div>
+    <div class="field">
+      <label>Nouveau mot de passe</label>
+      <input type="password" id="pw-new" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirmer</label>
+      <input type="password" id="pw-confirm" autocomplete="new-password">
+    </div>
+    <button type="button" class="submit-btn" id="pw-submit">Changer</button>
+    <div class="switch-link" style="text-align:center;margin-top:8px;">
+      <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;" id="pw-cancel">Annuler</a>
+    </div>
+  </div>
+</div>
+
+<!-- Reset password screen (magic link) -->
+<div class="modal-overlay hidden" id="reset-modal">
+  <div class="modal">
+    <h2>🔑 Nouveau mot de passe</h2>
+    <div class="error-msg" id="reset-error"></div>
+    <div class="field">
+      <label>Nouveau mot de passe</label>
+      <input type="password" id="reset-password" autocomplete="new-password">
+    </div>
+    <div class="field">
+      <label>Confirmer</label>
+      <input type="password" id="reset-confirm" autocomplete="new-password">
+    </div>
+    <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
+  </div>
+</div>
+
+<!-- Hidden print area for grocery list -->
+<div id="print-area-grocery" class="print-area"></div>
+
+<div class="mode-tabs" id="mode-tabs">
+  <button class="mode-tab" data-mode="tracking">📊 Suivi</button>
+  <button class="mode-tab" data-mode="planning">📋 Planification</button>
+</div>
+<div class="tracking-bar" id="tracking-bar" style="display:none;">
+  <button id="tracking-prev" class="tracking-nav-btn">‹</button>
+  <span id="tracking-day-label">Aujourd'hui</span>
+  <button id="tracking-next" class="tracking-nav-btn">›</button>
+</div>
+<div id="app"><p class="loading">Chargement…</p></div>
+
+<!-- Floating suggestions badge (feature 1) -->
+<div class="suggestions-fab" id="suggestions-fab" title="Suggestions nutritionnelles">💡<span class="fab-count" id="fab-count" style="display:none;">0</span></div>
+
+<!-- Modal (suggestions + food info) -->
+<div class="modal-overlay hidden" id="suggestions-modal">
+  <div class="modal wide scrollable">
+    <h2 id="suggestions-title">💡 Suggestions nutritionnelles</h2>
+    <div id="suggestions-content"><p class="loading">Chargement…</p></div>
+    <a class="cancel-link" id="suggestions-close">Fermer</a>
+  </div>
+</div>
+
+<!-- Goals modal (feature 3) -->
+<div class="modal-overlay hidden" id="goals-modal">
+  <div class="modal wide">
+    <h2>🎯 Mes objectifs</h2>
+    <div class="error-msg" id="goals-error"></div>
+    <div class="goals-grid">
+      <div class="goal-field"><label>Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1"></div>
+      <div class="goal-field"><label>Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1"></div>
+      <div class="goal-field"><label>Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1"></div>
+      <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1"></div>
+      <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1"></div>
+      <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1"></div>
+      <div class="goal-field"><label>Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50"></div>
+    </div>
+    <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
+    <a class="cancel-link" id="goals-cancel">Annuler</a>
+  </div>
+</div>
+
+<!-- History modal (feature 4) -->
+<div class="modal-overlay hidden" id="history-modal">
+  <div class="modal wide scrollable">
+    <h2>📊 Historique</h2>
+    <div id="history-content"><p class="loading">Chargement…</p></div>
+    <a class="cancel-link" id="history-close">Fermer</a>
+  </div>
+</div>
+
+<!-- Manage products modal (tabs: add / remove) -->
+<div class="modal-overlay hidden" id="manage-products-modal">
+  <div class="modal wide scrollable">
+    <h2>📦 Gérer les produits</h2>
+    <div style="display:flex;gap:0;margin-bottom:16px;border-bottom:2px solid var(--border);">
+      <button id="tab-add" class="product-tab active" style="flex:1;padding:10px;background:none;border:none;color:var(--accent);font-size:0.95rem;font-weight:600;cursor:pointer;border-bottom:2px solid var(--accent);margin-bottom:-2px;">➕ Ajouter</button>
+      <button id="tab-remove" class="product-tab" style="flex:1;padding:10px;background:none;border:none;color:var(--text-dim);font-size:0.95rem;font-weight:600;cursor:pointer;">🗑️ Retirer</button>
+    </div>
+    <div id="tab-add-content">
+      <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <input type="text" id="cnf-search-input" placeholder="Rechercher un aliment (ex: saumon, bleuet, cheval)…" autocomplete="off" style="flex:1;padding:10px 14px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.95rem;">
+        <button class="login-cta" id="cnf-search-btn" style="padding:10px 20px;">Rechercher</button>
+      </div>
+      <div id="cnf-results" style="margin-bottom:16px;"></div>
+      <div id="cnf-details"></div>
+    </div>
+    <div id="tab-remove-content" style="display:none;">
+      <p style="color:var(--text-dim);margin-bottom:12px;">Cliquez sur un aliment pour le masquer des listes.</p>
+      <div id="remove-product-list" style="max-height:400px;overflow-y:auto;"></div>
+    </div>
+    <a class="cancel-link" id="manage-products-close">Fermer</a>
+  </div>
+</div>
+
+<!-- Grocery list modal -->
+<div id="grocery-overlay" class="grocery-overlay hidden">
+  <div class="grocery-modal">
+    <h2>🛒 Liste d'épicerie</h2>
+    <div id="grocery-items"></div>
+    <div class="grocery-actions">
+      <button class="grocery-copy" id="grocery-copy-btn">📋 Copier</button>
+      <button class="grocery-copy" id="grocery-share-btn" style="background:transparent;color:var(--accent);border:1px solid var(--accent-dim);">📤 Partager</button>
+      <button class="grocery-close print-only-btn" id="grocery-print-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">🖨️ Imprimer</button>
+      <button class="grocery-close" id="grocery-close-btn">Fermer</button>
+    </div>
+  </div>
+</div>
+
+<!-- Food detail modal (removed, now hover tooltip) -->
+<div id="chip-tooltip" class="chip-tooltip"></div>
+
+<div id="save-bar">
+  <span class="save-info" id="save-info">Chargement…</span>
+  <button id="save-btn" disabled>Sauvegarder</button>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+'use strict';
+
+const API = '/nutri-food/api';
+const TOKEN_KEY = 'nutrifood_token';
+const USER_KEY = 'nutrifood_user';
+
+let DATA = null;
+let selections = {};
+let savedSnapshot = '{}';
+let activeTab = null;
+let currentUser = null;
+let authMode = 'login';
+var autoSaveTimer = null;
+var searchActiveIndex = -1;
+
+// ─── Mode Suivi (tracking) state ───
+var currentMode = localStorage.getItem('nf-mode') || 'tracking';
+var planningSelections = {};
+var trackingDate = null;
+var trackingSelections = {};
+var trackingSnapshot = '{}';
+var trackingWeek = {};
+var mobileSelectedDay = 0;
+
+// ─── Deals data (epiceries.ca) ───
+var DEALS = {};
+var STORE_META = {};
+
+// ─── DOM helpers ───
+function $(id) { return document.getElementById(id); }
+
+// ─── Date helpers (tracking mode) ───
+function getTodayISO() { return new Date().toISOString().slice(0,10); }
+function formatDayLabel(dateStr) {
+  var today = getTodayISO();
+  var d0 = new Date(); d0.setDate(d0.getDate()+1);
+  var tomorrowStr = d0.toISOString().slice(0,10);
+  var d1 = new Date(); d1.setDate(d1.getDate()-1);
+  var yesterdayStr = d1.toISOString().slice(0,10);
+  if (dateStr === today) return "Aujourd'hui";
+  if (dateStr === tomorrowStr) return "Demain";
+  if (dateStr === yesterdayStr) return "Hier";
+  var d = new Date(dateStr + 'T12:00:00');
+  var days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  var months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+  return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
+}
+
+// ─── Toast system ───
+function showToast(message, type) {
+  type = type || 'info';
+  var container = $('toast-container');
+  if (!container) return;
+  var toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(function() {
+    toast.classList.add('fade-out');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 3000);
+}
+
+// ─── Fetch with timeout ───
+function fetchWithTimeout(url, options, timeoutMs) {
+  timeoutMs = timeoutMs || 10000;
+  return Promise.race([
+    fetch(url, options),
+    new Promise(function(_, reject) {
+      setTimeout(function() { reject(new Error('D\u00e9lai d\u00e9pass\u00e9')); }, timeoutMs);
+    })
+  ]);
+}
+
+// ─── Token helpers ───
+function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { return null; } }
+
+function setAuth(token, user) {
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  } catch(e) { console.error('[NutriFood] localStorage error:', e); }
+  currentUser = user;
+  renderUserArea();
+}
+
+function clearAuth() {
+  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) {}
+  currentUser = null;
+  selections = {};
+  savedSnapshot = '{}';
+  var fab = $('suggestions-fab');
+  if (fab) fab.classList.remove('visible', 'pulsing');
+  var banner = $('seasonal-banner');
+  if (banner) banner.classList.add('hidden');
+  renderUserArea();
+  render();
+  updateSaveBar();
+}
+
+var globalClickListenersAttached = false;
+function renderUserArea() {
+  const area = $('user-area');
+  if (!area) return;
+  if (currentUser) {
+    var initials = currentUser.name.charAt(0).toUpperCase();
+    var menuItems = '';
+    menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
+    menuItems += '<button class="user-menu-item" id="menu-planner"><span class="icon">📅</span> Planificateur</button>';
+    menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
+    menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
+    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>';
+    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-refresh-deals"><span class="icon">🔄</span> Spéciaux</button>';
+    menuItems += '<div class="user-menu-divider"></div>';
+    menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
+    menuItems += '<button class="user-menu-item" id="menu-logout" style="color:var(--accent-red);"><span class="icon">🚪</span> Déconnexion</button>';
+
+    area.innerHTML = '<div class="user-menu">' +
+      '<button class="user-menu-btn" id="user-menu-toggle"><span class="avatar">' + initials + '</span> <span class="uname">' + currentUser.name + '</span> ▾</button>' +
+      '<div class="user-menu-dropdown" id="user-menu-dropdown">' + menuItems + '</div>' +
+    '</div>';
+
+    $('user-menu-toggle').addEventListener('click', function(e) {
+      e.stopPropagation();
+      $('user-menu-dropdown').classList.toggle('visible');
+    });
+    $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
+    $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
+    $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
+    $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showHistory(); });
+    $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
+    $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
+    if (currentUser.is_admin) {
+      $('menu-manage-products').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showManageProducts(); });
+      $('menu-refresh-deals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); refreshDeals(); });
+    }
+
+    if (!globalClickListenersAttached) {
+      globalClickListenersAttached = true;
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.user-menu')) {
+          var dd = $('user-menu-dropdown');
+          if (dd) dd.classList.remove('visible');
+        }
+      });
+    }
+  } else {
+    area.innerHTML = '<button class="auth-btn" id="login-btn">Connexion</button>';
+    $('login-btn').addEventListener('click', function() { showAuth('login'); });
+  }
+}
+
+// ─── Auth modal ───
+function showAuth(mode) {
+  authMode = mode;
+  $('auth-error').textContent = '';
+  $('auth-modal').classList.remove('hidden');
+  $('name-field').style.display = mode === 'register' ? 'block' : 'none';
+  $('auth-title').textContent = mode === 'register' ? 'Créer un compte' : 'Connexion';
+  $('auth-submit').textContent = mode === 'register' ? "S'inscrire" : 'Connexion';
+  $('auth-switch-text').textContent = mode === 'register' ? 'Déjà inscrit? ' : 'Pas de compte? ';
+  $('auth-switch-link').textContent = mode === 'register' ? 'Connexion' : "S'inscrire";
+  $('auth-email').focus();
+}
+
+function toggleAuthMode() { showAuth(authMode === 'login' ? 'register' : 'login'); }
+
+async function submitAuth() {
+  var email = $('auth-email').value.trim();
+  var password = $('auth-password').value;
+  var name = $('auth-name').value.trim();
+  var errEl = $('auth-error');
+  var submitBtn = $('auth-submit');
+  errEl.textContent = '';
+
+  if (!email || !password) { errEl.textContent = 'Identifiant et mot de passe requis'; return; }
+  if (authMode === 'register' && !name) { errEl.textContent = 'Nom requis'; return; }
+
+  var endpoint = authMode === 'register' ? '/register' : '/login';
+  var body = authMode === 'register' ? { email: email.toLowerCase(), name: name, password: password } : { email: email.toLowerCase(), password: password };
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = authMode === 'register' ? 'Inscription…' : 'Connexion…';
+
+  try {
+    var res = await fetchWithTimeout(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }, 10000);
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; submitBtn.disabled = false; submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion'; return; }
+
+    // Success - smooth transition without page reload
+    setAuth(data.token, data.user);
+    $('auth-modal').classList.add('hidden');
+    $('search-bar-container').style.display = 'block';
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
+    // Load selections and render
+    await loadSelectionsFromServer();
+    await loadUserGoals();
+    loadDeals();
+    render();
+    updateSaveBar();
+    // Seasonal now in suggestions panel
+    checkSuggestionsBadge();
+    showToast(authMode === 'register' ? 'Compte créé!' : 'Connexion réussie', 'success');
+  } catch(e) {
+    console.error('[NutriFood] Auth error:', e);
+    errEl.textContent = 'Erreur de connexion au serveur: ' + e.message;
+    submitBtn.disabled = false;
+    submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
+  }
+}
+
+// ─── Mode switching: Planification ↔ Suivi ───
+function switchMode(mode) {
+  if (mode === currentMode) return;
+  if (mode === 'tracking') {
+    planningSelections = JSON.parse(JSON.stringify(selections));
+    currentMode = 'tracking';
+    localStorage.setItem('nf-mode', 'tracking');
+    trackingDate = getTodayISO();
+    document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'tracking'); });
+    $('tracking-bar').style.display = 'flex';
+    loadTrackingDay(trackingDate);
+  } else {
+    trackingSelections = JSON.parse(JSON.stringify(selections));
+    currentMode = 'planning';
+    localStorage.setItem('nf-mode', 'planning');
+    selections = JSON.parse(JSON.stringify(planningSelections));
+    savedSnapshot = JSON.stringify(selections);
+    document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'planning'); });
+    $('tracking-bar').style.display = 'none';
+    render();
+    updateSaveBar();
+    if (currentUser) checkSuggestionsBadge();
+  }
+}
+
+async function loadTrackingDay(dateStr) {
+  trackingDate = dateStr;
+  $('tracking-day-label').textContent = formatDayLabel(dateStr);
+  if (!currentUser) { selections = {}; render(); return; }
+  var token = getToken();
+  if (!token) { selections = {}; render(); return; }
+  try {
+    var res = await fetchWithTimeout(API + '/tracking/' + dateStr, { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+    if (res.ok) {
+      var data = await res.json();
+      trackingSelections = data.selections || {};
+    } else {
+      trackingSelections = {};
+    }
+  } catch(e) { console.error('[NutriFood] Tracking load error:', e); trackingSelections = {}; }
+  selections = JSON.parse(JSON.stringify(trackingSelections));
+  Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
+  trackingSnapshot = JSON.stringify(selections);
+  savedSnapshot = trackingSnapshot;
+  render();
+  updateSaveBar();
+}
+
+async function saveTracking() {
+  if (!currentUser || currentMode !== 'tracking') return;
+  var token = getToken();
+  if (!token) return;
+  try {
+    await fetchWithTimeout(API + '/tracking/' + trackingDate, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ selections: selections })
+    }, 10000);
+    trackingSelections = JSON.parse(JSON.stringify(selections));
+    trackingSnapshot = JSON.stringify(selections);
+    savedSnapshot = trackingSnapshot;
+    updateSaveBar();
+  } catch(e) { console.error('[NutriFood] Tracking save error:', e); }
+}
+
+function scheduleTrackingSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(function() {
+    if (currentMode === 'tracking') saveTracking();
+  }, 2000);
+}
+
+// Wire up auth modal events (no inline onclick)
+function initAuthEvents() {
+  // Mode tabs (Planification / Suivi)
+  document.querySelectorAll('.mode-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { switchMode(tab.dataset.mode); });
+  });
+  // Tracking day navigation
+  $('tracking-prev').addEventListener('click', function() {
+    var d = new Date(trackingDate + 'T12:00:00');
+    d.setDate(d.getDate() - 1);
+    loadTrackingDay(d.toISOString().slice(0,10));
+  });
+  $('tracking-next').addEventListener('click', function() {
+    var d = new Date(trackingDate + 'T12:00:00');
+    d.setDate(d.getDate() + 1);
+    loadTrackingDay(d.toISOString().slice(0,10));
+  });
+  // Feature 1: Suggestions FAB & modal
+  $('suggestions-fab').addEventListener('click', showSuggestions);
+  $('suggestions-close').addEventListener('click', function() { $('suggestions-modal').classList.add('hidden'); });
+  $('suggestions-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('manage-products-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Feature 3: Goals modal
+  $('goals-submit').addEventListener('click', function(e) { e.preventDefault(); submitGoals(); });
+  $('goals-cancel').addEventListener('click', function() { $('goals-modal').classList.add('hidden'); });
+  $('goals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Feature 4: History modal
+  $('history-close').addEventListener('click', function() { $('history-modal').classList.add('hidden'); });
+  $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+
+  $('auth-submit').addEventListener('click', function(e) { e.preventDefault(); submitAuth(); });
+  $('auth-switch-link').addEventListener('click', function(e) { e.preventDefault(); toggleAuthMode(); });
+  $('auth-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
+  $('auth-email').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
+  // Close modal on overlay click
+  $('auth-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  // Forgot password
+  $('forgot-password-link').addEventListener('click', function(e) { e.preventDefault(); showForgotPassword(); });
+  // Change password modal
+  $('pw-submit').addEventListener('click', function(e) { e.preventDefault(); submitChangePassword(); });
+  $('pw-cancel').addEventListener('click', function(e) { e.preventDefault(); $('pw-modal').classList.add('hidden'); });
+  // Reset password modal (magic link)
+  $('reset-submit').addEventListener('click', function(e) { e.preventDefault(); submitResetPassword(); });
+  // Search
+  $('search-input').addEventListener('input', performSearch);
+  $('search-input').addEventListener('keydown', handleSearchKeydown);
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.search-bar')) { 
+      $('search-results').classList.remove('visible'); searchActiveIndex = -1; 
+    }
+  });
+  // Grocery list
+  document.addEventListener('click', function(e) {
+    if (e.target.id === 'grocery-close-btn' || (e.target.closest('#grocery-overlay') && e.target === e.currentTarget)) {
+      $('grocery-overlay').classList.add('hidden');
+    }
+    if (e.target.id === 'grocery-copy-btn') { copyGroceryList(); }
+  });
+}
+
+// ─── Meal planner ───
+var plannerWeek = null;
+var plannerData = {};
+var plannerSelectedFood = null;
+
+function getWeekKey(offset) {
+  var d = new Date();
+  d.setDate(d.getDate() + (offset || 0) * 7);
+  // Use proper ISO 8601 week calculation to match Python's date.isocalendar()
+  var tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  var weekNum = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+  return tmp.getUTCFullYear() + '-W' + String(weekNum).padStart(2, '0');
+}
+
+async function showPlanner() {
+  if (!plannerWeek) plannerWeek = 0; // current week
+  var weekKey = getWeekKey(plannerWeek);
+  
+  // Load plan from server
+  var token = getToken();
+  plannerData = {};
+  if (token) {
+    try {
+      var res = await fetchWithTimeout(API + '/meal-plan?week=' + weekKey, {
+        headers: { 'Authorization': 'Bearer ' + token }
+      }, 10000);
+      if (res.ok) {
+        var data = await res.json();
+        plannerData = data.data || {};
+      }
+    } catch(e) { console.error('[NutriFood] Plan load error:', e); }
+  }
+
+  renderPlanner(weekKey);
+}
+
+function renderPlanner(weekKey) {
+  var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var dayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
+  var mealLabels = { breakfast: 'matin', lunch: 'midi', dinner: 'soir', snack: 'collation' };
+  var todayIdx = (new Date().getDay() + 6) % 7; // 0=Monday
+  if (typeof mobileSelectedDay === 'undefined') mobileSelectedDay = todayIdx;
+
+  // Food palette from selections
+  var allFoods = [];
+  Object.keys(selections).forEach(function(catId) {
+    selections[catId].forEach(function(item) {
+      allFoods.push(item.name);
+    });
+  });
+
+  var html = '<div style="margin-bottom:16px;">';
+  html += '<div class="planner-week-nav">';
+  html += '<button data-planner-action="prev-week">←</button>';
+  html += '<span class="planner-week-label">' + weekKey + '</span>';
+  html += '<button data-planner-action="next-week">→</button>';
+  html += '</div>';
+
+  // Mobile day tabs
+  html += '<div class="planner-mobile-tabs">';
+  days.forEach(function(day, idx) {
+    var cls = idx === mobileSelectedDay ? 'planner-mobile-tab active' : 'planner-mobile-tab';
+    html += '<button class="' + cls + '" data-planner-action="select-day" data-day-idx="' + idx + '">' + dayLabels[idx] + '</button>';
+  });
+  html += '</div>';
+
+  // Food palette
+  if (allFoods.length > 0) {
+    html += '<div class="planner-food-palette"><div class="label">Cliquez un aliment puis cliquez sur un repas pour l\'ajouter:</div>';
+    allFoods.forEach(function(name) {
+      var sel = plannerSelectedFood === name ? 'border-color:var(--accent);background:rgba(74,222,128,0.2);' : '';
+      html += '<span class="planner-chip" style="' + sel + '" data-planner-action="select" data-food="' + esc(name) + '">' + esc(name) + '</span>';
+    });
+    html += '</div>';
+  } else {
+    html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Sélectionnez d\'abord des aliments dans les onglets ci-dessus.</p>';
+  }
+
+  // Day grid
+  html += '<div class="planner-grid' + (window.innerWidth <= 768 ? ' mobile-active' : '') + '">';
+  days.forEach(function(day, idx) {
+    var isToday = idx === todayIdx && plannerWeek === 0;
+    var mobileClass = idx === mobileSelectedDay ? ' mobile-selected' : '';
+    html += '<div class="planner-day' + (isToday ? ' today' : '') + mobileClass + '">';
+    html += '<div class="planner-day-header">' + dayLabels[idx] + '</div>';
+    meals.forEach(function(meal) {
+      var items = (plannerData[day] && plannerData[day][meal]) || [];
+      var itemsHtml = items.map(function(name) {
+        return '<span class="planner-chip" data-planner-action="remove" data-day="' + day + '" data-meal="' + meal + '" data-food="' + esc(name) + '">' + esc(name) + ' ×</span>';
+      }).join(' ');
+      html += '<div class="planner-meal-slot" data-planner-action="add" data-day="' + day + '" data-meal="' + meal + '">';
+      html += '<div class="planner-meal-label">' + mealLabels[meal] + '</div>';
+      html += '<div class="planner-meal-items">' + itemsHtml + '</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<p style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="save">💾 Sauvegarder le plan</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="print">🖨️ Imprimer</a> · <a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" data-planner-action="close">← Retour</a></p>';
+
+  $('app').innerHTML = html;
+  $('save-bar').classList.remove('visible');
+}
+
+function plannerSelectFood(name) {
+  plannerSelectedFood = plannerSelectedFood === name ? null : name;
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function plannerAddToSlot(day, meal) {
+  if (!plannerSelectedFood) { showToast('Choisissez d\'abord un aliment dans la palette', 'warning'); return; }
+  if (!plannerData[day]) plannerData[day] = {};
+  if (!plannerData[day][meal]) plannerData[day][meal] = [];
+  if (plannerData[day][meal].indexOf(plannerSelectedFood) === -1) {
+    plannerData[day][meal].push(plannerSelectedFood);
+  }
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function plannerRemoveFood(day, meal, name) {
+  if (plannerData[day] && plannerData[day][meal]) {
+    plannerData[day][meal] = plannerData[day][meal].filter(function(f) { return f !== name; });
+  }
+  renderPlanner(getWeekKey(plannerWeek));
+}
+
+function closePlanner() { plannerWeek = 0; render(); updateSaveBar(); }
+
+// Event delegation for planner actions
+function initPlannerDelegation() {
+  $('app').addEventListener('click', function(e) {
+    var el = e.target.closest('[data-planner-action]');
+    if (!el) return;
+    var action = el.dataset.plannerAction;
+    var food = el.dataset.food ? el.dataset.food.replace(/&#39;/g, "'").replace(/&quot;/g, '"') : '';
+    var day = el.dataset.day || '';
+    var meal = el.dataset.meal || '';
+    if (action === 'select') { plannerSelectFood(food); }
+    else if (action === 'add') { plannerAddToSlot(day, meal); }
+    else if (action === 'remove') { plannerRemoveFood(day, meal, food); }
+    else if (action === 'prev-week') { plannerWeek--; showPlanner(); }
+    else if (action === 'next-week') { plannerWeek++; showPlanner(); }
+    else if (action === 'select-day') { mobileSelectedDay = parseInt(el.dataset.dayIdx); renderPlanner(getWeekKey(plannerWeek)); }
+    else if (action === 'save') { saveMealPlan(); }
+    else if (action === 'print') { plannerPrint(); }
+    else if (action === 'close') { closePlanner(); }
+  });
+}
+
+function plannerPrint() {
+  var days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  var dayLabels = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
+  var meals = ['breakfast', 'lunch', 'dinner', 'snack'];
+  var mealLabels = { breakfast: 'Matin', lunch: 'Midi', dinner: 'Soir', snack: 'Collation' };
+
+  var html = '<h1>Plan de repas</h1>';
+  html += '<div class="print-date">Semaine du ' + getWeekKey(plannerWeek) + '</div>';
+  days.forEach(function(day, idx) {
+    var dayData = plannerData[day] || {};
+    var hasItems = meals.some(function(m) { return dayData[m] && dayData[m].length > 0; });
+    if (!hasItems) return;
+    html += '<div style="margin-top:12px;font-weight:700;font-size:1.05rem;">' + dayLabels[idx] + '</div>';
+    meals.forEach(function(meal) {
+      var items = dayData[meal] || [];
+      if (items.length === 0) return;
+      html += '<div class="print-item"><div class="print-checkbox"></div><span style="min-width:70px;color:#666;font-size:0.85rem;">' + mealLabels[meal] + '</span><span>' + items.join(', ') + '</span></div>';
+    });
+  });
+
+  $('print-area-grocery').innerHTML = html;
+  window.print();
+}
+
+async function saveMealPlan() {
+  var token = getToken();
+  var weekKey = getWeekKey(plannerWeek);
+  if (!token) return;
+  // Find the save link and show loading
+  var saveLink = document.querySelector('[data-planner-action="save"]');
+  var origText = saveLink ? saveLink.textContent : '';
+  if (saveLink) { saveLink.textContent = '⏳ Sauvegarde…'; saveLink.style.pointerEvents = 'none'; }
+  try {
+    var res = await fetchWithTimeout(API + '/meal-plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ week: weekKey, data: plannerData })
+    }, 10000);
+    if (res.ok) {
+      showToast('Plan sauvegardé', 'success');
+    } else {
+      showToast('Erreur sauvegarde du plan', 'error');
+    }
+  } catch(e) {
+    console.error('[NutriFood] Plan save error:', e);
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  if (saveLink) { saveLink.textContent = origText; saveLink.style.pointerEvents = ''; }
+}
+
+// ─── Share link ───
+
+// ─── Edit mode (admin) ───
+async function showShareLink() {
+  var token = getToken();
+  if (!token) { console.error('[NutriFood] No token for share'); return; }
+  // Show loading state in app
+  $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Génération du lien…</p><p class="loading">⏳ Patientez…</p></div>';
+  try {
+    var res = await fetchWithTimeout(API + '/share', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    var data = await res.json();
+    if (!res.ok) { console.error('[NutriFood] Share failed:', data); showToast('Erreur de partage', 'error'); render(); return; }
+    var url = data.share_url || '';
+    $('app').innerHTML = '<div class="welcome"><h2>📤 Partager</h2><p style="color:var(--text-dim);margin-bottom:20px;">Lien en lecture seule :</p><div style="max-width:420px;margin:0 auto;"><input type="text" value="' + url + '" id="share-url" readonly style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.85rem;margin-bottom:12px;text-align:center;"><button class="login-cta" id="share-copy-btn">📋 Copier</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="share-back">← Retour</a></div></div>';
+    $('share-copy-btn').addEventListener('click', function() {
+      var input = $('share-url');
+      input.select();
+      navigator.clipboard.writeText(input.value).then(function() {
+        $('share-copy-btn').textContent = '✓ Copié!';
+        showToast('Lien copié!', 'success');
+        setTimeout(function() { $('share-copy-btn').textContent = '📋 Copier'; }, 2000);
+      });
+    });
+    $('share-back').addEventListener('click', function() { render(); updateSaveBar(); });
+  } catch(e) { console.error('[NutriFood] Share error:', e); showToast('Erreur: ' + e.message, 'error'); render(); updateSaveBar(); }
+}
+
+// ─── Add product modal (CNF search) ───
+var cnfSelectedId = null;
+var cnfSearchQuery = ''; // Keep original search term for alias pre-fill
+var cnfSelectedFood = null;
+var cnfSelectedNutrients = null;
+
+// CNF group code → NutriFood category mapping
+var CNF_GROUP_MAP = {
+  1: 'lait',           // Dairy and Egg Products
+  2: 'habitudes-herbes-epices', // Spices and Herbs
+  4: 'habitudes-bons-gras',     // Fats and Oils
+  5: 'poulet',          // Poultry Products
+  8: 'feculents-tres-bons',     // Breakfast cereals
+  9: 'fruits-autres',   // Fruits and fruit juices
+  10: 'viande-rouge',   // Pork Products
+  11: 'legumes-verts-fonces', // Vegetables
+  12: 'noix-graines',   // Nuts and Seeds
+  13: 'viande-rouge',   // Beef Products
+  14: 'habitudes-boissons',    // Beverages
+  15: 'poissons-gras',  // Finfish and Shellfish
+  16: 'legumineuses',   // Legumes
+  17: 'viande-rouge',   // Lamb, Veal and Game
+  20: 'feculents-tres-bons',   // Cereals, Grains and Pasta
+};
+
+function guessCategory(groupCode, nutrients) {
+  // Refine based on omega-3 content for fish
+  if (groupCode === 15) {
+    var omega3 = 0;
+    // Sum EPA + DHA + ALA
+    nutrients.forEach(function(n) {
+      if (n.code === 629 || n.code === 621 || n.code === 851 || n.code === 631) omega3 += n.amount || 0;
+    });
+    return omega3 > 1.0 ? 'poissons-gras' : 'poissons-blancs';
+  }
+  return CNF_GROUP_MAP[groupCode] || null;
+}
+
+function showManageProducts() {
+  // Default to add tab
+  switchProductTab('add');
+  $('manage-products-modal').classList.remove('hidden');
+  $('manage-products-close').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
+  // Tab handlers
+  $('tab-add').onclick = function() { switchProductTab('add'); };
+  $('tab-remove').onclick = function() { switchProductTab('remove'); };
+}
+
+function switchProductTab(tab) {
+  if (tab === 'add') {
+    $('tab-add').classList.add('active');
+    $('tab-add').style.color = 'var(--accent)';
+    $('tab-add').style.borderBottom = '2px solid var(--accent)';
+    $('tab-add').style.marginBottom = '-2px';
+    $('tab-remove').classList.remove('active');
+    $('tab-remove').style.color = 'var(--text-dim)';
+    $('tab-remove').style.borderBottom = 'none';
+    $('tab-remove').style.marginBottom = '0';
+    $('tab-add-content').style.display = 'block';
+    $('tab-remove-content').style.display = 'none';
+    // Init add tab
+    cnfSelectedId = null;
+    cnfSelectedFood = null;
+    cnfSelectedNutrients = null;
+    $('cnf-search-input').value = '';
+    $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Entrez un terme de recherche et cliquez sur Rechercher.</p>';
+    $('cnf-details').innerHTML = '';
+    $('cnf-search-input').focus();
+    $('cnf-search-btn').onclick = cnfDoSearch;
+    $('cnf-search-input').onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); cnfDoSearch(); } };
+  } else {
+    $('tab-remove').classList.add('active');
+    $('tab-remove').style.color = 'var(--accent)';
+    $('tab-remove').style.borderBottom = '2px solid var(--accent)';
+    $('tab-remove').style.marginBottom = '-2px';
+    $('tab-add').classList.remove('active');
+    $('tab-add').style.color = 'var(--text-dim)';
+    $('tab-add').style.borderBottom = 'none';
+    $('tab-add').style.marginBottom = '0';
+    $('tab-add-content').style.display = 'none';
+    $('tab-remove-content').style.display = 'block';
+    loadRemoveProductList();
+  }
+}
+
+function loadRemoveProductList() {
+  var html = '';
+  (DATA.sections || []).forEach(function(sec) {
+    var cats = (DATA.categories || []).filter(function(c) { return c.section === sec.id; });
+    if (cats.length === 0) return;
+    cats.forEach(function(cat) {
+      var count = (cat.foods || []).length;
+      if (count === 0) return;
+      html += '<div class="remove-cat-header" data-remove-cat="' + cat.id + '" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;margin-bottom:4px;cursor:pointer;user-select:none;">';
+      html += '<span style="font-size:0.9rem;font-weight:600;">' + cat.icon + ' ' + esc(cat.name) + '</span>';
+      html += '<span style="font-size:0.78rem;color:var(--text-dim);">' + count + ' <span class="remove-cat-arrow">\u25BC</span></span>';
+      html += '</div>';
+      html += '<div class="remove-cat-items" data-remove-cat-items="' + cat.id + '" style="display:none;margin-bottom:8px;">';
+      (cat.foods || []).forEach(function(food) {
+        html += '<div class="remove-product-item" data-hide-cat="' + cat.id + '" data-hide-name="' + esc(food.name) + '" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:background 0.15s;">';
+        html += '<span style="font-size:0.85rem;">' + esc(food.name) + '</span>';
+        html += '<span style="font-size:0.75rem;color:var(--accent-red);">Masquer</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+  });
+  $('remove-product-list').innerHTML = html;
+}
+
+function showAddProductModal() {
+  showManageProducts();
+  cnfSelectedId = null;
+  cnfSelectedFood = null;
+  cnfSelectedNutrients = null;
+  $('cnf-search-input').value = '';
+  $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Entrez un terme de recherche et cliquez sur Rechercher.</p>';
+  $('cnf-details').innerHTML = '';
+  $('manage-products-modal').classList.remove('hidden');
+  $('cnf-search-input').focus();
+  $('cnf-search-btn').onclick = cnfDoSearch;
+  $('cnf-search-input').onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); cnfDoSearch(); } };
+  $('manage-products-close').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
+}
+
+async function cnfDoSearch() {
+  var q = $('cnf-search-input').value.trim();
+  if (q.length < 2) return;
+  cnfSearchQuery = q;
+  $('cnf-results').innerHTML = '<p class="loading">Recherche…</p>';
+  $('cnf-details').innerHTML = '';
+  cnfSelectedId = null;
+  
+  // Step 1: Check for existing items in foods.json (fuzzy match)
+  var existingMatches = [];
+  var ql = q.toLowerCase();
+  (DATA.categories || []).forEach(function(cat) {
+    (cat.foods || []).forEach(function(food) {
+      var fn = food.name.toLowerCase();
+      if (fn.includes(ql) || ql.includes(fn) || fn.replace(/[èéêë]/g,'e').includes(ql.replace(/[èéêë]/g,'e'))) {
+        existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases || [], alias: null });
+      }
+      // Check aliases too
+      if (food.aliases && Array.isArray(food.aliases)) {
+        food.aliases.forEach(function(a) {
+          var al = a.toLowerCase();
+          if (al.includes(ql) || ql.includes(al)) {
+            // Avoid duplicate if already matched by name
+            if (!existingMatches.some(function(m) { return m.name === food.name; })) {
+              existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases, alias: a });
+            }
+          }
+        });
+      }
+    });
+  });
+  
+  if (existingMatches.length > 0) {
+    var html = '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);border-radius:10px;padding:14px;margin-bottom:16px;">';
+    html += '<div style="font-size:0.9rem;font-weight:700;color:var(--accent-amber);margin-bottom:8px;">⚠ Ces items existent déjà!</div>';
+    existingMatches.forEach(function(m) {
+      html += '<div class="cnf-existing-item" data-exist-name="' + esc(m.name) + '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#12141c;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;">';
+      var displayName = esc(m.name);
+      if (m.allAliases && m.allAliases.length > 0) displayName += ' <span style="color:var(--text-dim);font-size:0.8rem;">(' + esc(m.allAliases.join(', ')) + ')</span>';
+      html += '<span style="flex:1;font-size:0.88rem;color:var(--text);">' + displayName + '</span>';
+      html += '<span style="font-size:0.75rem;color:var(--text-dim);">' + esc(m.category) + '</span>';
+      html += '</div>';
+    });
+    html += '<div id="exist-details" style="margin-top:8px;"></div>';
+    html += '<div style="display:flex;gap:8px;margin-top:12px;">';
+    html += '<button id="exist-cancel-btn" style="flex:1;padding:10px;background:rgba(248,113,113,0.15);color:var(--accent-red);border:1px solid rgba(248,113,113,0.3);border-radius:8px;font-size:0.88rem;font-weight:600;cursor:pointer;">L\'item existe déjà</button>';
+    html += '<button id="exist-continue-btn" style="flex:1;padding:10px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.88rem;cursor:pointer;">L\'item que je cherche n\'est pas dans cette liste</button>';
+    html += '</div></div>';
+    $('cnf-results').innerHTML = html;
+    
+    // Wire existing item clicks (toggle details)
+    document.querySelectorAll('.cnf-existing-item').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var name = el.dataset.existName;
+        document.querySelectorAll('.cnf-existing-item').forEach(function(e) { e.style.borderColor = 'var(--border)'; });
+        var details = $('exist-details');
+        if (details.dataset.shown === name) { details.innerHTML = ''; details.dataset.shown = ''; return; }
+        el.style.borderColor = 'var(--accent-amber)';
+        var match = existingMatches.find(function(m) { return m.name === name; });
+        var aliasNote = match.alias ? ' · Trouvé via: « ' + esc(match.alias) + ' »' : '';
+        details.innerHTML = '<div style="background:#12141c;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:4px;"><div style="font-size:0.85rem;color:var(--text);margin-bottom:4px;"><strong>' + esc(match.name) + '</strong></div><div style="font-size:0.78rem;color:var(--text-dim);">Catégorie: ' + esc(match.category) + ' · Densité: ' + match.density + aliasNote + '</div><div style="font-size:0.78rem;color:var(--text-dim);">Points forts: ' + esc(match.nutrients) + '</div></div>';
+        details.dataset.shown = name;
+      });
+    });
+    
+    $('exist-cancel-btn').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
+    $('exist-continue-btn').onclick = function() { cnfCnfSearch(q); };
+    return;
+  }
+  
+  // No existing matches → go straight to CNF search
+  cnfCnfSearch(q);
+}
+
+async function cnfCnfSearch(q) {
+  $('cnf-results').innerHTML = '<p class="loading">Recherche dans la base de données…</p>';
+  $('cnf-details').innerHTML = '';
+  cnfSelectedId = null;
+  try {
+    var res = await fetchWithTimeout(API + '/cnf/search?q=' + encodeURIComponent(q), {}, 10000);
+    var data = await res.json();
+    if (!res.ok) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">' + esc(data.error || 'Erreur') + '</p>'; return; }
+    var results = data.results || [];
+    if (results.length === 0) { $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;">Aucun résultat pour « ' + esc(q) + ' ».</p>'; return; }
+    var html = '';
+    results.forEach(function(r) {
+      html += '<div class="cnf-result" data-cnf-id="' + r.food_id + '">' +
+        '<span class="cnf-name">' + esc(r.name_fr || r.name_en || '') + '</span>' +
+        '<span class="cnf-group">' + esc(r.group_fr || '') + '</span>' +
+        '<span class="cnf-check">✓</span></div>';
+    });
+    $('cnf-results').innerHTML = html;
+    document.querySelectorAll('.cnf-result').forEach(function(el) {
+      el.addEventListener('click', function() { cnfSelectProduct(parseInt(el.dataset.cnfId)); });
+    });
+  } catch(e) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>'; }
+}
+
+async function cnfSelectProduct(foodId) {
+  if (cnfSelectedId === foodId) {
+    cnfSelectedId = null;
+    $('cnf-details').innerHTML = '';
+    document.querySelectorAll('.cnf-result').forEach(function(el) { el.classList.remove('selected'); });
+    return;
+  }
+  cnfSelectedId = foodId;
+  document.querySelectorAll('.cnf-result').forEach(function(el) { el.classList.remove('selected'); });
+  document.querySelector('.cnf-result[data-cnf-id="' + foodId + '"]').classList.add('selected');
+  $('cnf-details').innerHTML = '<p class="loading">Chargement des détails…</p>';
+  try {
+    var res = await fetchWithTimeout(API + '/cnf/product/' + foodId, {}, 10000);
+    var data = await res.json();
+    if (!res.ok) { $('cnf-details').innerHTML = '<p style="color:var(--accent-red);">Erreur</p>'; return; }
+    var food = data.food;
+    var group = data.group;
+    var nutrients = data.nutrients || [];
+    var html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
+    html += '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">' + esc(food.name_fr || food.name_en) + '</div>';
+    if (group) html += '<div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;">' + esc(group.name_fr) + '</div>';
+    html += '<div class="cnf-nutrients">';
+    nutrients.forEach(function(n) {
+      html += '<div class="cnf-nutri-item"><div class="cnf-nutri-name">' + esc(n.name_fr) + '</div><div class="cnf-nutri-val">' + n.amount + ' ' + esc(n.unit) + '</div></div>';
+    });
+    html += '</div></div>';
+    html += '<button class="login-cta" id="cnf-add-btn" style="width:100%;padding:12px;">✓ Ajouter cet aliment</button>';
+    $('cnf-details').innerHTML = html;
+    $('cnf-add-btn').addEventListener('click', function() { cnfConfirmAdd(food, nutrients, group); });
+  } catch(e) { $('cnf-details').innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>'; }
+}
+
+function cnfConfirmAdd(food, nutrients, group) {
+  var nutriMap = {};
+  nutrients.forEach(function(n) { nutriMap[n.code] = n; });
+  var nutrition = {
+    protein: (nutriMap[203] || {}).amount || 0,
+    fiber: (nutriMap[291] || {}).amount || 0,
+    iron: (nutriMap[303] || {}).amount || 0,
+    vit_c: (nutriMap[401] || {}).amount || 0,
+    calcium: (nutriMap[301] || {}).amount || 0,
+    omega3: ((nutriMap[629] || {}).amount || 0) + ((nutriMap[621] || {}).amount || 0) + ((nutriMap[631] || {}).amount || 0) + ((nutriMap[851] || {}).amount || 0)
+  };
+  Object.keys(nutrition).forEach(function(k) { nutrition[k] = Math.round(nutrition[k] * 100) / 100; });
+  var guessedCat = guessCategory(food.group_code, nutrients);
+  var highlights = [];
+  if (nutrition.omega3 > 1) highlights.push('Ω-3');
+  if (nutrition.protein > 15) highlights.push('Protéine');
+  if (nutrition.iron > 2) highlights.push('Fer');
+  if (nutrition.calcium > 100) highlights.push('Calcium');
+  if (nutrition.vit_c > 10) highlights.push('Vit C');
+  if ((nutriMap[418] || {}).amount > 1) highlights.push('B12');
+  if ((nutriMap[328] || {}).amount > 2) highlights.push('Vit D');
+  if ((nutriMap[317] || {}).amount > 15) highlights.push('Sélénium');
+  var allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
+  var foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
+  var html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
+  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
+  html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
+  html += '<select id="cnf-add-cat" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">' + allCats + '</select>';
+  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts</label>';
+  html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
+  // Auto-populate aliases from CNF data + original search term
+  var autoAliases = [];
+  if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(cnfSearchQuery);
+  if (food.name_fr && food.name_fr !== foodName) autoAliases.push(food.name_fr);
+  if (food.name_en && food.name_en.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(food.name_en);
+  if (food.alt_name_fr) food.alt_name_fr.split(',').forEach(function(a) { a = a.trim(); if (a && autoAliases.indexOf(a) === -1) autoAliases.push(a); });
+  if (food.alt_name_en) food.alt_name_en.split(',').forEach(function(a) { a = a.trim(); if (a && autoAliases.indexOf(a) === -1) autoAliases.push(a); });
+  if (food.scientific_name) autoAliases.push(food.scientific_name);
+  // Dedupe
+  var seen = {};
+  autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) return false; seen[a] = true; return true; });
+  html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
+  [['Protéine', nutrition.protein, 'g'], ['Fibres', nutrition.fiber, 'g'], ['Fer', nutrition.iron, 'mg'], ['Vit C', nutrition.vit_c, 'mg'], ['Calcium', nutrition.calcium, 'mg'], ['Ω-3', nutrition.omega3, 'g']].forEach(function(n) {
+    html += '<div style="background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;"><div style="font-size:0.7rem;color:var(--text-dim);">' + n[0] + '</div><div style="font-size:0.9rem;font-weight:700;color:var(--accent);">' + n[1] + ' ' + n[2] + '</div></div>';
+  });
+  html += '</div></div>';
+  html += '<div style="display:flex;gap:8px;">';
+  html += '<button class="login-cta" id="cnf-save-btn" style="flex:1;padding:12px;">✓ Ajouter</button>';
+  html += '<button id="cnf-back-btn" style="padding:12px 20px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.9rem;cursor:pointer;">← Retour</button>';
+  html += '</div>';
+  $('cnf-details').innerHTML = html;
+  $('cnf-save-btn').addEventListener('click', function() { cnfSaveToDatabase(food, nutrition); });
+  $('cnf-back-btn').addEventListener('click', function() { cnfSelectProduct(cnfSelectedId); });
+}
+
+async function cnfSaveToDatabase(food, nutrition) {
+  var name = $('cnf-add-name').value.trim();
+  var catId = $('cnf-add-cat').value;
+  var highlights = $('cnf-add-highlights').value.trim();
+  var aliasesRaw = $('cnf-add-aliases').value.trim();
+  var aliases = aliasesRaw ? aliasesRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+  if (!name) { showToast('Le nom est requis', 'error'); return; }
+  var cat = (DATA.categories || []).find(function(c) { return c.id === catId; });
+  if (!cat) { showToast('Catégorie invalide', 'error'); return; }
+  if (cat.foods && cat.foods.some(function(f) { return f.name.toLowerCase() === name.toLowerCase(); })) {
+    showToast('Cet aliment existe déjà', 'error'); return;
+  }
+  var densityScore = Math.round((nutrition.protein * 2 + nutrition.fiber * 3 + nutrition.iron * 2 + nutrition.vit_c + nutrition.calcium * 0.1 + nutrition.omega3 * 10) / 3);
+  densityScore = Math.max(10, Math.min(100, densityScore));
+  var token = getToken();
+  if (!token) { showToast('Session expirée', 'error'); return; }
+  $('cnf-save-btn').textContent = 'Sauvegarde…';
+  $('cnf-save-btn').disabled = true;
+  try {
+    var res = await fetchWithTimeout(API + '/admin/food/show', {
+      method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({
+        source_type: 1,
+        source_id: food.food_id,
+        nf_category: catId,
+        name: name,
+        density: densityScore,
+        highlights: highlights || 'À compléter',
+        aliases: aliases
+      })
+    }, 10000);
+    var data = await res.json();
+    if (!res.ok) { showToast(data.error || 'Erreur', 'error'); $('cnf-save-btn').textContent = '✓ Ajouter'; $('cnf-save-btn').disabled = false; return; }
+    // Reload DATA from server to get the updated list
+    var foodsRes = await fetchWithTimeout(API + '/foods', {}, 10000);
+    if (foodsRes.ok) { DATA = await foodsRes.json(); }
+    $('manage-products-modal').classList.add('hidden');
+    showToast(name + ' ajouté!', 'success');
+    render();
+    updateSaveBar();
+  } catch(e) {
+    showToast('Erreur: ' + e.message, 'error');
+    $('cnf-save-btn').textContent = '✓ Ajouter';
+    $('cnf-save-btn').disabled = false;
+  }
+}
+
+
+async function loadSharedView(shareToken) {
+  try {
+    var res = await fetch(API + '/shared/' + shareToken);
+    if (!res.ok) { renderWelcome(); return; }
+    var data = await res.json();
+    var items = data.grocery || [];
+
+    $('user-area').innerHTML = '<span class="user-name" style="color:var(--accent);">🛒 Liste de ' + esc(data.user_name || '') + '</span>';
+    $('search-bar-container').style.display = 'none';
+
+    if (items.length === 0) {
+      $('app').innerHTML = '<div class="welcome"><h2>🛒 Liste vide</h2><p style="color:var(--text-dim);">Aucun aliment dans cette liste.</p></div>';
+      return;
+    }
+
+    var html = '<div style="max-width:500px;margin:0 auto;">';
+    html += '<div style="margin-bottom:16px;"><h2 style="color:var(--accent);font-size:1.3rem;">🛒 Liste d\'épicerie</h2>';
+    html += '<p style="color:var(--text-dim);font-size:0.9rem;">' + items.length + ' article(s) — cliquez pour cocher</p></div>';
+    items.forEach(function(item) {
+      var qtyLabel = item.qty > 1 ? ' <span class="gi-qty">×' + item.qty + '</span>' : '';
+      html += '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + esc(item.name) + '</span>' + qtyLabel + '</div>';
+    });
+    html += '</div>';
+    $('app').innerHTML = html;
+
+    // Wire checkboxes
+    $('app').querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        this.closest('.grocery-item').classList.toggle('checked', this.checked);
+      });
+    });
+
+    $('save-bar').classList.remove('visible');
+  } catch(e) { renderWelcome(); }
+}
+
+// ─── Food detail (hover tooltip) ───
+var tooltipEl = null;
+function getNutritionTips(food) {
+  var tips = [];
+  var n = food.nutrition || {};
+  var nutrientsStr = (food.nutrients || '').toLowerCase();
+
+  // ─── Absorption tips (from food.absorption or auto-generated) ───
+  if (food.absorption) {
+    tips.push({ icon: '💡', text: food.absorption });
+  } else {
+    // Auto-generate based on nutrition profile
+    if (n.iron > 2 && n.vit_c < 5) {
+      tips.push({ icon: '💡', text: 'Ajouter vitamine C (citron, poivrons) pour absorber le fer' });
+    }
+    if (nutrientsStr.indexOf('lycopène') !== -1 || food.name.toLowerCase().indexOf('tomate') !== -1) {
+      tips.push({ icon: '💡', text: 'Cuire légèrement pour amplifier le lycopène' });
+    }
+    if (nutrientsStr.indexOf('β-carotène') !== -1 || nutrientsStr.indexOf('beta-carotene') !== -1 || food.name.toLowerCase().indexOf('carotte') !== -1) {
+      tips.push({ icon: '💡', text: 'Cuire avec un corps gras pour absorber le β-carotène' });
+    }
+    if ((nutrientsStr.indexOf('vit c') !== -1 || n.vit_c > 20) && food.name.toLowerCase().indexOf('poivron') !== -1) {
+      tips.push({ icon: '💡', text: 'Manger cru pour préserver la vitamine C' });
+    }
+  }
+
+  // ─── Combination suggestions ───
+  if (n.iron > 1) {
+    tips.push({ icon: '🔗', text: 'Fer + Vitamine C (agrumes, poivrons) = meilleure absorption' });
+  }
+  if (nutrientsStr.indexOf('vit a') !== -1 || nutrientsStr.indexOf('vit d') !== -1 || nutrientsStr.indexOf('vit e') !== -1 || nutrientsStr.indexOf('vit k') !== -1) {
+    tips.push({ icon: '🔗', text: 'Vit. liposolubles + bons gras (huile d\'olive, avocat) = +absorption' });
+  }
+  if (n.omega3 > 0.5 || nutrientsStr.indexOf('oméga') !== -1 || nutrientsStr.indexOf('omega') !== -1) {
+    tips.push({ icon: '🔗', text: 'Oméga-3 + antioxydants (thé vert, baies) = effet synergique' });
+  }
+  if (n.calcium > 50) {
+    tips.push({ icon: '🔗', text: 'Calcium + Vitamine D (soleil, poisson gras) = +absorption' });
+  }
+
+  // ─── Warnings ───
+  if (n.iron > 1) {
+    tips.push({ icon: '⚠️', text: 'Thé/café éloignés des repas = inhibe l\'absorption du fer' });
+  }
+  if (n.calcium > 50 && n.fiber > 5) {
+    tips.push({ icon: '⚠️', text: 'Excès de fibres avec calcium = absorption réduite' });
+  }
+  if (n.vit_c > 20) {
+    tips.push({ icon: '⚠️', text: 'Cuisson à très haute température détruit la vitamine C' });
+  }
+
+  return tips;
+}
+
+function openFoodModal(catId, name) {
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  var food = cat.foods.find(function(f) { return f.name === name; });
+  if (!food) return;
+  $('suggestions-title').textContent = '📋 Informations nutritionnelles';
+  var alsoIn = [];
+  DATA.categories.forEach(function(c) {
+    if (c.id !== catId && c.foods.some(function(f) { return f.name === name; })) alsoIn.push(c.icon + ' ' + c.name);
+  });
+  var month = new Date().getMonth() + 1;
+  var html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
+  html += '<div style="color:var(--accent);font-weight:700;margin-bottom:8px;">Densité nutritionnelle: ' + food.density + '%</div>';
+  if (food.nutrients) html += '<div style="margin-bottom:8px;color:var(--text);">' + food.nutrients + '</div>';
+  // Nutrition per 100g
+  if (food.nutrition) {
+    var n = food.nutrition;
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
+    if (n.protein) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Protéines</span><br><strong>' + n.protein + 'g</strong></div>';
+    if (n.fiber) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fibres</span><br><strong>' + n.fiber + 'g</strong></div>';
+    if (n.iron) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fer</span><br><strong>' + n.iron + 'mg</strong></div>';
+    if (n.vit_c) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Vit C</span><br><strong>' + n.vit_c + 'mg</strong></div>';
+    if (n.calcium) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calcium</span><br><strong>' + n.calcium + 'mg</strong></div>';
+    if (n.omega3) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Oméga-3</span><br><strong>' + n.omega3 + 'g</strong></div>';
+    if (n.calories) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calories</span><br><strong>' + Math.round(n.calories) + '</strong></div>';
+    html += '</div>';
+  }
+  // Season
+  if (food.season && food.season.length > 0) {
+    if (food.season.indexOf(month) !== -1) {
+      html += '<div style="margin-bottom:8px;"><span class="season-badge in-season">🌱 De saison</span></div>';
+    } else if (food.import_season && food.import_season.indexOf(month) !== -1) {
+      html += '<div style="margin-bottom:8px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
+    }
+  }
+  // Tips
+  var tips = getNutritionTips(food);
+  if (tips.length > 0) {
+    html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
+    tips.forEach(function(t) {
+      html += '<div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;margin-top:4px;">' + t.icon + ' ' + esc(t.text) + '</div>';
+    });
+    html += '</div>';
+  }
+  if (cat.tips) {
+    if (cat.tips.absorption) html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);"><div style="color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Absorption</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.absorption) + '</div></div>';
+    if (cat.tips.warnings) html += '<div style="margin-top:6px;"><div style="color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Attention</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(cat.tips.warnings) + '</div></div>';
+  }
+  if (food.tips) {
+    if (food.tips.absorption) html += '<div style="margin-top:6px;"><div style="color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.absorption) + '</div></div>';
+    if (food.tips.warnings) html += '<div style="margin-top:6px;"><div style="color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.warnings) + '</div></div>';
+  }
+  // Deals (collapsible)
+  var deals = (DEALS[food.name] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length > 0) {
+    html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
+    html += '<h3 id="deals-toggle" style="margin:0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;">🏷️ Voir les spéciaux (' + deals.length + ') <span id="deals-arrow" style="font-size:0.7rem;">▼</span></h3>';
+    html += '<div id="deals-content" style="display:none;margin-top:8px;">';
+    deals.forEach(function(d) {
+      var si = STORE_META[d.store] || {};
+      var color = si.color || '#666';
+      var sn = si.name || d.store || '?';
+      var letter = sn.charAt(0).toUpperCase();
+      html += '<div style="border-left:3px solid ' + color + ';padding-left:10px;margin-left:4px;margin-bottom:8px;">';
+      html += '<div style="font-weight:600;">' + esc(d.name || food.name) + '</div>';
+      html += '<div style="font-size:1.05rem;color:var(--accent);font-weight:700;margin:2px 0;">' + (d.price || '') + '$</div>';
+      if (d.size) html += '<div style="font-size:0.78rem;color:var(--text-dim);">Format: ' + esc(d.size) + '</div>';
+      html += '<div style="font-size:0.82rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + color + ';color:#fff;font-size:0.65rem;font-weight:700;margin-right:4px;">' + letter + '</span>' + esc(sn) + '</div>';
+      if (d.link) html += '<a href="' + esc(d.link) + '" target="_blank" rel="noopener" style="font-size:0.82rem;color:var(--accent);">Voir sur le site →</a>';
+      html += '</div>';
+    });
+    html += '</div></div>';
+  }
+  if (alsoIn.length > 0) html += '<div style="font-size:0.82rem;color:var(--text-dim);margin-top:8px;">Aussi dans: ' + alsoIn.join(', ') + '</div>';
+  // Show in suggestions modal (reuse)
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = html;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
+}
+
+// Show deals in modal instead of tooltip
+function showDealTooltip(foodName) {
+  openDealModal(foodName);
+}
+
+// ─── Grocery list ───
+function showGroceryList() {
+  // In tracking mode, use planning selections for grocery list
+  var grocerySelections = (currentMode === 'tracking') ? planningSelections : selections;
+  var month = new Date().getMonth() + 1;
+  var items = [];
+  var dealTotal = 0;
+  var dealCount = 0;
+  Object.keys(grocerySelections).forEach(function(catId) {
+    var cat = DATA.categories.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    grocerySelections[catId].forEach(function(item) {
+      var food = cat.foods.find(function(f) { return f.name === item.name; });
+      var icon = cat.icon;
+      var seasonIcon = getSeasonIcon(food, month);
+      if (seasonIcon) icon = seasonIcon + ' ' + icon;
+      var dealInfo = null;
+      var itemDeals = DEALS[item.name];
+      if (itemDeals && itemDeals.length > 0) {
+        var bestDeal = itemDeals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); })[0];
+        dealInfo = bestDeal;
+        dealTotal += (bestDeal.price || 0) * (item.qty || 1);
+        dealCount++;
+      }
+      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: icon, dealInfo: dealInfo });
+    });
+  });
+  items.sort(function(a, b) { return a.name.localeCompare(b.name); });
+
+  var container = $('grocery-items');
+  if (items.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Aucun aliment sélectionné.</p>';
+  } else {
+    container.innerHTML = items.map(function(item) {
+      var dealHtml = '';
+      if (item.dealInfo) {
+        var d = item.dealInfo;
+        var storeInfo = STORE_META[d.store] || {};
+        var color = storeInfo.color || '#666';
+        var storeName = storeInfo.name || d.store || '?';
+        var letter = storeName.charAt(0).toUpperCase();
+        var link = d.link || '#';
+        dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">\uD83C\uDFF7\uFE0F <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
+      }
+      return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
+    }).join('');
+    container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
+      cb.addEventListener('change', function() {
+        this.closest('.grocery-item').classList.toggle('checked', this.checked);
+      });
+    });
+    // Add estimated total
+    if (dealCount > 0) {
+      var totalHtml = '<div class="grocery-total">';
+      totalHtml += '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div>';
+      totalHtml += '<div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
+      totalHtml += '</div>';
+      container.innerHTML += totalHtml;
+    }
+  }
+
+  // Wire share button inside grocery modal
+  var shareBtn = $('grocery-share-btn');
+  if (shareBtn) {
+    shareBtn.onclick = async function() {
+      var token = getToken();
+      if (!token) return;
+      var origText = shareBtn.textContent;
+      shareBtn.disabled = true; shareBtn.textContent = '⏳…';
+      try {
+        var res = await fetchWithTimeout(API + '/share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+        }, 10000);
+        var data = await res.json();
+        if (res.ok && data.share_url) {
+          shareBtn.textContent = '✓ Lien copié!';
+          navigator.clipboard.writeText(data.share_url);
+          showToast('Lien copié!', 'success');
+          setTimeout(function() { shareBtn.textContent = origText; }, 2000);
+        } else {
+          showToast('Erreur de partage', 'error');
+          shareBtn.textContent = origText;
+        }
+      } catch(e) { console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
+      shareBtn.disabled = false;
+    };
+  }
+
+  // Wire print button
+  var printBtn = $('grocery-print-btn');
+  if (printBtn) {
+    printBtn.onclick = function() {
+      var items = [];
+      Object.keys(selections).forEach(function(catId) {
+        var cat = DATA.categories.find(function(c) { return c.id === catId; });
+        if (!cat) return;
+        selections[catId].forEach(function(item) {
+          items.push({ name: item.name, qty: item.qty || 1 });
+        });
+      });
+      items.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      var date = new Date().toLocaleDateString('fr-CA');
+      var html = '<h1>Liste \u00e9picerie</h1>';
+      html += '<div class="print-date">' + date + '</div>';
+      items.forEach(function(item) {
+        html += '<div class="print-item"><div class="print-checkbox"></div><span>' + item.name + '</span>' + (item.qty > 1 ? '<span class="print-qty">x' + item.qty + '</span>' : '') + '</div>';
+      });
+      $('print-area-grocery').innerHTML = html;
+      window.print();
+    };
+  }
+
+  $('grocery-overlay').classList.remove('hidden');
+}
+
+function copyGroceryList() {
+  var lines = [];
+  Object.keys(selections).forEach(function(catId) {
+    var cat = DATA.categories.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    selections[catId].forEach(function(item) {
+      var qty = item.qty > 1 ? ' x' + item.qty : '';
+      lines.push(item.name + qty);
+    });
+  });
+  lines.sort();
+  var text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(function() {
+    var btn = $('grocery-copy-btn');
+    btn.textContent = '✓ Copié!';
+    setTimeout(function() { btn.textContent = '📋 Copier'; }, 2000);
+  });
+}
+
+// ─── Search ───
+var searchTimer = null;
+function performSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(actualSearch, 150);
+}
+
+function handleSearchKeydown(e) {
+  var results = $('search-results');
+  if (!results.classList.contains('visible')) return;
+  var items = results.querySelectorAll('.search-result[data-cat]');
+  if (items.length === 0) return;
+
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1);
+    updateSearchActive(items);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchActiveIndex = Math.max(searchActiveIndex - 1, 0);
+    updateSearchActive(items);
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+      items[searchActiveIndex].click();
+    }
+  } else if (e.key === 'Escape') {
+    $('search-input').value = '';
+    results.classList.remove('visible');
+    searchActiveIndex = -1;
+  }
+}
+
+function updateSearchActive(items) {
+  items.forEach(function(el, i) {
+    el.classList.toggle('search-result-active', i === searchActiveIndex);
+  });
+  // Scroll active item into view
+  if (searchActiveIndex >= 0 && items[searchActiveIndex]) {
+    items[searchActiveIndex].scrollIntoView({ block: 'nearest' });
+  }
+}
+function normalizeForSearch(str) {
+  return (str || '').toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/œ/g, 'oe')
+    .replace(/æ/g, 'ae')
+    .replace(/Œ/g, 'oe')
+    .replace(/Æ/g, 'ae')
+    .replace(/[^a-z0-9\s]/g, ' ');
+}
+
+function actualSearch() {
+  var rawQuery = $('search-input').value.trim();
+  var query = normalizeForSearch(rawQuery);
+  var results = $('search-results');
+  searchActiveIndex = -1;
+  if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
+  var matches = [];
+  DATA.categories.forEach(function(cat) {
+    cat.foods.forEach(function(f) {
+      if (normalizeForSearch(f.name).indexOf(query) !== -1) {
+        matches.push({ cat: cat, food: f });
+      } else if (f.aliases && Array.isArray(f.aliases)) {
+        for (var i = 0; i < f.aliases.length; i++) {
+          if (normalizeForSearch(f.aliases[i]).indexOf(query) !== -1) {
+            matches.push({ cat: cat, food: f });
+            break;
+          }
+        }
+      }
+    });
+  });
+  if (matches.length === 0) {
+    results.innerHTML = '<div class="search-result"><span class="sr-meta">Aucun résultat</span></div>';
+  } else {
+    results.innerHTML = matches.slice(0, 20).map(function(m) {
+      var aliasInfo = '';
+      if (m.food.aliases && m.food.aliases.length > 0) aliasInfo = ' <span style="color:var(--text-dim);font-size:0.75rem;">(' + esc(m.food.aliases.slice(0, 3).join(', ')) + ')</span>';
+      return '<div class="search-result" data-cat="' + m.cat.id + '" data-name="' + esc(m.food.name) + '" data-density="' + m.food.density + '" data-nutrients="' + esc(m.food.nutrients) + '"><div><div class="sr-name">' + esc(m.food.name) + aliasInfo + '</div><div class="sr-cat">' + m.cat.icon + ' ' + m.cat.name + '</div></div><div class="sr-density">' + m.food.density + '%</div></div>';
+    }).join('');
+    // Wire up result clicks
+    results.querySelectorAll('.search-result[data-cat]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        addItem(el.dataset.cat, { name: el.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"'), density: parseInt(el.dataset.density), nutrients: el.dataset.nutrients.replace(/&#39;/g, "'").replace(/&quot;/g, '"') });
+        // Switch to that tab
+        var cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
+        if (cat) { activeTab = cat.section; render(); }
+        $('search-input').value = '';
+        results.classList.remove('visible');
+      });
+    });
+  }
+  results.classList.add('visible');
+}
+
+// ─── Forgot password ───
+function showForgotPassword() {
+  var email = $('auth-email').value.trim();
+  $('auth-modal').classList.add('hidden');
+  $('app').innerHTML = '<div class="welcome"><h2>🔑 Mot de passe oublié</h2><p style="color:var(--text-dim);margin-bottom:20px;">Entrez votre email ou nom d usager. Vous recevrez un lien par courriel.</p><div style="max-width:340px;margin:0 auto;"><input type="text" id="forgot-email" placeholder="Email ou nom d usager" value="' + esc(email || '') + '" style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px;"><button class="login-cta" id="forgot-submit">Envoyer le lien</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="forgot-back">← Retour</a></div></div>';
+  $('forgot-submit').addEventListener('click', submitForgotPassword);
+  $('forgot-back').addEventListener('click', function() { window.location.reload(); });
+  $('forgot-email').focus();
+}
+
+async function submitForgotPassword() {
+  var identifier = $('forgot-email').value.trim();
+  if (!identifier) return;
+  $('forgot-submit').textContent = 'Envoi…';
+  $('forgot-submit').disabled = true;
+  try {
+    await fetch(API + '/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: identifier })
+    });
+    // Always show success (prevent enumeration)
+    $('app').innerHTML = '<div class="welcome"><h2>📧 Courriel envoyé</h2><p style="color:var(--text-dim);margin-bottom:20px;">Si ce compte existe, vous recevrez un lien de réinitialisation par courriel. Vérifiez votre boîte de réception.</p><button class="login-cta" id="forgot-done" onclick="location.reload()">Retour à NutriFood</button></div>';
+  } catch(e) {
+    $('forgot-submit').textContent = 'Erreur';
+  }
+}
+
+// ─── Reset via magic link ───
+async function submitResetPassword() {
+  var newPw = $('reset-password').value;
+  var confirmPw = $('reset-confirm').value;
+  var errEl = $('reset-error');
+  errEl.textContent = '';
+  if (!newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'Minimum 6 caractères'; return; }
+
+  var hash = window.location.hash;
+  var resetToken = '';
+  var match = hash.match(/reset=([^&]+)/);
+  if (match) resetToken = decodeURIComponent(match[1]);
+  if (!resetToken) { errEl.textContent = 'Token manquant'; return; }
+
+  $('reset-submit').textContent = 'Changement…';
+  $('reset-submit').disabled = true;
+  try {
+    var res = await fetchWithTimeout(API + '/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: resetToken, password: newPw })
+    }, 10000);
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false; return; }
+    // Success: log in and redirect
+    setAuth(data.token, data.user);
+    window.location.hash = '';
+    window.location.reload();
+  } catch(e) {
+    errEl.textContent = 'Erreur de connexion'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false;
+  }
+}
+
+// ─── Change password (logged in) ───
+function showChangePassword() {
+  $('pw-error').textContent = '';
+  $('pw-current').value = '';
+  $('pw-new').value = '';
+  $('pw-confirm').value = '';
+  $('pw-modal').classList.remove('hidden');
+  $('pw-current').focus();
+}
+
+async function submitChangePassword() {
+  var current = $('pw-current').value;
+  var newPw = $('pw-new').value;
+  var confirmPw = $('pw-confirm').value;
+  var errEl = $('pw-error');
+  errEl.textContent = '';
+  if (!current || !newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
+  if (newPw !== confirmPw) { errEl.textContent = 'Les nouveaux mots de passe ne correspondent pas'; return; }
+  if (newPw.length < 6) { errEl.textContent = 'Minimum 6 caractères'; return; }
+  if (newPw === current) { errEl.textContent = 'Le nouveau mot de passe doit être différent'; return; }
+
+  $('pw-submit').textContent = 'Changement…';
+  $('pw-submit').disabled = true;
+  var token = getToken();
+  try {
+    var res = await fetchWithTimeout(API + '/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ current_password: current, new_password: newPw })
+    }, 10000);
+    var data = await res.json();
+    if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false; return; }
+    // Success
+    $('pw-modal').classList.add('hidden');
+    showToast('Mot de passe changé', 'success');
+    $('save-bar').classList.add('visible');
+    $('save-info').textContent = 'Mot de passe changé ✓';
+  } catch(e) {
+    errEl.textContent = 'Erreur de connexion'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false;
+  }
+}
+
+// ─── Server selections ───
+// ─── Deals (epiceries.ca) ───
+async function loadDeals() {
+  try {
+    var res = await fetchWithTimeout(API + '/deals', {}, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    DEALS = data.deals || {};
+    STORE_META = data.stores || {};
+    // Filter out pet food / non-human food
+    var PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
+    function isPetFood(name) {
+      var lower = (name || '').toLowerCase();
+      return PET_KEYWORDS.some(function(kw) { return lower.indexOf(kw) !== -1; });
+    }
+    Object.keys(DEALS).forEach(function(food) {
+      DEALS[food] = DEALS[food].filter(function(d) {
+        return !isPetFood(d.name);
+      });
+      if (DEALS[food].length === 0) delete DEALS[food];
+    });
+  } catch(e) { console.error('[NutriFood] Deals load error:', e); }
+}
+
+async function refreshDeals() {
+  var token = getToken();
+  if (!token) return;
+  var btn = document.getElementById('menu-refresh-deals');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
+  try {
+    var res = await fetchWithTimeout(API + '/deals/refresh', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 30000);
+    if (res.ok) {
+      var data = await res.json();
+      var count = data.count || 0;
+      showToast(count + ' spéciaux mis à jour', 'success');
+      await loadDeals();
+      render();
+    } else {
+      showToast('Erreur lors de la mise à jour', 'error');
+    }
+  } catch(e) {
+    console.error('[NutriFood] Deals refresh error:', e);
+    showToast('Erreur: ' + e.message, 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Spéciaux'; }
+}
+
+// Helper: build deal badges HTML for a food name
+function buildDealBadges(foodName) {
+  var deals = DEALS[foodName];
+  if (!deals || deals.length === 0) return '';
+  var sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
+  var maxShow = 3;
+  var shown = sorted.slice(0, maxShow);
+  var extra = sorted.length > maxShow ? sorted.length - maxShow : 0;
+  var html = '<span class="deal-badges" data-deal-food="' + esc(foodName) + '">';
+  html += '\uD83C\uDFF7\uFE0F';
+  shown.forEach(function(d) {
+    var storeInfo = STORE_META[d.store] || {};
+    var color = storeInfo.color || '#666';
+    var letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
+    html += '<span class="deal-badge" style="background:' + color + ';" title="' + esc(d.name || '') + ' — ' + (d.price || '') + '$">' + letter + '</span>';
+  });
+  if (extra > 0) html += '<span class="deal-badges-extra deal-show-all" data-deal-food="' + esc(foodName) + '" style="cursor:pointer;text-decoration:underline;" title="Voir tous les spéciaux">+' + extra + '</span>';
+  html += '</span>';
+  return html;
+}
+
+// Helper: build deal tooltip HTML
+// Deals are shown in modal on click, not in tooltip
+function buildDealTooltipHtml(foodName) { return ''; }
+
+// Open deal modal with full list
+function openDealModal(foodName) {
+  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length === 0) return;
+  var mHtml = '<h2 style="margin-bottom:12px;">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</h2>';
+  deals.forEach(function(d) {
+    var si = STORE_META[d.store] || {};
+    var color = si.color || '#666';
+    var sn = si.name || d.store || '?';
+    var letter = sn.charAt(0).toUpperCase();
+    mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:12px;margin-left:4px;margin-bottom:12px;">';
+    mHtml += '<div class="ct-deal-name" style="font-weight:600;font-size:0.95rem;">' + esc(d.name || foodName) + '</div>';
+    mHtml += '<div class="ct-deal-price" style="font-size:1.1rem;color:var(--accent);font-weight:700;margin:4px 0;">' + (d.price || '') + '$</div>';
+    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    if (d.unit_price) mHtml += '<div class="ct-deal-meta">Prix unitaire: ' + esc(d.unit_price) + '</div>';
+    mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
+    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    mHtml += '</div>';
+  });
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = mHtml;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
+}
+
+// Deal modal: click 'voir plus' opens full list in suggestions modal
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-deal-modal-food]');
+  if (!el) return;
+  var foodName = el.dataset.dealModalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  if (deals.length === 0) return;
+  var mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';
+  deals.forEach(function(d) {
+    var si = STORE_META[d.store] || {};
+    var color = si.color || '#666';
+    var sn = si.name || d.store || '?';
+    var letter = sn.charAt(0).toUpperCase();
+    mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:8px;margin-left:4px;margin-bottom:8px;">';
+    mHtml += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
+    mHtml += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
+    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
+    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    mHtml += '</div>';
+  });
+  var content = document.getElementById('suggestions-content');
+  if (content) {
+    content.innerHTML = mHtml;
+    document.getElementById('suggestions-modal').classList.remove('hidden');
+  }
+});
+
+async function loadSelectionsFromServer() {
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+    if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
+    var data = await res.json();
+    selections = data.selections || {};
+    Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
+    savedSnapshot = JSON.stringify(selections);
+  } catch(e) { console.error('[NutriFood] Load selections error:', e); }
+}
+
+// ─── Feature 1: Suggestions ───
+var suggestionsFab = null;
+
+function hasSelections() {
+  return Object.keys(selections).some(function(catId) { return selections[catId] && selections[catId].length > 0; });
+}
+
+async function checkSuggestionsBadge() {
+  if (!currentUser || !hasSelections()) {
+    if (suggestionsFab) suggestionsFab.classList.remove('visible', 'pulsing');
+    return;
+  }
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/suggestions', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    var gaps = data.gaps || [];
+    var portionGaps = data.portion_gaps || [];
+    var totalCount = gaps.length + portionGaps.length;
+    suggestionsFab = $('suggestions-fab');
+    var countEl = $('fab-count');
+    if (totalCount > 0) {
+      suggestionsFab.classList.add('visible', 'pulsing');
+      countEl.textContent = totalCount;
+      countEl.style.display = 'flex';
+    } else {
+      suggestionsFab.classList.add('visible');
+      suggestionsFab.classList.remove('pulsing');
+      countEl.style.display = 'none';
+    }
+  } catch(e) { console.error('[NutriFood] Suggestions check error:', e); }
+}
+
+async function showSuggestions() {
+  var content = $('suggestions-content');
+  content.innerHTML = '<p class="loading">Chargement…</p>';
+  $('suggestions-title').textContent = '💡 Suggestions nutritionnelles';
+  $('suggestions-modal').classList.remove('hidden');
+  var token = getToken();
+  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
+  try {
+    var res = await fetchWithTimeout(API + '/suggestions', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
+    var data = await res.json();
+    var gaps = data.gaps || [];
+    var portionGaps = data.portion_gaps || [];
+    var suggestions = data.suggestions || [];
+    if (gaps.length === 0 && portionGaps.length === 0) {
+      var allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
+      var seasHtml = await buildSeasonalHtml();
+      if (seasHtml) allGoodHtml += seasHtml;
+      content.innerHTML = allGoodHtml;
+      return;
+    }
+    var html = '';
+    // Portion gaps section
+    if (portionGaps.length > 0) {
+      html += '<h3 style="margin:0 0 8px;font-size:0.9rem;color:var(--accent-amber);">🍽️ Portions par catégorie</h3>';
+      portionGaps.forEach(function(pg) {
+        var pct = pg.percentage || 0;
+        var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+        html += '<div class="suggestion-gap">';
+        html += '<div class="sg-header"><span class="sg-name">' + esc(pg.icon || '') + ' ' + esc(pg.category || '') + '</span><span class="sg-pct">' + pg.current + '/' + pg.target + '</span></div>';
+        html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+        html += '</div>';
+      });
+    }
+    // Nutrient gaps section
+    if (gaps.length > 0) {
+      html += '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:var(--accent);">📊 Nutriments</h3>';
+    }
+    gaps.forEach(function(gap) {
+      var pct = Math.round(gap.percentage || 0);
+      var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+      html += '<div class="suggestion-gap">';
+      html += '<div class="sg-header"><span class="sg-name">' + esc(gap.nutrient || gap.name || '') + '</span><span class="sg-pct">' + pct + '%</span></div>';
+      html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
+      var foods = gap.foods || gap.suggestions || [];
+      foods.forEach(function(f) {
+        var fName = f.name || f.food || '';
+        var fVal = f.value || f.amount || '';
+        var fCat = f.category || f.cat || '';
+        html += '<div class="sg-food">';
+        html += '<div class="sg-food-info"><div class="sg-food-name">' + esc(fName) + '</div>';
+        if (fVal) html += '<div class="sg-food-val">' + esc(String(fVal)) + (fCat ? ' · ' + esc(fCat) : '') + '</div>';
+        html += '</div>';
+        html += '<button class="sg-add-btn" data-suggest-add="' + esc(fName) + '" data-suggest-cat="' + esc(fCat) + '">+</button>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    // Food suggestions
+    if (suggestions.length > 0) {
+      html += '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:var(--accent);">💡 Aliments suggérés</h3>';
+      suggestions.forEach(function(s) {
+        html += '<div class="sg-food">';
+        html += '<div class="sg-food-info"><div class="sg-food-name">' + esc(s.food || '') + '</div>';
+        html += '<div class="sg-food-val">' + esc(s.reason || '') + (s.category ? ' · ' + esc(s.category) : '') + '</div></div>';
+        html += '<button class="sg-add-btn" data-suggest-add="' + esc(s.food || '') + '" data-suggest-cat="' + esc(s.category || '') + '">+</button>';
+        html += '</div>';
+      });
+    }
+    // Add seasonal at the end of suggestions
+    var seasHtml = await buildSeasonalHtml();
+    if (seasHtml) html += seasHtml;
+    content.innerHTML = html;
+    // Wire add buttons
+    content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var name = btn.dataset.suggestAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        addSuggestedFood(name, btn.dataset.suggestCat);
+        btn.textContent = '✓';
+        btn.style.background = 'var(--accent)';
+        setTimeout(function() { btn.textContent = '+'; btn.style.background = ''; }, 1500);
+      });
+    });
+  } catch(e) {
+    console.error('[NutriFood] Suggestions error:', e);
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
+function addSuggestedFood(name, catHint) {
+  // Search in DATA for this food
+  var found = false;
+  for (var i = 0; i < DATA.categories.length; i++) {
+    var cat = DATA.categories[i];
+    var food = cat.foods.find(function(f) { return f.name === name; });
+    if (food) {
+      // If catHint provided, try to match it, otherwise use found cat
+      var useCatId = cat.id;
+      if (catHint) {
+        var hintedCat = DATA.categories.find(function(c) { return c.id === catHint || c.name === catHint; });
+        if (hintedCat) {
+          var inHinted = hintedCat.foods.find(function(f) { return f.name === name; });
+          if (inHinted) { useCatId = hintedCat.id; food = inHinted; }
+        }
+      }
+      addItem(useCatId, { name: food.name, density: food.density, nutrients: food.nutrients || '' });
+      found = true;
+      break;
+    }
+  }
+  if (!found) showToast('Aliment introuvable: ' + name, 'warning');
+  else showToast(name + ' ajouté', 'success');
+}
+
+// ─── Feature 2: Seasonal (now inside suggestions panel) ───
+var _seasonalCache = null;
+async function fetchSeasonalData() {
+  if (_seasonalCache) return _seasonalCache;
+  try {
+    var res = await fetchWithTimeout(API + '/seasonal', {}, 10000);
+    if (!res.ok) return null;
+    var data = await res.json();
+    var foods = data.foods || data.seasonal || [];
+    var names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
+    _seasonalCache = names;
+    return names;
+  } catch(e) { console.error('[NutriFood] Seasonal error:', e); return null; }
+}
+
+async function buildSeasonalHtml() {
+  var names = await fetchSeasonalData();
+  if (!names || names.length === 0) return '';
+  var display = names.slice(0, 8);
+  var extraCount = names.length - 8;
+  var html = '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:#4ade80;">\uD83C\uDF31 De saison ce mois-ci</h3>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+  display.forEach(function(n) {
+    html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">' + esc(n) + '</span>';
+  });
+  if (extraCount > 0) {
+    html += '<span id="seasonal-more-btn" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.06);border:1px dashed rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">+' + extraCount + '</span>';
+    html += '<div id="seasonal-extra-list" style="display:none;margin-top:4px;flex-wrap:wrap;gap:4px;">';
+    names.slice(8).forEach(function(n) {
+      html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">' + esc(n) + '</span>';
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+// Delegated clicks for seasonal items and expand/collapse
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-seasonal-food]');
+  if (el) {
+    var name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    addSuggestedFood(name);
+    return;
+  }
+  if (e.target.id === 'seasonal-more-btn') {
+    var extra = $('seasonal-extra-list');
+    if (extra) {
+      var shown = extra.style.display !== 'none';
+      extra.style.display = shown ? 'none' : 'flex';
+      var count = e.target.textContent.match(/\d+/);
+      e.target.textContent = shown ? '+' + (count ? count[0] : '') : '\u2212';
+    }
+  }
+});
+
+// ─── Feature 3: Goals ───
+var userGoals = null;
+var defaultGoals = { protein: 350, fiber: 175, iron: 56, vitamin_c: 280, calcium: 700, omega3: 3.5, calories: 14000 };
+
+async function loadUserGoals() {
+  var token = getToken();
+  if (!token) { userGoals = Object.assign({}, defaultGoals); return; }
+  try {
+    var res = await fetchWithTimeout(API + '/goals', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (res.ok) {
+      var data = await res.json();
+      userGoals = data.goals || Object.assign({}, defaultGoals);
+    } else {
+      userGoals = Object.assign({}, defaultGoals);
+    }
+  } catch(e) { userGoals = Object.assign({}, defaultGoals); }
+}
+
+async function showGoals() {
+  $('goals-error').textContent = '';
+  if (!userGoals) await loadUserGoals();
+  $('goal-protein').value = userGoals.protein || defaultGoals.protein;
+  $('goal-fiber').value = userGoals.fiber || defaultGoals.fiber;
+  $('goal-iron').value = userGoals.iron || defaultGoals.iron;
+  $('goal-vitamin_c').value = userGoals.vitamin_c || defaultGoals.vitamin_c;
+  $('goal-calcium').value = userGoals.calcium || defaultGoals.calcium;
+  $('goal-omega3').value = userGoals.omega3 || defaultGoals.omega3;
+  $('goal-calories').value = userGoals.calories || defaultGoals.calories;
+  $('goals-modal').classList.remove('hidden');
+}
+
+async function submitGoals() {
+  var goals = {
+    protein: parseFloat($('goal-protein').value) || 0,
+    fiber: parseFloat($('goal-fiber').value) || 0,
+    iron: parseFloat($('goal-iron').value) || 0,
+    vitamin_c: parseFloat($('goal-vitamin_c').value) || 0,
+    calcium: parseFloat($('goal-calcium').value) || 0,
+    omega3: parseFloat($('goal-omega3').value) || 0,
+    calories: parseFloat($('goal-calories').value) || 0
+  };
+  var token = getToken();
+  if (!token) { $('goals-error').textContent = 'Non connecté'; return; }
+  $('goals-submit').disabled = true;
+  $('goals-submit').textContent = 'Sauvegarde…';
+  try {
+    var res = await fetchWithTimeout(API + '/goals', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ goals: goals })
+    }, 10000);
+    if (res.ok) {
+      userGoals = goals;
+      $('goals-modal').classList.add('hidden');
+      showToast('Objectifs sauvegardés', 'success');
+      render();
+      checkSuggestionsBadge();
+    } else {
+      var data = await res.json().catch(function() { return {}; });
+      $('goals-error').textContent = data.error || 'Erreur';
+    }
+  } catch(e) {
+    $('goals-error').textContent = 'Erreur: ' + e.message;
+  }
+  $('goals-submit').disabled = false;
+  $('goals-submit').textContent = '💾 Sauvegarder';
+}
+
+// ─── Feature 4: History ───
+async function showHistory() {
+  var content = $('history-content');
+  content.innerHTML = '<p class="loading">Chargement…</p>';
+  $('history-modal').classList.remove('hidden');
+  var token = getToken();
+  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir l\'historique.</p>'; return; }
+  try {
+    var res = await fetchWithTimeout(API + '/history', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
+    var data = await res.json();
+    var weeks = data.weeks || data.history || [];
+    if (!weeks || weeks.length === 0) {
+      content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun historique encore. Vos semaines sauvegardées apparaîtront ici.</p>';
+      return;
+    }
+    var html = '<table class="history-table"><thead><tr>';
+    html += '<th>Semaine</th><th>Aliments</th><th>Prot.</th><th>Fib.</th><th>Fer</th><th>Vit C</th><th>Calcium</th>';
+    html += '</tr></thead><tbody>';
+    weeks.forEach(function(w) {
+      var week = w.week || w.week_key || '';
+      var total = w.total_foods || w.total || 0;
+      var prot = w.protein || 0;
+      var fib = w.fiber || 0;
+      var iron = w.iron || 0;
+      var vitC = w.vit_c || w.vitamin_c || 0;
+      var calc = w.calcium || 0;
+      html += '<tr data-history-week="' + esc(String(week)) + '">';
+      html += '<td class="ht-week">' + esc(String(week)) + '</td>';
+      html += '<td>' + total + '</td>';
+      html += '<td>' + Math.round(prot) + '</td>';
+      html += '<td>' + Math.round(fib) + '</td>';
+      html += '<td>' + Math.round(iron) + '</td>';
+      html += '<td>' + Math.round(vitC) + '</td>';
+      html += '<td>' + Math.round(calc) + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    content.innerHTML = html;
+    // Wire row clicks
+    content.querySelectorAll('[data-history-week]').forEach(function(row) {
+      row.addEventListener('click', function() {
+        var weekKey = row.dataset.historyWeek;
+        showHistoryDetail(weekKey);
+      });
+    });
+  } catch(e) {
+    console.error('[NutriFood] History error:', e);
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
+async function showHistoryDetail(weekKey) {
+  var content = $('history-content');
+  content.innerHTML = '<p class="loading">Chargement de ' + esc(weekKey) + '…</p>';
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/history/' + encodeURIComponent(weekKey), {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur.</p>'; return; }
+    var data = await res.json();
+    var sels = data.selections || data.data || {};
+    var html = '<span class="history-detail-back" id="history-back">← Retour à l\'historique</span>';
+    html += '<h3 style="color:var(--accent);margin-bottom:12px;">Semaine ' + esc(weekKey) + '</h3>';
+    var total = 0;
+    html += '<ul class="history-detail-list">';
+    Object.keys(sels).forEach(function(catId) {
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      var catName = cat ? cat.name : catId;
+      var catIcon = cat ? cat.icon : '📦';
+      sels[catId].forEach(function(item) {
+        var qty = item.qty || 1;
+        total += qty;
+        html += '<li><span>' + catIcon + ' ' + esc(item.name) + ' <span style="color:var(--text-dim);font-size:0.78rem;">(' + esc(catName) + ')</span></span><span class="hd-qty">×' + qty + '</span></li>';
+      });
+    });
+    html += '</ul>';
+    if (total === 0) html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Aucune sélection cette semaine.</p>';
+    html += '<p style="margin-top:8px;color:var(--text-dim);font-size:0.82rem;">Total: ' + total + ' aliment(s)</p>';
+    content.innerHTML = html;
+    $('history-back').addEventListener('click', showHistory);
+  } catch(e) {
+    content.innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>';
+  }
+}
+
+// ─── Init ───
+async function init() {
+  try {
+    var res = await fetchWithTimeout(API + '/foods', {}, 8000);
+    DATA = await res.json();
+    activeTab = DATA.sections[0].id;
+
+    // Wire up events
+    initAuthEvents();
+    initPlannerDelegation();
+
+    // Restore session
+    var savedUser = null;
+    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) {}
+    if (savedUser) {
+      currentUser = JSON.parse(savedUser);
+      var token = getToken();
+      if (token) {
+        try {
+          var meRes = await fetchWithTimeout(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+          if (meRes.ok) {
+            renderUserArea();
+            await loadSelectionsFromServer();
+            planningSelections = JSON.parse(JSON.stringify(selections));
+            loadDeals();
+          } else {
+            console.warn('[NutriFood] Token invalid, clearing');
+            clearAuth();
+          }
+        } catch(e) { console.error('[NutriFood] Session check failed:', e); clearAuth(); }
+      } else { clearAuth(); }
+    }
+
+    renderUserArea();
+
+    // Apply saved mode (tracking by default)
+    if (currentMode === 'tracking') {
+      document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'tracking'); });
+      $('tracking-bar').style.display = 'flex';
+      trackingDate = getTodayISO();
+    } else {
+      document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'planning'); });
+    }
+
+    if (currentUser) {
+      // Show search bar + app
+      $('search-bar-container').style.display = 'block';
+      if (currentMode === 'tracking') {
+        await loadTrackingDay(trackingDate);
+      } else {
+        render();
+        updateSaveBar();
+      }
+      // Load deals
+      loadDeals().then(function() { render(); });
+      // Seasonal now in suggestions panel
+      // Feature 3: load goals
+      await loadUserGoals();
+      // Feature 1: check suggestions badge
+      checkSuggestionsBadge();
+    } else if (window._shareToken) {
+      $('search-bar-container').style.display = 'none';
+      await loadSharedView(window._shareToken);
+    } else {
+      // Not logged in: show welcome screen
+      renderWelcome();
+    }
+  } catch (e) {
+    console.error('[NutriFood] Init error:', e);
+    $('app').innerHTML = '<div class="api-error"><h2>⚠️ Serveur indisponible</h2><p>Impossible de se connecter au serveur. Réessayez dans un moment.</p><button id="retry-init">Réessayer</button></div>';
+    $('save-bar').classList.remove('visible');
+    var retryBtn = $('retry-init');
+    if (retryBtn) retryBtn.addEventListener('click', function() {
+      $('app').innerHTML = '<p class="loading">Chargement…</p>';
+      init();
+    });
+  }
+}
+
+function renderWelcome() {
+  $('app').innerHTML = `
+    <div class="welcome">
+      <h2>🍎 NutriFood</h2>
+      <p>Planifiez votre semaine nutritionnelle — aliments classés par densité nutritionnelle.</p>
+      <div class="features">
+        <div class="feature">🥩 <strong>Viandes & Laitiers</strong></div>
+        <div class="feature">🥔 <strong>Féculents</strong></div>
+        <div class="feature">🥬 <strong>Légumes</strong></div>
+        <div class="feature">🍎 <strong>Fruits</strong></div>
+        <div class="feature">🌱 <strong>Habitudes</strong></div>
+      </div>
+      <button class="login-cta" id="welcome-login">Connexion / Inscription</button>
+    </div>
+  `;
+  $('save-bar').classList.remove('visible');
+  $('welcome-login').addEventListener('click', function() { showAuth('login'); });
+}
+
+// ─── Daily nutrition helpers ───
+function daysUntilReset() {
+  var now = new Date();
+  var day = now.getDay(); // 0=dimanche, 1=lundi, ...
+  var daysUntilMonday = day === 0 ? 1 : (8 - day);
+  return daysUntilMonday;
+}
+
+function getISOWeek() {
+  var d = new Date();
+  var tmp = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  var dayNum = tmp.getUTCDay() || 7;
+  tmp.setUTCDate(tmp.getUTCDate() + 4 - dayNum);
+  var yearStart = new Date(Date.UTC(tmp.getUTCFullYear(), 0, 1));
+  var weekNum = Math.ceil((((tmp - yearStart) / 86400000) + 1) / 7);
+  return weekNum;
+}
+
+// ─── Tracking nutrition dashboard (dual: day + week) ───
+async function renderTrackingNutrition() {
+  var container = $('tracking-nutrition');
+  if (!container || !DATA) return;
+  var nutrients = [
+    { key: 'calories', label: 'Calories', unit: 'kcal', goalKey: 'calories' },
+    { key: 'protein', label: 'Protéine', unit: 'g', goalKey: 'protein' },
+    { key: 'fiber', label: 'Fibres', unit: 'g', goalKey: 'fiber' },
+    { key: 'iron', label: 'Fer', unit: 'mg', goalKey: 'iron' },
+    { key: 'vit_c', label: 'Vit C', unit: 'mg', goalKey: 'vitamin_c' },
+    { key: 'calcium', label: 'Calcium', unit: 'mg', goalKey: 'calcium' },
+    { key: 'omega3', label: 'O-3', unit: 'g', goalKey: 'omega3' }
+  ];
+  var targets = userGoals || {};
+  // Compute day totals locally (instant)
+  var dt = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
+  Object.keys(selections).forEach(function(catId) {
+    if (!selections[catId]) return;
+    var cat = DATA.categories.find(function(c) { return c.id === catId; });
+    if (!cat) return;
+    selections[catId].forEach(function(item) {
+      var food = cat.foods.find(function(f) { return f.name === item.name; });
+      if (food && food.nutrition) {
+        var qty = item.qty || 1;
+        dt.protein += (food.nutrition.protein || 0) * qty;
+        dt.fiber += (food.nutrition.fiber || 0) * qty;
+        dt.iron += (food.nutrition.iron || 0) * qty;
+        dt.vit_c += (food.nutrition.vit_c || 0) * qty;
+        dt.calcium += (food.nutrition.calcium || 0) * qty;
+        dt.omega3 += (food.nutrition.omega3 || 0) * qty;
+        dt.calories += (food.nutrition.calories || 0) * qty;
+      }
+    });
+  });
+  function nutrientRow(n, val, goal, isDaily) {
+    var target = isDaily ? (goal ? goal / 7 : 0) : (goal || 0);
+    var pct = target > 0 ? Math.round((val / target) * 100) : 0;
+    var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+    var h = '<div class="nutri-stat">';
+    h += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(val).toLocaleString() : Math.round(val)) + '</span>';
+    h += '<span class="ns-label">' + n.label + '</span>';
+    if (target > 0) {
+      h += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
+      h += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+    }
+    h += '</div>';
+    return h;
+  }
+  // Render day section immediately
+  var html = '';
+  html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📊 <strong>' + formatDayLabel(trackingDate) + '</strong></span></div>';
+  html += '<div class="nutri-stats-row">';
+  nutrients.forEach(function(n) {
+    html += nutrientRow(n, dt[n.key] || 0, targets[n.goalKey || n.key], true);
+  });
+  html += '</div>';
+  // Week section placeholder
+  var weekNum = getISOWeek();
+  html += '<div class="nutri-summary-header" style="margin-top:12px;"><span class="nutri-summary-title">📅 Semaine ' + weekNum + ' (cumul)</span></div>';
+  html += '<div id="tracking-week-stats" class="nutri-stats-row"><p class="loading">Chargement…</p></div>';
+  container.innerHTML = html;
+  // Fetch week totals async
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/tracking/nutrition/' + trackingDate, { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+    if (!res.ok) { var wc1 = $('tracking-week-stats'); if (wc1) wc1.innerHTML = ''; return; }
+    var data = await res.json();
+    var wt = data.week_totals || {};
+    if (data.targets) targets = data.targets;
+    var wc2 = $('tracking-week-stats');
+    if (!wc2) return;
+    var wh = '';
+    nutrients.forEach(function(n) {
+      wh += nutrientRow(n, wt[n.key] || 0, targets[n.goalKey || n.key], false);
+    });
+    wc2.innerHTML = wh;
+  } catch(e) { console.error('[NutriFood] Tracking week fetch error:', e); }
+}
+
+function renderDailyNutrition(totals) {
+  var hasGoals = userGoals && (userGoals.protein || userGoals.fiber || userGoals.iron || userGoals.vitamin_c || userGoals.calcium || userGoals.omega3);
+  var weekNum = getISOWeek();
+  var resetDays = daysUntilReset();
+
+  var nutrients = [
+    { key: 'calories', label: 'Calories',   unit: 'kcal', weekly: totals.calories || 0, goalKey: 'calories' },
+    { key: 'protein',  label: 'Proteine g', unit: 'g',    weekly: totals.protein,  goalKey: 'protein' },
+    { key: 'fiber',    label: 'Fibres g',   unit: 'g',    weekly: totals.fiber,    goalKey: 'fiber' },
+    { key: 'iron',     label: 'Fer mg',     unit: 'mg',   weekly: totals.iron,     goalKey: 'iron' },
+    { key: 'vit_c',    label: 'Vit C mg',   unit: 'mg',   weekly: totals.vit_c,    goalKey: 'vitamin_c' },
+    { key: 'calcium',  label: 'Calcium mg', unit: 'mg',   weekly: totals.calcium,  goalKey: 'calcium' },
+    { key: 'omega3',   label: 'O-3 g',      unit: 'g',    weekly: totals.omega3,   goalKey: 'omega3' }
+  ];
+
+  var html = '<div class="nutri-summary-header">';
+  html += '<span class="nutri-summary-title">\uD83D\uDCCA Nutrition — <strong>Semaine ' + weekNum + '</strong></span>';
+  html += '<span class="reset-badge">\uD83D\uDD04 Reset dans ' + resetDays + 'j</span>';
+  html += '</div>';
+
+  html += '<div class="nutri-stats-row">';
+  nutrients.forEach(function(n) {
+    var daily = n.weekly / 7;
+    var dailyStr = n.unit === 'g' ? (Math.round(daily * 10) / 10) + '' : Math.round(daily) + '';
+    html += '<div class="nutri-stat">';
+    html += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(n.weekly).toLocaleString() : Math.round(n.weekly)) + '</span>';
+    html += '<span class="ns-label">' + n.label + '</span>';
+    html += '<span class="ns-daily">' + dailyStr + n.unit + '/j</span>';
+    var goalVal = userGoals ? userGoals[n.goalKey || n.key] : null;
+    if (goalVal) {
+      var dailyTarget = goalVal / 7;
+      var pct = dailyTarget > 0 ? Math.round((daily / dailyTarget) * 100) : 0;
+      var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+      html += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
+      html += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+// ─── Render ───
+function render() {
+  var app = $('app');
+
+  // Compute nutrition totals FIRST (used for score ring)
+  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
+  Object.keys(selections).forEach(function(catId) {
+    selections[catId].forEach(function(item) {
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      if (cat) {
+        var food = cat.foods.find(function(f) { return f.name === item.name; });
+        if (food && food.nutrition) {
+          var qty = item.qty || 1;
+          totals.protein += (food.nutrition.protein || 0) * qty;
+          totals.fiber += (food.nutrition.fiber || 0) * qty;
+          totals.iron += (food.nutrition.iron || 0) * qty;
+          totals.vit_c += (food.nutrition.vit_c || 0) * qty;
+          totals.calcium += (food.nutrition.calcium || 0) * qty;
+          totals.omega3 += (food.nutrition.omega3 || 0) * qty;
+          totals.calories += (food.nutrition.calories || 0) * qty;
+        }
+      }
+    });
+  });
+  // Nutrient totals computed above — used for nutrition dashboard
+  var html = '';
+  html += '<div class="nutri-summary">';
+  if (currentMode === 'tracking') {
+    html += '<div id="tracking-nutrition"><p class="loading">Chargement nutrition…</p></div>';
+  } else {
+    html += renderDailyNutrition(totals);
+  }
+  html += '</div>';
+
+  html += '<div class="tabs">';
+  DATA.sections.forEach(function(sec) {
+    html += '<button class="tab ' + (sec.id === activeTab ? 'active' : '') + '" data-tab="' + sec.id + '"><span class="tab-dot ' + getSectionDotClass(sec.id) + '"></span>' + sec.icon + ' ' + sec.name + '</button>';
+  });
+  html += '</div>';
+  DATA.sections.forEach(function(sec) {
+    var cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
+    html += '<div class="tab-content ' + (sec.id === activeTab ? 'active' : '') + '" id="tab-' + sec.id + '"><div class="grid">';
+    cats.forEach(function(cat) {
+      var sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
+      html += renderCard(Object.assign({}, cat, { foods: sorted }));
+    });
+    html += '</div></div>';
+  });
+  app.innerHTML = html;
+
+  // Wire up tabs
+  app.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() { activeTab = tab.dataset.tab; render(); });
+  });
+  // Wire up selects and checkboxes
+  app.querySelectorAll('select[id^="sel-"]').forEach(function(sel) {
+    sel.addEventListener('change', function() { addFromSelect(sel.dataset.cat || sel.id.replace('sel-', ''), sel); });
+  });
+  // In tracking mode, fetch and render dual nutrition dashboard
+  if (currentMode === 'tracking' && currentUser) {
+    renderTrackingNutrition();
+  }
+}
+
+function getSeasonIcon(food, month) {
+  if (!food) return '';
+  if (food.season && food.season.length > 0 && food.season.length < 12) {
+    if (food.season.indexOf(month) !== -1) return '🌱';
+    if (food.import_season && food.import_season.indexOf(month) !== -1) return '✈️';
+  } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
+    if (food.import_season.indexOf(month) !== -1) return '✈️';
+  }
+  return '';
+}
+
+function getSectionDotClass(sectionId) {
+  var cats = DATA.categories.filter(function(c) { return c.section === sectionId; });
+  var totalSelected = 0, totalMin = 0, totalMax = 0;
+  cats.forEach(function(cat) {
+    var sel = selections[cat.id] || [];
+    totalSelected += sel.reduce(function(s, i) { return s + i.qty; }, 0);
+    totalMin += cat.weekly_min; totalMax += cat.weekly_max;
+  });
+  if (totalSelected === 0 || totalSelected < totalMin) return 'under';
+  if (totalSelected > totalMax) return 'over';
+  return 'in-range';
+}
+
+function getPortionHint(cat) {
+  var section = cat.section || '';
+  var catId = cat.id || '';
+  var hints = {
+    'viandes-laitiers': '1 portion = paume de la main (~100g)',
+    'legumes': '1 portion = 1 tasse crue ou ½ tasse cuite',
+    'fruits': '1 portion = 1 fruit moyen ou ½ tasse',
+    'feculents': '1 portion = ½ tasse cuite ou 1 tranche',
+    'habitudes': 'Consommer avec modération'
+  };
+  // Also check by category id for more specific hints
+  var idHints = {
+    'noix-graines': '1 portion = 1 petite poignée (~30g)',
+    'lait': '1 portion = 1 tasse (250ml)',
+    'oeufs': '1 portion = 1-2 œufs'
+  };
+  if (idHints[catId]) return idHints[catId];
+  if (hints[section]) return hints[section];
+  return null;
+}
+
+function renderCard(cat) {
+  var selected = selections[cat.id] || [];
+  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  var suffix = cat.daily ? 'jour.' : 'sem.';
+  var min = cat.weekly_min, max = cat.weekly_max;
+  var target = min === max ? '' + min : min + '-' + max;
+  var cls = totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range');
+
+  var html = '<div class="card" data-cat="' + cat.id + '">';
+  html += '<div class="card-header">';
+  html += '<span class="cat-label"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
+  html += '<span class="counter-badge ' + (totalCount > 0 ? cls : '') + '">' + totalCount + ' / ' + target + ' ' + suffix + '</span>';
+  html += '</div>';
+
+  var portionHint = getPortionHint(cat);
+  if (portionHint) {
+    html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px;font-style:italic;">📏 ' + esc(portionHint) + '</div>';
+  }
+
+  if (cat.type === 'checkbox') {
+    cat.foods.forEach(function(f) {
+        var isChecked = selected.some(function(s) { return s.name === f.name; });
+        var dealBadgesHtml = buildDealBadges(f.name);
+        html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span>' + dealBadgesHtml + '</label>';
+    });
+  } else {
+    html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
+      cat.foods.forEach(function(f) {
+        var seasonPrefix = '';
+        if (f.season && f.season.length > 0) {
+          var month = new Date().getMonth() + 1;
+          if (f.season.indexOf(month) !== -1) seasonPrefix = '🌱 ';
+          else if (f.import_season && f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+        } else if (f.import_season && f.import_season.length > 0 && f.import_season.length < 12) {
+          var month = new Date().getMonth() + 1;
+          if (f.import_season.indexOf(month) !== -1) seasonPrefix = '✈️ ';
+        }
+        var dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
+        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
+      });
+      html += '</select>';
+  }
+
+  html += '<div class="chips" id="chips-' + cat.id + '">' + renderChips(cat.id, selected) + '</div>';
+  html += '</div>';
+  return html;
+}
+
+function renderChips(catId, selected) {
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  return selected.slice().sort(function(a, b) { return b.density - a.density; }).map(function(item) {
+    // Check if food exists in another category
+    var alsoIn = [];
+    DATA.categories.forEach(function(c) {
+      if (c.id !== catId && c.foods.some(function(f) { return f.name === item.name; })) {
+        alsoIn.push(c.icon + ' ' + c.name);
+      }
+    });
+    var alsoTag = alsoIn.length > 0 ? ' <span style="font-size:0.68rem;color:var(--text-dim);">aussi: ' + alsoIn.join(', ') + '</span>' : '';
+    var qtyControls = item.qty > 1
+      ? '<span class="qty-controls"><button class="qty-btn" data-action="dec" data-cat="' + catId + '" data-name="' + esc(item.name) + '">−</button><span class="qty-num">×' + item.qty + '</span><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>'
+      : '<span class="qty-controls"><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>';
+    return '<span class="chip" title="' + esc(item.nutrients) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + buildDealBadges(item.name) + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
+  }).join('');
+}
+
+function esc(s) { return String(s == null ? '' : s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+
+// ─── Unified event delegation ───
+document.addEventListener('click', function(e) {
+  // 1. Action buttons (qty +, qty -, remove, admin) — highest priority
+  var btn = e.target.closest('[data-action]');
+  if (btn) {
+    var catId = btn.dataset.cat;
+    var name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    var action = btn.dataset.action;
+    if (action === 'inc') changeQty(catId, name, 1);
+    else if (action === 'dec') changeQty(catId, name, -1);
+    else if (action === 'remove') removeItem(catId, name);
+    else if (action === 'add-food') adminAddFood(catId);
+    else if (action === 'remove-food') adminRemoveFood(catId, name);
+    e.stopPropagation();
+    e.preventDefault();
+    return;
+  }
+  // 1b. Hide product from manage tab
+  var hideItem = e.target.closest('[data-hide-cat]');
+  if (hideItem) {
+    var hideCat = hideItem.dataset.hideCat;
+    var hideName = hideItem.dataset.hideName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    hideFood(hideCat, hideName);
+    return;
+  }
+  // 1c. Toggle category accordion in remove tab
+  var catHeader = e.target.closest('[data-remove-cat]');
+  if (catHeader) {
+    var catId = catHeader.dataset.removeCat;
+    var items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
+    var arrow = catHeader.querySelector('.remove-cat-arrow');
+    if (items) {
+      var shown = items.style.display !== 'none';
+      // Close all others
+      document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
+      document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
+      // Toggle this one
+      if (!shown) {
+        items.style.display = 'block';
+        if (arrow) arrow.textContent = '\u25B2';
+      }
+    }
+    return;
+  }
+  // 2. Deals toggle in modal
+  var toggle = e.target.closest('#deals-toggle');
+  if (toggle) {
+    var content = document.getElementById('deals-content');
+    var arrow = document.getElementById('deals-arrow');
+    if (content) {
+      var shown = content.style.display !== 'none';
+      content.style.display = shown ? 'none' : 'block';
+      if (arrow) arrow.textContent = shown ? '\u2193' : '\u2191';
+    }
+    return;
+  }
+  // 3. Deal badges inside chips -> open food modal
+  var dealBadges = e.target.closest('[data-deal-food]');
+  if (dealBadges) {
+    e.preventDefault();
+    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    for (var i = 0; i < DATA.categories.length; i++) {
+      var cat = DATA.categories[i];
+      if (cat.foods.some(function(f) { return f.name === dealName; })) {
+        openFoodModal(cat.id, dealName);
+        return;
+      }
+    }
+    return;
+  }
+  // 4. Chip click -> open food modal
+  var chip = e.target.closest('[data-detail-cat]');
+  if (chip) {
+    e.preventDefault();
+    var chipName = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    openFoodModal(chip.dataset.detailCat, chipName);
+    return;
+  }
+});
+
+document.addEventListener('change', function(e) {
+  // Select changes
+  if (e.target.tagName === 'SELECT' && e.target.dataset.cat) {
+    if (e.target.value) {
+      var opt = e.target.selectedOptions[0];
+      addItem(e.target.dataset.cat, { name: e.target.value, density: parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
+      e.target.value = '';
+    }
+  }
+  // Checkbox changes
+  if (e.target.type === 'checkbox' && e.target.dataset.cat) {
+    var name = e.target.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
+    else removeItem(e.target.dataset.cat, name);
+  }
+});
+
+// Mouse hover: highlight chips
+document.addEventListener('mouseover', function(e) {
+  var chip = e.target.closest('[data-detail-cat]');
+  if (chip) chip.style.cursor = 'pointer';
+});
+
+// ─── Actions ───
+function addItem(catId, item) {
+  if (!selections[catId]) selections[catId] = [];
+  var existing = selections[catId].find(function(s) { return s.name === item.name; });
+  if (existing) existing.qty = (existing.qty || 1) + 1;
+  else selections[catId].push(Object.assign({}, item, { qty: 1 }));
+  refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
+  if (currentMode === 'tracking') renderTrackingNutrition();
+  if (currentUser) checkSuggestionsBadge();
+}
+
+function removeItem(catId, name) {
+  if (!selections[catId]) return;
+  selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
+  if (selections[catId].length === 0) delete selections[catId];
+  // Uncheck checkbox if visible
+  var cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
+  if (cb) cb.checked = false;
+  refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
+  if (currentMode === 'tracking') renderTrackingNutrition();
+  if (currentUser) checkSuggestionsBadge();
+}
+
+function changeQty(catId, name, delta) {
+  if (!selections[catId]) return;
+  var item = selections[catId].find(function(s) { return s.name === name; });
+  if (!item) return;
+  item.qty = (item.qty || 1) + delta;
+  if (item.qty <= 0) removeItem(catId, name);
+  else { refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave(); if (currentMode === 'tracking') renderTrackingNutrition(); if (currentUser) checkSuggestionsBadge(); }
+}
+
+function refreshCard(catId) {
+  var card = document.querySelector('[data-cat="' + catId + '"]');
+  if (!card) return;
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  var selected = selections[catId] || [];
+  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  var badge = card.querySelector('.counter-badge');
+  if (badge) {
+    var min = cat.weekly_min, max = cat.weekly_max;
+    var target = min === max ? '' + min : min + '-' + max;
+    badge.textContent = totalCount + ' / ' + target + ' ' + (cat.daily ? 'jour.' : 'sem.');
+    badge.className = 'counter-badge ' + (totalCount === 0 ? '' : (totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range')));
+  }
+  var chipsContainer = card.querySelector('#chips-' + catId);
+  if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
+}
+
+function updateTabDots() {
+  DATA.sections.forEach(function(sec, idx) {
+    var dotClass = getSectionDotClass(sec.id);
+    var tabs = document.querySelectorAll('.tab');
+    if (tabs[idx]) { var dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
+  });
+  if (currentMode === 'tracking') renderTrackingNutrition();
+}
+
+// ─── Persistence ───
+function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
+
+function scheduleAutoSave() {
+  if (!getToken()) return; // skip if not logged in
+  setDirty(true);
+  clearTimeout(autoSaveTimer);
+  if (currentMode === 'tracking') {
+    autoSaveTimer = setTimeout(function() { saveTracking(); }, 2000);
+  } else {
+    autoSaveTimer = setTimeout(function() { saveSelections(); }, 2000);
+  }
+}
+
+function setDirty(dirty) {
+  var btn = $('save-btn');
+  if (!btn) return;
+  if (dirty) { btn.classList.add('dirty'); btn.disabled = false; }
+  else { btn.classList.remove('dirty'); btn.disabled = true; }
+}
+
+// ─── Admin food editing ───
+function adminAddFood(catId) {
+  var nameEl = $('add-name-' + catId);
+  var densityEl = $('add-density-' + catId);
+  var nutrientsEl = $('add-nutrients-' + catId);
+  if (!nameEl || !nameEl.value.trim()) return;
+  var name = nameEl.value.trim();
+  var density = parseInt(densityEl.value || '50');
+  var nutrients = nutrientsEl.value.trim() || 'Non spécifié';
+  
+  // Add to DATA
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  if (cat.foods.some(function(f) { return f.name === name; })) { showToast('Cet aliment existe d\u00e9j\u00e0', 'warning'); return; }
+  cat.foods.push({ name: name, density: density, nutrients: nutrients });
+  
+  // Clear fields
+  nameEl.value = ''; densityEl.value = ''; nutrientsEl.value = '';
+  
+  // Save to server
+  saveFoodsToServer();
+  render();
+}
+
+function adminRemoveFood(catId, name) {
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
+  // Also remove from selections if present
+  if (selections[catId]) {
+    selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
+    if (selections[catId].length === 0) delete selections[catId];
+  }
+  saveFoodsToServer();
+  render();
+  updateSaveBar();
+}
+
+async function saveFoodsToServer() {
+  // Deprecated — foods are now managed via /api/admin/food/show and /api/admin/food/hide
+}
+
+async function hideFood(catId, name) {
+  var token = getToken();
+  if (!token) { showToast('Non connecté', 'error'); return; }
+  try {
+    var res = await fetchWithTimeout(API + '/admin/food/hide', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ name: name })
+    }, 10000);
+    if (res.ok) {
+      // Remove from DATA locally
+      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      if (cat) cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
+      // Remove from selections
+      if (selections[catId]) {
+        selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
+        if (selections[catId].length === 0) delete selections[catId];
+      }
+      render();
+      updateSaveBar();
+      loadRemoveProductList();
+      showToast(name + ' masqué', 'success');
+    } else {
+      showToast('Erreur lors du masquage', 'error');
+    }
+  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+}
+
+function updateSaveBar() {
+  var bar = $('save-bar');
+  var btn = $('save-btn');
+  var info = $('save-info');
+  var total = Object.values(selections).reduce(function(sum, arr) { return sum + arr.reduce(function(s, i) { return s + i.qty; }, 0); }, 0);
+
+  // Rewire save button
+  btn.onclick = saveSelections;
+
+  if (isDirty()) {
+    bar.classList.add('visible'); btn.classList.add('dirty'); btn.disabled = false;
+    info.textContent = total + ' aliment(s) — modifications non sauvegardées';
+  } else {
+    btn.classList.remove('dirty'); btn.disabled = true;
+    if (total > 0) { bar.classList.add('visible'); info.textContent = total + ' aliment(s) sélectionné(s) — sauvegardé ✓'; }
+    else { bar.classList.remove('visible'); }
+  }
+}
+
+async function saveSelections() {
+  if (currentMode === 'tracking') { saveTracking(); return; }
+  // Cancel pending auto-save timer since we're saving now
+  clearTimeout(autoSaveTimer);
+  var btn = $('save-btn');
+  var origText = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
+  var token = getToken();
+  if (token) {
+    try {
+      var res = await fetchWithTimeout(API + '/selections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ selections: selections })
+      }, 10000);
+      if (res.ok) {
+        savedSnapshot = JSON.stringify(selections);
+        showToast('Sauvegardé', 'success');
+      } else {
+        showToast('Erreur de sauvegarde', 'error');
+      }
+    } catch(e) {
+      console.error('[NutriFood] Save error:', e);
+      showToast('Erreur de sauvegarde: ' + e.message, 'error');
+    }
+  }
+  btn.textContent = '💾 Sauvegarder';
+  updateSaveBar();
+}
+
+// Start
+
+// Check for magic link or share link in URL before init
+if (window.location.hash) {
+  if (window.location.hash.indexOf('reset=') !== -1) {
+    document.addEventListener('DOMContentLoaded', function() {
+      $('reset-modal').classList.remove('hidden');
+      $('reset-password').focus();
+    });
+  } else if (window.location.hash.indexOf('share=') !== -1) {
+    var shareMatch = window.location.hash.match(/share=([^&]+)/);
+    if (shareMatch) {
+      var shareToken = decodeURIComponent(shareMatch[1]);
+      // Override init to load shared view
+      window._shareToken = shareToken;
+    }
+  }
+}
+
+init();
+
+</script>
+</body>
+</html>

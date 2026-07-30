@@ -1099,9 +1099,9 @@ def get_tracking(date):
     if not user:
         return jsonify({'error': 'Non autorisé'}), 401
     db = get_db()
-    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date)).fetchone()
+    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user["id"], date)).fetchone()
     data = json.loads(row['data']) if row and row['data'] else {}
-    return jsonify({'date': date, 'selections': data})
+    return jsonify({"date": date, 'selections': data})
 
 @app.route('/api/tracking/<date>', methods=['POST'])
 def save_tracking(date):
@@ -1137,6 +1137,7 @@ def get_tracking_week():
 @app.route('/api/tracking/nutrition/<date>', methods=['GET'])
 def tracking_nutrition(date):
     """Get nutrition totals for a specific tracking day + week cumulative."""
+    from datetime import date as _date
     user = get_auth_user()
     if not user:
         return jsonify({'error': 'Non autorisé'}), 401
@@ -1145,7 +1146,7 @@ def tracking_nutrition(date):
     
     # Get this day's selections
     db = get_db()
-    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date)).fetchone()
+    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user["id"], date)).fetchone()
     day_selections = json.loads(row['data']) if row and row['data'] else {}
     
     # Compute day totals
@@ -1153,9 +1154,9 @@ def tracking_nutrition(date):
     
     # Get week cumulative
     try:
-        day_date = date.fromisoformat(date)
+        day_date = _date.fromisoformat(date)
     except ValueError:
-        day_date = date.today()
+        day_date = _date.today()
     monday = day_date - timedelta(days=day_date.weekday())
     week_rows = db.execute('SELECT date, data FROM tracking WHERE user_id = ? AND date >= ? AND date <= ?',
                            (user['id'], monday.isoformat(), date)).fetchall()
@@ -1167,7 +1168,7 @@ def tracking_nutrition(date):
             week_totals[k] += wt.get(k, 0)
     
     targets = get_user_targets(user['id'])
-    return jsonify({'date': date, 'day_totals': {k: round(v, 2) for k, v in day_totals.items()},
+    return jsonify({"date": date, 'day_totals': {k: round(v, 2) for k, v in day_totals.items()},
                     'week_totals': {k: round(v, 2) for k, v in week_totals.items()}, 'targets': targets})
 
 def compute_totals_from_selections(selections_data, categories):

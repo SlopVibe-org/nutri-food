@@ -2,227 +2,146 @@
 
 App de planification de repas et suivi nutritionnel basée sur le Guide alimentaire canadien.
 
-## Architecture
-
-Deux containers Docker:
-
-| Container | Rôle | Port |
-|-----------|------|------|
-| `nutrifood-api` | Backend Flask/Gunicorn (API + auth + DB SQLite) | 5000 (interne) |
-| `nutrifood-web` | Frontend nginx (fichiers statiques + proxy API) | 5011→80 |
-
-```
-Utilisateur → nginx (reverse proxy) → nutrifood-web:5011
-                                        ├── /        → fichiers statiques
-                                        └── /api/    → nutrifood-api:5000
-```
-
-### Structure des dossiers
-
-```
-nutrifood/
-├── docker-compose.yml       ← Stack complet
-├── .env                     ← Vos secrets (NON commité)
-├── .env.example             ← Template des variables
-├── backend/
-│   ├── Dockerfile
-│   ├── app.py               ← API Flask
-│   └── requirements.txt
-├── web/
-│   ├── Dockerfile           ← nginx + entrypoint
-│   ├── entrypoint.sh        ← Seed les fichiers au premier run
-│   ├── nginx.conf           ← Config nginx (static + proxy)
-│   └── defaults/            ← Fichiers par défaut (baked dans l'image)
-│       ├── index.html
-│       ├── favicon.svg
-│       └── foods.json
-├── config/                  ← Fichiers vivants (bind mount, créé au 1er run)
-└── data/                    ← DB + données persistantes (bind mount)
-    └── nutrifood.db         ← SQLite: CNF + aliments + sélections + objectifs
-```
-
 ## Fonctionnalités
 
 ### Planification hebdomadaire
-- Aliments classés par densité nutritionnelle (score sur 100)
-- 5 sections: Viandes & Laitiers, Féculents, Légumes, Fruits, Habitudes
-- 24 catégories, ~154 aliments visibles
-- Sélection par semaine (reset le lundi)
-- Contrôle des portions par catégorie (minimums/max hebdomadaires)
+- Sélection d'aliments par catégorie (protéines, légumes, fruits, grains, etc.)
+- Calcul automatique des objectifs nutritionnels (protéines, fibres, fer, vitamine C, calcium, oméga-3, calories)
+- Objectifs personnalisables par semaine
+- Liste d'épicerie générée à partir des sélections
+- Suggestions de portions et carences en nutriments
+- Sauvegarde automatique et historique des semaines
 
-### Base de données nutritionnelles (CNF)
-- **Source:** Fichier canadien sur les éléments nutritifs (FCÉN), Santé Canada 2026
-- 5993 aliments dans la base, 154 visibles dans l'app
-- 36 nutriments suivis (protéines, fibres, fer, vitamine C, calcium, oméga-3, calories)
-- Recherche et ajout d'aliments via la modale "Gérer les produits"
-- Alias multi-langues (FR, EN, scientifique)
+### Suivi quotidien (tracking)
+- Onglet "Suivi" pour enregistrer ce que vous mangez réellement
+- Navigation par jour (‹ ›) pour consulter l'historique
+- Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
+- Données préservées entre les deux modes (planification ↔ suivi)
 
-### Suivi nutritionnel
-- Calcul automatique des totaux nutritionnels (par semaine + moyenne journalière)
-- Objectifs personnalisables (défaut: valeurs hebdomadaires DRIs Canada)
-  - Protéines: 350g/sem · Fibres: 175g/sem · Fer: 56mg/sem
-  - Vitamine C: 280mg/sem · Calcium: 700mg/sem · Oméga-3: 3.5g/sem
-  - Calories: 14 000 kcal/sem (2000/jour — moyenne adulte DRIs)
-- Barres de progression par nutriment (% de l'objectif)
-- Suggestions intelligentes basées sur les carences + portions manquantes
+### Spéciaux (deals)
+- Liste des spéciaux hebdomadaires d'épiceries.ca
+- Regroupés par catégorie, classés du meilleur rabais en bas
+- Logos des chaînes (IGA, Metro, Super C, Maxi, Provigo, Walmart)
+- Bouton "+" pour ajouter directement à la sélection
+- Clic sur une ligne → fiche produit sur le site du marchand
 
-### Suggestions nutritionnelles
-- Détection des carences (< 80% de l'objectif)
-- Vérification des portions par catégorie (vs minimums hebdomadaires)
-- Recommandations d'aliments non sélectionnés (NOVA 1 seulement)
-- Aliments de saison affichés dans le panneau de suggestions
+## Architecture
 
-### Spéciaux d'épicerie (aubaines)
-- Intégration avec l'API epiceries.ca
-- Affichage des spéciaux en vigueur par aliment
-- Filtrage automatique:
-  - Exclut la nourriture pour animaux (chat, chien, etc.)
-  - Exclut les produits transformés/transformés (saveur, nouilles, sauce, etc.)
-  - Le mot-clé de l'aliment doit apparaître dans le nom du produit
-- Badges 🏷️ sur les chips + détails dans la modale aliment
-- Cache partagé entre workers (TTL 6h, refresh automatique)
+### Stack
+- **Frontend:** HTML/CSS/JS vanilla (single file, ~3300 lignes)
+- **Backend:** Python Flask (API REST)
+- **DB:** SQLite (nutrifood.db)
+- **Déploiement:** Docker Compose sur ai-docker-01 (10.81.69.110)
 
-### Gestion des produits (admin)
-- Modale à onglets: **Ajouter** | **Retirer**
-- **Ajouter:** Recherche dans la base CNF → sélection → ajout à une catégorie
-- **Retirer:** Liste de tous les aliments → clic pour masquer (visible=0)
-- Auto-détection de catégorie selon le groupe CNF
-- Calcul automatique du score de densité
+### Docker
+```
+ai-docker-01 (10.81.69.110)
+├── nutrifood-api   (Flask/Gunicorn, port 5000 interne)
+└── nutrifood-web   (Nginx, port 5011 → proxy vers API)
+```
 
-### Modale aliment (clic sur un chip)
-- Informations nutritionnelles complètes (par 100g)
-- Badge de saison (🌱 de saison / ✈️ importé)
-- Conseils d'absorption et mises en garde
-- Spéciaux d'épicerie (section repliable)
-- Aliments apparentés dans d'autres catégories
+### Données persistantes (volume `./data:/data`)
+- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals, journal)
+- `deals_raw.json` — données brutes des spéciaux (fetch hebdomadaire depuis epiceries.ca)
 
-### Autres fonctionnalités
-- 🔐 Authentification JWT (login/inscription/reset password)
-- 📋 Liste d'épicerie générée depuis les sélections
-- 📅 Planificateur de repas
-- 📝 Journal alimentaire quotidien
-- 📊 Historique des semaines précédentes
-- 🔗 Partage de sélections (liens temporaires 30 jours)
-- 📱 Interface mobile (PWA-friendly)
+### Schéma DB
+- `users` — comptes utilisateurs (email, password_hash, is_admin)
+- `selections` — planification hebdomadaire par utilisateur
+- `tracking` — suivi quotidien (user_id, date, data JSON)
+- `history_snapshots` — snapshots des semaines passées
+- `goals` — objectifs nutritionnels personnalisés
+- `journal_entries` — journal alimentaire (legacy, non utilisé dans l'UI)
+
+## API Endpoints
+
+### Aliments
+- `GET /api/foods` — liste des catégories et aliments
+
+### Authentification
+- `POST /api/signup` — inscription
+- `POST /api/login` — connexion (retourne JWT)
+- `GET /api/me` — profil utilisateur courant
+- `POST /api/change-password` — changement de mot de passe
+- `POST /api/forgot-password` — mot de passe oublié (envoi lien)
+- `POST /api/reset-password` — réinitialisation via magic link
+
+### Planification
+- `GET /api/selections` — sélections de l'utilisateur
+- `POST /api/selections` — sauvegarder les sélections
+- `GET /api/history` — historique des semaines
+- `GET /api/history/<week>` — détail d'une semaine
+
+### Suivi (tracking)
+- `GET /api/tracking/<date>` — sélections du jour
+- `POST /api/tracking/<date>` — sauvegarder le jour
+- `GET /api/tracking/week` — toutes les entrées de la semaine
+- `GET /api/tracking/nutrition/<date>` — totaux nutritionnels (jour + semaine cumulée)
+
+### Objectifs
+- `GET /api/goals` — objectifs nutritionnels
+- `POST /api/goals` — mettre à jour les objectifs
+
+### Spéciaux (deals)
+- `GET /api/deals` — spéciaux filtrés (lus depuis deals_raw.json, filtrés à la volée)
+- `POST /api/deals/refresh` — forcer un refresh du raw (admin only)
+
+### Autres
+- `GET /api/suggestions` — suggestions basées sur carences
+- `POST /api/share` — générer un lien de partage
+- `GET /api/share/<token>` — vue partagée (lecture seule)
+
+## Système de deals (epiceries.ca)
+
+### Architecture en 3 couches
+
+1. **`/data/deals_raw.json`** (source de vérité)
+   - Fetch brut depuis epiceries.ca, une fois par semaine
+   - Stocke TOUS les résultats sans filtrage
+   - **JAMAIS modifié** après écriture (sauf refresh hebdomadaire)
+
+2. **`filter_deals(raw, foods)`** (pure function)
+   - Lit le raw, applique les filtres, retourne les deals valides
+   - Aucun side effect — le raw reste intact
+   - Filtres: word-boundary matching, exclusion animaux, produits transformés, strict match pour herbes/épices/noix
+
+3. **API `/api/deals`**
+   - Sert les deals filtrés en temps réel
+   - Déclenche un refresh auto si le raw a >1 semaine
+   - Le bouton "🔄 Rafraîchir" (admin) force un refresh manuel
+
+### Pourquoi cette architecture?
+- On ne hammer pas epiceries.ca (1 fetch/semaine, pas plus)
+- Les filtres peuvent changer sans re-fetch
+- Le raw persiste à travers les rebuilds Docker (volume monté)
 
 ## Installation
 
-### 1. Cloner et configurer
+### Prérequis
+- Docker + Docker Compose
+- Port 5011 disponible (ou modifier docker-compose.yml)
 
+### Déployement
 ```bash
 git clone https://github.com/SlopVibe-org/nutri-food.git
 cd nutri-food
-cp .env.example .env
-```
-
-### 2. Éditer `.env`
-
-```bash
-# Obligatoire: générer un JWT secret
-python3 -c "import secrets; print(secrets.token_hex(32))"
-# Coller la valeur dans JWT_SECRET
-
-# Configurer le SMTP pour les emails (reset password, welcome)
-# Voir .env.example pour tous les paramètres
-```
-
-### 3. Démarrer
-
-```bash
+cp .env.example .env  # Éditer avec vos valeurs
 docker compose up -d
 ```
 
-Au premier démarrage, l'entrypoint du container web copie automatiquement les fichiers par défaut (`index.html`, `favicon.svg`) depuis l'image vers le volume `config/`.
+Le site sera accessible sur le port 5011.
 
-### 4. Accéder
-
-L'app est disponible sur `http://localhost:5011/`.
-
-## Variables d'environnement
-
-Voir [`.env.example`](.env.example) pour le template complet.
-
-| Variable | Description | Défaut |
-|----------|-------------|--------|
-| `JWT_SECRET` | Secret pour signer les tokens d'auth | **Requis** |
-| `JWT_EXPIRY_HOURS` | Durée de validité des tokens | 2160 (90 jours) |
-| `SMTP_HOST` | Serveur SMTP pour les emails | — |
-| `SMTP_PORT` | Port SMTP | 465 |
-| `SMTP_USER` | Utilisateur SMTP | — |
-| `SMTP_PASS` | Mot de passe SMTP | — |
-| `MAIL_FROM` | Adresse d'envoi | — |
-| `APP_URL` | URL publique (pour liens email) | — |
-
-## Base de données
-
-### SQLite (`data/nutrifood.db`)
-
-| Table | Description |
-|-------|-------------|
-| `users` | Comptes utilisateurs (id, email, name, password, is_admin, token_version) |
-| `selections` | Sélections hebdomadaires par utilisateur |
-| `user_goals` | Objectifs nutritionnels personnalisés (prot, fib, fer, vit C, calcium, oméga-3, calories) |
-| `history_snapshots` | Instantanés des semaines précédentes |
-| `share_links` | Liens de partage temporaires (30j TTL) |
-| `meal_plans` | Planificateur de repas |
-| `journal_entries` | Journal alimentaire quotidien |
-| `nf_sections` | 5 sections principales |
-| `nf_categories` | 24 catégories (avec tips d'absorption) |
-| `nf_foods` | Aliments (154 visibles, source_type: 0=custom/1=CNF) |
-| `nf_foods_aliases` | Alias de recherche (1292 entrées) |
-| `nf_foods_nutrients` | Valeurs nutritionnelles par 100g |
-
-### Migrations automatiques
-- Ajout de colonnes (ex: `calories` dans `user_goals`) géré par `ALTER TABLE` au démarrage
-- Pas besoin de migration manuelle
-
-## Persistance
-
-- **`config/`** — Fichiers statiques servis par nginx. Survivent aux rebuilds.
-- **`data/`** — Base de données SQLite (`nutrifood.db`). Survit aux rebuilds.
-
-Pour modifier le frontend: éditer les fichiers dans `config/` directement sur le host. Pas besoin de rebuild.
-
-## Développement
-
-```bash
-# Rebuild après changement de code backend
-docker compose build nutrifood-api && docker compose up -d
-
-# Voir les logs
-docker compose logs -f
-
-# Modifier le frontend (pas besoin de rebuild)
-# Éditer config/index.html → refresh du navigateur
-
-# Accéder à la DB SQLite
-sqlite3 data/nutrifood.db
-
-# Commandes utiles (dans le container API)
-docker exec nutrifood-api python3 -c "import sqlite3; ..."
+### Configuration (.env)
+```
+JWT_SECRET=votre_secret_jwt_tres_long
+DB_PATH=/data/nutrifood.db
 ```
 
-## Sécurité
+## Données nutritionnelles
 
-- JWT signé avec secret (fail-fast si manquant)
-- Invalidation des tokens au changement de mot de passe (token_version)
-- Mots de passe hachés (PBKDF2-SHA256, 100k iterations)
-- En-têtes de sécurité nginx (X-Frame-Options, CSP, etc.)
-- Liens de partage avec TTL de 30 jours
-- Noms d'utilisateur dupliqués bloqués à l'inscription
+- **Aliments personnalisés:** ajoutés via l'interface admin
+- **CNF (Canadian Nutrient File):** 5993 aliments de Santé Canada intégrés
+- **Objectifs par défaut (hebdomadaires):** Protéines 350g, Fibres 175g, Fer 56mg, Vit C 280mg, Calcium 700mg, Oméga-3 3.5g, Calories 14000kcal
 
 ## Licence
 
 GPL-3.0
-
-## Source de données nutritionnelles
-
-Les données nutritionnelles proviennent du **Fichier canadien sur les éléments nutritifs (FCÉN)** de Santé Canada, mis à jour en 2026.
-
-🔗 [Fichier canadien sur les éléments nutritifs — Santé Canada](https://www.canada.ca/fr/sante-canada/services/aliments-nutrition/saine-alimentation/donnees-nutritionnelles/fichier-canadien-elements-nutritifs-propos-nous.html)
-
-Licence: [Licence du gouvernement ouvert — Canada](https://open.canada.ca/fr/licence-du-gouvernement-ouvert-canada)
-
-## Spéciaux d'épicerie
-
-Données fournies par [epiceries.ca](https://epiceries.ca) — API publique de spéciaux alimentaires.

@@ -1242,14 +1242,16 @@ def update_goals():
     targets = get_user_targets(user['id'])
     return jsonify({'goals': targets})
 
-# ─── Grocery Deals Cache (epiceries.ca) ───
+# ─── Grocery Deals (epiceries.ca) ───
+# Architecture:
+#   1. deals_raw.json — RAW data fetched once per week from epiceries.ca. NEVER modified after fetch.
+#   2. filter_deals() — reads raw, applies filters, returns clean deals. Pure function, no side effects.
+#   3. API endpoints serve filtered deals. Raw file is never touched on read.
 
-DEALS_CACHE = None
-DEALS_CACHE_TIME = None
-DEALS_CACHE_TTL = 6 * 3600  # 6 hours
-DEALS_BUILDING = False  # True while background thread is fetching
-DEALS_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deals_cache.json')
-DEALS_LOCK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'deals_cache.lock')
+DEALS_RAW_FILE = '/data/deals_raw.json'
+DEALS_LOCK_FILE = '/data/deals.lock'
+DEALS_BUILDING = False
+DEALS_RAW_TTL = 7 * 24 * 3600  # 1 week
 
 STORE_META = {
     'maxi':    {'name': 'Maxi',     'color': '#0a6cff'},
@@ -1260,150 +1262,162 @@ STORE_META = {
     'walmart': {'name': 'Walmart',  'color': '#0071ce'},
 }
 
-def fetch_deals_for_food(food_name, query=None):
-    """Fetch discounted grocery deals from epiceries.ca for a given food."""
-    search_query = query or food_name
-    try:
-        params = urllib.parse.urlencode({
-            'endpoint': 'search',
-            'q': search_query,
-            'discounted': 'true',
-            'limit': '10',
-            'sort': 'price_asc',
-        })
-        url = f'https://epiceries.ca/api?{params}'
-        req = urllib.request.Request(url, headers={'User-Agent': 'NutriFood/1.0'})
-        with urllib.request.urlopen(req, timeout=8) as resp:
-            body = resp.read().decode('utf-8')
-        data = json.loads(body)
-        if not data.get('ok') or not data.get('data'):
-            return []
-        results = data['data'].get('results', [])
-        # Build keywords from food name
-        food_keywords = [w.strip().lower().rstrip('s') for w in food_name.replace(',', ' ').split() if len(w.strip()) >= 3]
-        generic = {'les', 'des', 'de', 'et', 'la', 'le', 'un', 'une', 'aux', 'crue', 'cuit', 'cru'}
-        food_keywords = [w for w in food_keywords if w not in generic]
-        # Words that indicate the food is just an ingredient/flavour, not the main product
-        transform_words = {
-            'saveur', 'arome', 'arôme', 'style', 'facon', 'façon', 'recette',
-            'instantane', 'instantané', 'poudre', 'bouillon', 'chips', 'croustilles',
-            'biscuits', 'barre', 'soupe', 'nouilles', 'pates', 'pâtes', 'cereales',
-            'céréales', 'condiment', 'melange', 'mélange', 'sauce', 'marinade',
-            'boisson', 'the', 'thé', 'cafe', 'café', 'jus', 'yaourt', 'yogourt',
-            'fromage fondu', 'tartine', 'galette', 'crepe', 'crêpe', 'desse', 'dessert',
-            'glace', 'sorbet', 'chocolat', 'bonbon', 'confiserie', 'sirop',
-            'plat', 'repas', 'microwave', 'micro-ondes', 'congele', 'surgelé',
-        }
-        # Pet food exclusion
-        pet_indicators = {'chat', 'chien', 'animal', 'pet', 'special kitty', 'friskies', 'whiskas', 'purina cat'}
-        deals = []
-        for r in results:
-            r_name = (r.get('name') or '').lower()
-            # Must contain at least one food keyword
-            if not any(kw in r_name for kw in food_keywords):
-                continue
-            # Exclude pet food
-            if any(ind in r_name for ind in pet_indicators):
-                continue
-            # Exclude transformed/derived products
-            if any(tw in r_name for tw in transform_words):
-                continue
-            deals.append({
-                'name': r.get('name', ''),
-                'store': r.get('store', ''),
-                'price': r.get('price'),
-                'unit_price': r.get('unitPrice', ''),
-                'size': r.get('size', ''),
-                'link': r.get('link', ''),
-                'image': r.get('image', ''),
-            })
-        # Sort by price ascending (cheapest first)
-        deals.sort(key=lambda d: d['price'] if d['price'] is not None else float('inf'))
-        return deals
-    except Exception as e:
-        print(f'[NutriFood] Deals fetch error for "{food_name}": {e}')
-        return []
+# --- Filter configuration ---
+import re as _re_deals
 
-def refresh_deals_cache():
-    """Refresh the deals cache by querying epiceries.ca for all foods."""
-    global DEALS_CACHE, DEALS_CACHE_TIME
+TRANSFORM_WORDS = {
+    'saveur', 'arome', 'arôme', 'style', 'facon', 'façon', 'recette',
+    'instantane', 'instantané', 'poudre', 'bouillon', 'chips', 'croustilles',
+    'biscuits', 'barre', 'soupe', 'nouilles', 'pates', 'pâtes', 'cereales',
+    'céréales', 'condiment', 'melange', 'mélange', 'sauce', 'marinade',
+    'boisson', 'the', 'thé', 'cafe', 'café', 'jus', 'yaourt', 'yogourt',
+    'fromage fondu', 'tartine', 'galette', 'crepe', 'crêpe', 'desse', 'dessert',
+    'glace', 'sorbet', 'chocolat', 'bonbon', 'confiserie', 'sirop',
+    'plat', 'repas', 'microwave', 'micro-ondes', 'congele', 'surgelé',
+    # beverages
+    'limonade', 'eau', 'soda', 'gingembre', 'kombucha', 'smoothie',
+    # snacks/sweet
+    'compote', 'collation', 'energie', 'énergie', 'gel', 'gels',
+    # condiments/spreads
+    'vinaigrette', 'tartinade', 'beurre', 'confiture', 'gelée',
+    # baked goods
+    'pain', 'gateau', 'gâteau', 'muffin', 'donut', 'beigne', 'croissant',
+    'tarte', 'tourtiere', 'brioche', 'chausson', 'pate', 'pâte',
+}
+STRICT_MATCH_KEYWORDS = {
+    'cannelle', 'curcuma', 'curry', 'paprika', 'cumin', 'origan', 'basilic',
+    'thym', 'romarin', 'sauge', 'aneth', 'coriandre', 'persil', 'estragon',
+    'menthe', 'laurier', 'piment', 'muscade', 'clou', 'cardamome', 'fenouil',
+    'fenugrec', 'safran', 'sesame', 'sésame', 'graine', 'poivre', 'sel',
+    'ail', 'oignon', 'échalote', 'gingembre', 'vanille', 'moutarde',
+    'pacane', 'pacanes', 'amande', 'amandes', 'noix', 'cajou', 'pistache',
+    'arachide', 'arachides', 'tournesol', 'citrouille',
+    'huile', 'olive', 'coco',
+}
+PET_INDICATORS = {'chat', 'chien', 'animal', 'pet', 'special kitty', 'friskies', 'whiskas', 'purina cat'}
+GENERIC_WORDS = {'les', 'des', 'de', 'et', 'la', 'le', 'un', 'une', 'aux', 'crue', 'cuit', 'cru'}
+
+
+def filter_deals(raw_deals, foods_data):
+    """Pure function: read raw deals + food list, return filtered deals. No side effects."""
+    result = {}
+    for cat in foods_data.get('categories', []):
+        for food in cat.get('foods', []):
+            food_name = food.get('name', '')
+            if not food_name or food_name not in raw_deals:
+                continue
+            food_keywords = [w.strip().lower().rstrip('s') for w in food_name.replace(',', ' ').split() if len(w.strip()) >= 3]
+            food_keywords = [w for w in food_keywords if w not in GENERIC_WORDS]
+            is_strict = any(kw in STRICT_MATCH_KEYWORDS for kw in food_keywords)
+            filtered = []
+            for r in raw_deals[food_name]:
+                r_name = (r.get('name') or '').lower()
+                if not any(_re_deals.search(r'\b' + _re_deals.escape(kw) + r's?\b', r_name) for kw in food_keywords):
+                    continue
+                if any(ind in r_name for ind in PET_INDICATORS):
+                    continue
+                if any(tw in r_name for tw in TRANSFORM_WORDS):
+                    continue
+                if is_strict:
+                    if not any(r_name.startswith(kw) or r_name.startswith('moulu ' + kw) or r_name.startswith(kw + ' moulu') or r_name.startswith('beurre ' + kw) or r_name.startswith('huile ' + kw) for kw in food_keywords):
+                        continue
+                filtered.append(r)
+            if filtered:
+                result[food_name] = filtered
+    return result
+
+
+def fetch_all_deals_raw():
+    """Fetch ALL deals from epiceries.ca. Store raw in deals_raw.json. NEVER filter here."""
+    global DEALS_BUILDING
     foods_data = load_foods()
-    all_deals = {}
-    total_count = 0
+    all_raw = {}
+    total = 0
     for cat in foods_data.get('categories', []):
         for food in cat.get('foods', []):
             food_name = food.get('name', '')
             if not food_name:
                 continue
             query = food.get('epiceries_query') or food_name
-            deals = fetch_deals_for_food(food_name, query)
-            if deals:
-                all_deals[food_name] = deals
-                total_count += len(deals)
-            time.sleep(0.3)  # Respect rate limit
-    # Write to file for cross-worker sharing
+            try:
+                params = urllib.parse.urlencode({
+                    'endpoint': 'search',
+                    'q': query,
+                    'discounted': 'true',
+                    'limit': '10',
+                    'sort': 'price_asc',
+                })
+                url = f'https://epiceries.ca/api?{params}'
+                req = urllib.request.Request(url, headers={'User-Agent': 'NutriFood/1.0'})
+                with urllib.request.urlopen(req, timeout=8) as resp:
+                    body = resp.read().decode('utf-8')
+                data = json.loads(body)
+                if data.get('ok') and data.get('data'):
+                    results = data['data'].get('results', [])
+                    raw_items = []
+                    for r in results:
+                        raw_items.append({
+                            'name': r.get('name', ''),
+                            'store': r.get('store', ''),
+                            'price': r.get('price'),
+                            'unit_price': r.get('unitPrice', ''),
+                            'size': r.get('size', ''),
+                            'link': r.get('link', ''),
+                            'image': r.get('image', ''),
+                        })
+                    if raw_items:
+                        all_raw[food_name] = raw_items
+                        total += len(raw_items)
+            except Exception as e:
+                print(f'[NutriFood] Raw fetch error for "{food_name}": {e}')
+            time.sleep(0.3)
     cache_data = {
-        'deals': all_deals,
+        'raw': all_raw,
         'updated': datetime.now(timezone.utc).isoformat(),
-        'count': total_count
+        'count': total
     }
     try:
-        with open(DEALS_CACHE_FILE, 'w') as f:
+        with open(DEALS_RAW_FILE, 'w') as f:
             json.dump(cache_data, f, ensure_ascii=False)
     except Exception as e:
-        print(f'[NutriFood] Deals cache file write error: {e}')
-    # Also update in-memory
-    DEALS_CACHE = all_deals
-    DEALS_CACHE_TIME = datetime.now(timezone.utc)
-    print(f'[NutriFood] Deals cache refreshed: {total_count} deals across {len(all_deals)} foods')
-    return total_count
+        print(f'[NutriFood] Raw deals file write error: {e}')
+    print(f'[NutriFood] Raw deals fetched: {total} items across {len(all_raw)} foods')
+    return total
 
 
-def _refresh_deals_thread():
-    """Background thread wrapper for refresh_deals_cache."""
-    global DEALS_BUILDING
+def load_raw_deals():
+    """Load raw deals from file. Returns (raw_dict, updated_str) or (None, None)."""
     try:
-        refresh_deals_cache()
+        if os.path.exists(DEALS_RAW_FILE):
+            with open(DEALS_RAW_FILE, 'r') as f:
+                data = json.load(f)
+            return data.get('raw', {}), data.get('updated')
     except Exception as e:
-        print(f'[NutriFood] Background deals refresh failed: {e}')
-    finally:
-        DEALS_BUILDING = False
-        # Remove lock file
-        try:
-            if os.path.exists(DEALS_LOCK_FILE):
-                os.remove(DEALS_LOCK_FILE)
-        except Exception:
-            pass
+        print(f'[NutriFood] Raw deals read error: {e}')
+    return None, None
 
 
-def load_deals_from_file():
-    """Load deals cache from file (shared across workers)."""
-    global DEALS_CACHE, DEALS_CACHE_TIME
+def is_raw_deals_fresh():
+    """Check if raw deals file is within TTL (1 week)."""
     try:
-        if os.path.exists(DEALS_CACHE_FILE):
-            mtime = os.path.getmtime(DEALS_CACHE_FILE)
-            file_age = (datetime.now(timezone.utc) - datetime.fromtimestamp(mtime, tz=timezone.utc)).total_seconds()
-            if file_age <= DEALS_CACHE_TTL:
-                with open(DEALS_CACHE_FILE, 'r') as f:
-                    data = json.load(f)
-                DEALS_CACHE = data.get('deals', {})
-                DEALS_CACHE_TIME = datetime.fromisoformat(data['updated'])
-                return True
-    except Exception as e:
-        print(f'[NutriFood] Deals cache file read error: {e}')
+        if os.path.exists(DEALS_RAW_FILE):
+            mtime = os.path.getmtime(DEALS_RAW_FILE)
+            age = (datetime.now(timezone.utc) - datetime.fromtimestamp(mtime, tz=timezone.utc)).total_seconds()
+            return age <= DEALS_RAW_TTL
+    except Exception:
+        pass
     return False
 
 
-def trigger_deals_refresh_async():
-    """Start background refresh if not already running."""
+def trigger_raw_refresh_async():
+    """Start background fetch of raw deals if not already running."""
     global DEALS_BUILDING
     if DEALS_BUILDING:
         return False
-    # Check file lock (cross-worker)
     if os.path.exists(DEALS_LOCK_FILE):
         try:
             lock_age = (datetime.now(timezone.utc) - datetime.fromtimestamp(os.path.getmtime(DEALS_LOCK_FILE), tz=timezone.utc)).total_seconds()
-            if lock_age < 300:  # Lock valid for 5 min
+            if lock_age < 300:
                 return False
         except Exception:
             pass
@@ -1413,56 +1427,58 @@ def trigger_deals_refresh_async():
     except Exception:
         pass
     DEALS_BUILDING = True
-    t = threading.Thread(target=_refresh_deals_thread, daemon=True)
+    def _worker():
+        global DEALS_BUILDING
+        try:
+            fetch_all_deals_raw()
+        except Exception as e:
+            print(f'[NutriFood] Background raw fetch failed: {e}')
+        finally:
+            DEALS_BUILDING = False
+            try:
+                if os.path.exists(DEALS_LOCK_FILE):
+                    os.remove(DEALS_LOCK_FILE)
+            except Exception:
+                pass
+    t = threading.Thread(target=_worker, daemon=True)
     t.start()
     return True
 
+
 @app.route('/api/deals', methods=['GET'])
 def get_deals():
-    global DEALS_CACHE, DEALS_CACHE_TIME
-    now = datetime.now(timezone.utc)
-
-    # Try loading from file first (cross-worker cache)
-    if DEALS_CACHE is None:
-        load_deals_from_file()
-
-    cache_expired = (
-        DEALS_CACHE is None
-        or DEALS_CACHE_TIME is None
-        or (now - DEALS_CACHE_TIME).total_seconds() > DEALS_CACHE_TTL
-    )
-    warning = None
-    if cache_expired:
-        started = trigger_deals_refresh_async()
-        if DEALS_CACHE is None:
-            # No cache yet, building in background
-            return jsonify({
-                'deals': {},
-                'stores': STORE_META,
-                'updated': None,
-                'count': 0,
-                'building': True,
-            })
-    count = sum(len(v) for v in (DEALS_CACHE or {}).values())
-    resp = {
-        'deals': DEALS_CACHE or {},
+    """Serve FILTERED deals. Reads raw file, applies filters on the fly. Never modifies raw."""
+    raw, updated = load_raw_deals()
+    if raw is None:
+        trigger_raw_refresh_async()
+        return jsonify({'deals': {}, 'stores': STORE_META, 'updated': None, 'count': 0, 'building': True})
+    if not is_raw_deals_fresh():
+        trigger_raw_refresh_async()
+    foods_data = load_foods()
+    filtered = filter_deals(raw, foods_data)
+    count = sum(len(v) for v in filtered.values())
+    return jsonify({
+        'deals': filtered,
         'stores': STORE_META,
-        'updated': DEALS_CACHE_TIME.isoformat() if DEALS_CACHE_TIME else None,
-        'count': count,
-    }
-    if warning:
-        resp['warning'] = warning
-    return jsonify(resp)
+        'updated': updated,
+        'count': count
+    })
 
 @app.route('/api/deals/refresh', methods=['POST'])
 def force_refresh_deals():
     user = get_auth_user()
     if not user or not user['is_admin']:
         return jsonify({'error': 'Accès refusé'}), 403
-    started = trigger_deals_refresh_async()
-    if not started:
-        return jsonify({'status': 'ok', 'count': sum(len(v) for v in (DEALS_CACHE or {}).values()), 'updated': DEALS_CACHE_TIME.isoformat() if DEALS_CACHE_TIME else None, 'message': 'Refresh déjà en cours'})
-    return jsonify({'status': 'ok', 'message': 'Refresh lancé en arrière-plan'})
+    started = trigger_raw_refresh_async()
+    raw, updated = load_raw_deals()
+    count = sum(len(v) for v in raw.values()) if raw else 0
+    return jsonify({
+        'status': 'ok',
+        'started': started,
+        'message': 'Refresh lancé' if started else 'Refresh déjà en cours',
+        'raw_count': count,
+        'updated': updated
+    })
 
 # ─── Journal ───
 

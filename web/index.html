@@ -507,7 +507,6 @@
   .deals-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; overflow: hidden; }
   .deals-table tr:last-child td { border-bottom: none; }
   .dt-name { color: var(--text); max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: help; }
-  .dt-food { font-size: 0.72rem; color: var(--text-dim); }
   .dt-store { color: var(--text-dim); text-align: center; cursor: help; }
   .dt-price { font-weight: 700; color: var(--text); white-space: nowrap; text-align: right; max-width: 5ch; }
   .dt-size { font-size: 0.72rem; color: var(--text-dim); font-weight: 400; }
@@ -1254,21 +1253,6 @@ function loadRemoveProductList() {
     });
   });
   $('remove-product-list').innerHTML = html;
-}
-
-function showAddProductModal() {
-  showManageProducts();
-  cnfSelectedId = null;
-  cnfSelectedFood = null;
-  cnfSelectedNutrients = null;
-  $('cnf-search-input').value = '';
-  $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Entrez un terme de recherche et cliquez sur Rechercher.</p>';
-  $('cnf-details').innerHTML = '';
-  $('manage-products-modal').classList.remove('hidden');
-  $('cnf-search-input').focus();
-  $('cnf-search-btn').onclick = cnfDoSearch;
-  $('cnf-search-input').onkeydown = function(e) { if (e.key === 'Enter') { e.preventDefault(); cnfDoSearch(); } };
-  $('manage-products-close').onclick = function() { $('manage-products-modal').classList.add('hidden'); };
 }
 
 async function cnfDoSearch() {
@@ -2853,13 +2837,10 @@ function renderDailyNutrition(totals) {
 }
 
 // ─── Render ───
-function render() {
-  var app = $('app');
-
-  // Compute nutrition totals FIRST (used for score ring)
+function computeNutritionTotals(sel) {
   var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
-  Object.keys(selections).forEach(function(catId) {
-    selections[catId].forEach(function(item) {
+  Object.keys(sel).forEach(function(catId) {
+    sel[catId].forEach(function(item) {
       var cat = DATA.categories.find(function(c) { return c.id === catId; });
       if (cat) {
         var food = cat.foods.find(function(f) { return f.name === item.name; });
@@ -2876,7 +2857,13 @@ function render() {
       }
     });
   });
-  // Nutrient totals computed above — used for nutrition dashboard
+  return totals;
+}
+
+function render() {
+  var app = $('app');
+
+  var totals = computeNutritionTotals(selections);
   var html = '';
   html += '<div class="nutri-summary">';
   if (currentMode === 'tracking') {

@@ -886,7 +886,7 @@ function setAuth(token, user) {
 }
 
 function clearAuth() {
-  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) {}
+  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage clear error:', e); }
   currentUser = null;
   selections = {};
   savedSnapshot = '{}';
@@ -1578,42 +1578,33 @@ function getNutritionTips(food) {
   return tips;
 }
 
-function openFoodModal(catId, name) {
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
-  if (!cat) return;
-  var food = cat.foods.find(function(f) { return f.name === name; });
-  if (!food) return;
-  $('suggestions-title').textContent = '📋 Informations nutritionnelles';
-  var alsoIn = [];
-  DATA.categories.forEach(function(c) {
-    if (c.id !== catId && c.foods.some(function(f) { return f.name === name; })) alsoIn.push(c.icon + ' ' + c.name);
-  });
-  var month = new Date().getMonth() + 1;
-  var html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
-  html += '<div style="color:var(--accent);font-weight:700;margin-bottom:8px;">Densité nutritionnelle: ' + food.density + '%</div>';
-  if (food.nutrients) html += '<div style="margin-bottom:8px;color:var(--text);">' + food.nutrients + '</div>';
-  // Nutrition per 100g
-  if (food.nutrition) {
-    var n = food.nutrition;
-    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
-    if (n.protein) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Protéines</span><br><strong>' + n.protein + 'g</strong></div>';
-    if (n.fiber) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fibres</span><br><strong>' + n.fiber + 'g</strong></div>';
-    if (n.iron) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fer</span><br><strong>' + n.iron + 'mg</strong></div>';
-    if (n.vit_c) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Vit C</span><br><strong>' + n.vit_c + 'mg</strong></div>';
-    if (n.calcium) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calcium</span><br><strong>' + n.calcium + 'mg</strong></div>';
-    if (n.omega3) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Oméga-3</span><br><strong>' + n.omega3 + 'g</strong></div>';
-    if (n.calories) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calories</span><br><strong>' + Math.round(n.calories) + '</strong></div>';
-    html += '</div>';
+function renderFoodNutritionHTML(n) {
+  if (!n) return '';
+  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
+  if (n.protein) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Protéines</span><br><strong>' + n.protein + 'g</strong></div>';
+  if (n.fiber) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fibres</span><br><strong>' + n.fiber + 'g</strong></div>';
+  if (n.iron) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fer</span><br><strong>' + n.iron + 'mg</strong></div>';
+  if (n.vit_c) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Vit C</span><br><strong>' + n.vit_c + 'mg</strong></div>';
+  if (n.calcium) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calcium</span><br><strong>' + n.calcium + 'mg</strong></div>';
+  if (n.omega3) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Oméga-3</span><br><strong>' + n.omega3 + 'g</strong></div>';
+  if (n.calories) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Calories</span><br><strong>' + Math.round(n.calories) + '</strong></div>';
+  html += '</div>';
+  return html;
+}
+
+function renderFoodSeasonHTML(food, month) {
+  if (!food.season || food.season.length === 0) return '';
+  if (food.season.includes(month)) {
+    return '<div style="margin-bottom:8px;"><span class="season-badge in-season">🌱 De saison</span></div>';
   }
-  // Season
-  if (food.season && food.season.length > 0) {
-    if (food.season.includes(month)) {
-      html += '<div style="margin-bottom:8px;"><span class="season-badge in-season">🌱 De saison</span></div>';
-    } else if (food.import_season && food.import_season.includes(month)) {
-      html += '<div style="margin-bottom:8px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
-    }
+  if (food.import_season && food.import_season.includes(month)) {
+    return '<div style="margin-bottom:8px;"><span class="season-badge" style="background:rgba(56,189,248,0.15);color:#38bdf8;border:1px solid rgba(56,189,248,0.3);">✈️ Importé</span></div>';
   }
-  // Tips
+  return '';
+}
+
+function renderFoodTipsHTML(food, cat) {
+  var html = '';
   var tips = getNutritionTips(food);
   if (tips.length > 0) {
     html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
@@ -1630,27 +1621,50 @@ function openFoodModal(catId, name) {
     if (food.tips.absorption) html += '<div style="margin-top:6px;"><div style="color:var(--accent);font-weight:600;margin-bottom:2px;">💡 Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.absorption) + '</div></div>';
     if (food.tips.warnings) html += '<div style="margin-top:6px;"><div style="color:var(--accent-amber);font-weight:600;margin-bottom:2px;">⚠ Spécifique</div><div style="font-size:0.82rem;color:var(--text-dim);line-height:1.4;">' + esc(food.tips.warnings) + '</div></div>';
   }
-  // Deals (collapsible)
+  return html;
+}
+
+function renderFoodDealsHTML(food) {
   var deals = (DEALS[food.name] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
-  if (deals.length > 0) {
-    html += '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
-    html += '<h3 id="deals-toggle" style="margin:0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;">🏷️ Voir les spéciaux (' + deals.length + ') <span id="deals-arrow" style="font-size:0.7rem;">▼</span></h3>';
-    html += '<div id="deals-content" style="display:none;margin-top:8px;">';
-    deals.forEach(function(d) {
-      var si = STORE_META[d.store] || {};
-      var color = si.color || '#666';
-      var sn = si.name || d.store || '?';
-      var letter = sn.charAt(0).toUpperCase();
-      html += '<div style="border-left:3px solid ' + color + ';padding-left:10px;margin-left:4px;margin-bottom:8px;">';
-      html += '<div style="font-weight:600;">' + esc(d.name || food.name) + '</div>';
-      html += '<div style="font-size:1.05rem;color:var(--accent);font-weight:700;margin:2px 0;">' + (d.price || '') + '$</div>';
-      if (d.size) html += '<div style="font-size:0.78rem;color:var(--text-dim);">Format: ' + esc(d.size) + '</div>';
-      html += '<div style="font-size:0.82rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + color + ';color:#fff;font-size:0.65rem;font-weight:700;margin-right:4px;">' + letter + '</span>' + esc(sn) + '</div>';
-      if (d.link) html += '<a href="' + esc(d.link) + '" target="_blank" rel="noopener" style="font-size:0.82rem;color:var(--accent);">Voir sur le site →</a>';
-      html += '</div>';
-    });
-    html += '</div></div>';
-  }
+  if (deals.length === 0) return '';
+  var html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
+  html += '<h3 id="deals-toggle" style="margin:0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;">🏷️ Voir les spéciaux (' + deals.length + ') <span id="deals-arrow" style="font-size:0.7rem;">▼</span></h3>';
+  html += '<div id="deals-content" style="display:none;margin-top:8px;">';
+  deals.forEach(function(d) {
+    var si = STORE_META[d.store] || {};
+    var color = si.color || '#666';
+    var sn = si.name || d.store || '?';
+    var letter = sn.charAt(0).toUpperCase();
+    html += '<div style="border-left:3px solid ' + color + ';padding-left:10px;margin-left:4px;margin-bottom:8px;">';
+    html += '<div style="font-weight:600;">' + esc(d.name || food.name) + '</div>';
+    html += '<div style="font-size:1.05rem;color:var(--accent);font-weight:700;margin:2px 0;">' + (d.price || '') + '$</div>';
+    if (d.size) html += '<div style="font-size:0.78rem;color:var(--text-dim);">Format: ' + esc(d.size) + '</div>';
+    html += '<div style="font-size:0.82rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:' + color + ';color:#fff;font-size:0.65rem;font-weight:700;margin-right:4px;">' + letter + '</span>' + esc(sn) + '</div>';
+    if (d.link) html += '<a href="' + esc(d.link) + '" target="_blank" rel="noopener" style="font-size:0.82rem;color:var(--accent);">Voir sur le site →</a>';
+    html += '</div>';
+  });
+  html += '</div></div>';
+  return html;
+}
+
+function openFoodModal(catId, name) {
+  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) return;
+  var food = cat.foods.find(function(f) { return f.name === name; });
+  if (!food) return;
+  $('suggestions-title').textContent = '📋 Informations nutritionnelles';
+  var alsoIn = [];
+  DATA.categories.forEach(function(c) {
+    if (c.id !== catId && c.foods.some(function(f) { return f.name === name; })) alsoIn.push(c.icon + ' ' + c.name);
+  });
+  var month = new Date().getMonth() + 1;
+  var html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
+  html += '<div style="color:var(--accent);font-weight:700;margin-bottom:8px;">Densité nutritionnelle: ' + food.density + '%</div>';
+  if (food.nutrients) html += '<div style="margin-bottom:8px;color:var(--text);">' + food.nutrients + '</div>';
+  html += renderFoodNutritionHTML(food.nutrition);
+  html += renderFoodSeasonHTML(food, month);
+  html += renderFoodTipsHTML(food, cat);
+  html += renderFoodDealsHTML(food);
   if (alsoIn.length > 0) html += '<div style="font-size:0.82rem;color:var(--text-dim);margin-top:8px;">Aussi dans: ' + alsoIn.join(', ') + '</div>';
   // Show in suggestions modal (reuse)
   var content = document.getElementById('suggestions-content');
@@ -1661,10 +1675,7 @@ function openFoodModal(catId, name) {
 }
 
 // ─── Grocery list ───
-function showGroceryList() {
-  // In tracking mode, use planning selections for grocery list
-  var grocerySelections = (currentMode === 'tracking') ? planningSelections : selections;
-  var month = new Date().getMonth() + 1;
+function collectGroceryItems(grocerySelections, month) {
   var items = [];
   var dealTotal = 0;
   var dealCount = 0;
@@ -1688,40 +1699,43 @@ function showGroceryList() {
     });
   });
   items.sort(function(a, b) { return a.name.localeCompare(b.name); });
+  return { items: items, dealTotal: dealTotal, dealCount: dealCount };
+}
 
+function renderGroceryItemsHTML(items, dealCount, dealTotal) {
   var container = $('grocery-items');
   if (items.length === 0) {
     container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Aucun aliment sélectionné.</p>';
-  } else {
-    container.innerHTML = items.map(function(item) {
-      var dealHtml = '';
-      if (item.dealInfo) {
-        var d = item.dealInfo;
-        var storeInfo = STORE_META[d.store] || {};
-        var color = storeInfo.color || '#666';
-        var storeName = storeInfo.name || d.store || '?';
-        var letter = storeName.charAt(0).toUpperCase();
-        var link = d.link || '#';
-        dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">\uD83C\uDFF7\uFE0F <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
-      }
-      return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
-    }).join('');
-    container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
-      cb.addEventListener('change', function() {
-        this.closest('.grocery-item').classList.toggle('checked', this.checked);
-      });
-    });
-    // Add estimated total
-    if (dealCount > 0) {
-      var totalHtml = '<div class="grocery-total">';
-      totalHtml += '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div>';
-      totalHtml += '<div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
-      totalHtml += '</div>';
-      container.innerHTML += totalHtml;
-    }
+    return;
   }
+  container.innerHTML = items.map(function(item) {
+    var dealHtml = '';
+    if (item.dealInfo) {
+      var d = item.dealInfo;
+      var storeInfo = STORE_META[d.store] || {};
+      var color = storeInfo.color || '#666';
+      var storeName = storeInfo.name || d.store || '?';
+      var letter = storeName.charAt(0).toUpperCase();
+      var link = d.link || '#';
+      dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">\uD83C\uDFF7\uFE0F <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
+    }
+    return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
+  }).join('');
+  container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
+    cb.addEventListener('change', function() {
+      this.closest('.grocery-item').classList.toggle('checked', this.checked);
+    });
+  });
+  if (dealCount > 0) {
+    var totalHtml = '<div class="grocery-total">';
+    totalHtml += '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div>';
+    totalHtml += '<div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
+    totalHtml += '</div>';
+    container.innerHTML += totalHtml;
+  }
+}
 
-  // Wire share button inside grocery modal
+function wireGroceryButtons() {
   var shareBtn = $('grocery-share-btn');
   if (shareBtn) {
     shareBtn.onclick = async function() {
@@ -1749,29 +1763,37 @@ function showGroceryList() {
     };
   }
 
-  // Wire print button
   var printBtn = $('grocery-print-btn');
   if (printBtn) {
     printBtn.onclick = function() {
-      var items = [];
+      var printItems = [];
       Object.keys(selections).forEach(function(catId) {
         var cat = DATA.categories.find(function(c) { return c.id === catId; });
         if (!cat) return;
         selections[catId].forEach(function(item) {
-          items.push({ name: item.name, qty: item.qty || 1 });
+          printItems.push({ name: item.name, qty: item.qty || 1 });
         });
       });
-      items.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      printItems.sort(function(a, b) { return a.name.localeCompare(b.name); });
       var date = new Date().toLocaleDateString('fr-CA');
-      var html = '<h1>Liste \u00e9picerie</h1>';
-      html += '<div class="print-date">' + date + '</div>';
-      items.forEach(function(item) {
-        html += '<div class="print-item"><div class="print-checkbox"></div><span>' + item.name + '</span>' + (item.qty > 1 ? '<span class="print-qty">x' + item.qty + '</span>' : '') + '</div>';
+      var printHtml = '<h1>Liste \u00e9picerie</h1>';
+      printHtml += '<div class="print-date">' + date + '</div>';
+      printItems.forEach(function(item) {
+        printHtml += '<div class="print-item"><div class="print-checkbox"></div><span>' + item.name + '</span>' + (item.qty > 1 ? '<span class="print-qty">x' + item.qty + '</span>' : '') + '</div>';
       });
-      $('print-area-grocery').innerHTML = html;
+      $('print-area-grocery').innerHTML = printHtml;
       window.print();
     };
   }
+}
+
+function showGroceryList() {
+  var grocerySelections = (currentMode === 'tracking') ? planningSelections : selections;
+  var month = new Date().getMonth() + 1;
+
+  var result = collectGroceryItems(grocerySelections, month);
+  renderGroceryItemsHTML(result.items, result.dealCount, result.dealTotal);
+  wireGroceryButtons();
 
   $('grocery-overlay').classList.remove('hidden');
 }
@@ -2004,10 +2026,7 @@ function showDealsPage() {
   renderDealsContent();
 }
 
-function renderDealsContent() {
-  var content = $('deals-content');
-  if (!DATA) { content.innerHTML = '<p class="loading">Chargement…</p>'; return; }
-  // Build flat list of all deals with category info
+function flattenDeals() {
   var allDeals = [];
   Object.keys(DEALS).forEach(function(foodName) {
     var cat = null;
@@ -2029,23 +2048,33 @@ function renderDealsContent() {
       });
     });
   });
-  if (allDeals.length === 0) {
-    content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun spécial disponible actuellement.</p>';
-    return;
-  }
-  // Sort by best unit price ascending
   allDeals.sort(function(a, b) {
     if (a.unitPrice && b.unitPrice) return a.unitPrice - b.unitPrice;
     if (a.unitPrice) return -1;
     if (b.unitPrice) return 1;
     return a.price - b.price;
   });
-  // Group by category
+  return allDeals;
+}
+
+function groupDealsByCategory(allDeals) {
   var grouped = {};
   allDeals.forEach(function(d) {
     if (!grouped[d.catName]) grouped[d.catName] = { icon: d.catIcon, items: [] };
     grouped[d.catName].items.push(d);
   });
+  return grouped;
+}
+
+function renderDealsContent() {
+  var content = $('deals-content');
+  if (!DATA) { content.innerHTML = '<p class="loading">Chargement…</p>'; return; }
+  var allDeals = flattenDeals();
+  if (allDeals.length === 0) {
+    content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun spécial disponible actuellement.</p>';
+    return;
+  }
+  var grouped = groupDealsByCategory(allDeals);
   // Store icons
   var STORE_ICONS = {
     'iga': '<img src="favicon-iga.png" alt="IGA" style="width:24px;height:24px;vertical-align:middle;" loading="lazy">',
@@ -2275,6 +2304,7 @@ async function showSuggestions() {
   var token = getToken();
   if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
   try {
+    var seasHtml = '';
     var res = await fetchWithTimeout(API + '/suggestions', {
       headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
@@ -2285,7 +2315,7 @@ async function showSuggestions() {
     var suggestions = data.suggestions || [];
     if (gaps.length === 0 && portionGaps.length === 0) {
       var allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
-      var seasHtml = await buildSeasonalHtml();
+      seasHtml = await buildSeasonalHtml();
       if (seasHtml) allGoodHtml += seasHtml;
       content.innerHTML = allGoodHtml;
       return;
@@ -2296,7 +2326,9 @@ async function showSuggestions() {
       html += '<h3 style="margin:0 0 8px;font-size:0.9rem;color:var(--accent-amber);">🍽️ Portions par catégorie</h3>';
       portionGaps.forEach(function(pg) {
         var pct = pg.percentage || 0;
-        var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+        var barClass = '';
+        if (pct >= 75) barClass = 'good';
+        else if (pct >= 50) barClass = 'ok';
         html += '<div class="suggestion-gap">';
         html += '<div class="sg-header"><span class="sg-name">' + esc(pg.icon || '') + ' ' + esc(pg.category || '') + '</span><span class="sg-pct">' + pg.current + '/' + pg.target + '</span></div>';
         html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
@@ -2309,7 +2341,9 @@ async function showSuggestions() {
     }
     gaps.forEach(function(gap) {
       var pct = Math.round(gap.percentage || 0);
-      var barClass = pct >= 75 ? 'good' : (pct >= 50 ? 'ok' : '');
+      var barClass = '';
+      if (pct >= 75) barClass = 'good';
+      else if (pct >= 50) barClass = 'ok';
       html += '<div class="suggestion-gap">';
       html += '<div class="sg-header"><span class="sg-name">' + esc(gap.nutrient || gap.name || '') + '</span><span class="sg-pct">' + pct + '%</span></div>';
       html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
@@ -2339,7 +2373,7 @@ async function showSuggestions() {
       });
     }
     // Add seasonal at the end of suggestions
-    var seasHtml = await buildSeasonalHtml();
+    seasHtml = await buildSeasonalHtml();
     if (seasHtml) html += seasHtml;
     content.innerHTML = html;
     // Wire add buttons
@@ -2611,7 +2645,7 @@ async function init() {
 
     // Restore session
     var savedUser = null;
-    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) {}
+    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage read error:', e); }
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
       var token = getToken();
@@ -2751,7 +2785,10 @@ async function renderTrackingNutrition() {
   function nutrientRow(n, val, goal, isDaily) {
     var target = isDaily ? (goal ? goal / 7 : 0) : (goal || 0);
     var pct = target > 0 ? Math.round((val / target) * 100) : 0;
-    var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+    var pctCls = '';
+    if (pct >= 80) pctCls = 'good';
+    else if (pct >= 50) pctCls = 'ok';
+    else pctCls = 'low';
     var h = '<div class="nutri-stat">';
     h += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(val).toLocaleString() : Math.round(val)) + '</span>';
     h += '<span class="ns-label">' + n.label + '</span>';
@@ -2826,7 +2863,10 @@ function renderDailyNutrition(totals) {
     if (goalVal) {
       var dailyTarget = goalVal / 7;
       var pct = dailyTarget > 0 ? Math.round((daily / dailyTarget) * 100) : 0;
-      var pctCls = pct >= 80 ? 'good' : (pct >= 50 ? 'ok' : 'low');
+      var pctCls = '';
+      if (pct >= 80) pctCls = 'good';
+      else if (pct >= 50) pctCls = 'ok';
+      else pctCls = 'low';
       html += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
       html += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
     }
@@ -2954,7 +2994,10 @@ function renderCard(cat) {
   var suffix = cat.daily ? 'jour.' : 'sem.';
   var min = cat.weekly_min, max = cat.weekly_max;
   var target = min === max ? '' + min : min + '-' + max;
-  var cls = totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range');
+  var cls = '';
+  if (totalCount < min) cls = 'under';
+  else if (totalCount > max) cls = 'over';
+  else cls = 'in-range';
 
   var html = '<div class="card" data-cat="' + cat.id + '">';
   html += '<div class="card-header">';
@@ -3163,7 +3206,11 @@ function refreshCard(catId) {
     var min = cat.weekly_min, max = cat.weekly_max;
     var target = min === max ? '' + min : min + '-' + max;
     badge.textContent = totalCount + ' / ' + target + ' ' + (cat.daily ? 'jour.' : 'sem.');
-    badge.className = 'counter-badge ' + (totalCount === 0 ? '' : (totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range')));
+    var rangeClass = '';
+    if (totalCount > 0 && totalCount < min) rangeClass = 'under';
+    else if (totalCount > max) rangeClass = 'over';
+    else if (totalCount > 0) rangeClass = 'in-range';
+    badge.className = 'counter-badge ' + rangeClass;;
   }
   var chipsContainer = card.querySelector('#chips-' + catId);
   if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);

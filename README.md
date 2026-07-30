@@ -13,35 +13,36 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 - Sauvegarde automatique et historique des semaines
 
 ### Suivi quotidien (tracking)
-- Onglet "Suivi" pour enregistrer ce que vous mangez réellement
+- Onglet "Suivi" (par défaut) pour enregistrer ce que vous mangez réellement
 - Navigation par jour (‹ ›) pour consulter l'historique
 - Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
 - Données préservées entre les deux modes (planification ↔ suivi)
+- Mode mémorisé dans localStorage
 
-### Spéciaux (deals)
-- Liste des spéciaux hebdomadaires d'épiceries.ca
-- Regroupés par catégorie, classés du meilleur rabais en bas
+### Spéciaux (deals hebdomadaires)
+- Liste des spéciaux d'épiceries.ca regroupés par catégorie
+- Classés du meilleur rabais (prix unitaire le plus bas)
 - Logos des chaînes (IGA, Metro, Super C, Maxi, Provigo, Walmart)
 - Bouton "+" pour ajouter directement à la sélection
 - Clic sur une ligne → fiche produit sur le site du marchand
+- Tooltips au survol : nom complet du produit, magasin, format/prix/rabais
 
 ## Architecture
 
 ### Stack
 - **Frontend:** HTML/CSS/JS vanilla (single file, ~3300 lignes)
-- **Backend:** Python Flask (API REST)
+- **Backend:** Python Flask (API REST, ~1675 lignes)
 - **DB:** SQLite (nutrifood.db)
-- **Déploiement:** Docker Compose sur ai-docker-01 (10.81.69.110)
+- **Déploiement:** Docker Compose
 
 ### Docker
 ```
-ai-docker-01 (10.81.69.110)
-├── nutrifood-api   (Flask/Gunicorn, port 5000 interne)
-└── nutrifood-web   (Nginx, port 5011 → proxy vers API)
+nutrifood-api   (Flask/Gunicorn, port 5000 interne)
+nutrifood-web   (Nginx, port 5011 → proxy vers API)
 ```
 
 ### Données persistantes (volume `./data:/data`)
-- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals, journal)
+- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals)
 - `deals_raw.json` — données brutes des spéciaux (fetch hebdomadaire depuis epiceries.ca)
 
 ### Schéma DB
@@ -50,7 +51,30 @@ ai-docker-01 (10.81.69.110)
 - `tracking` — suivi quotidien (user_id, date, data JSON)
 - `history_snapshots` — snapshots des semaines passées
 - `goals` — objectifs nutritionnels personnalisés
-- `journal_entries` — journal alimentaire (legacy, non utilisé dans l'UI)
+
+## Système de deals (epiceries.ca)
+
+### Architecture en 3 couches
+
+1. **`/data/deals_raw.json`** (source de vérité)
+   - Fetch brut depuis epiceries.ca, une fois par semaine
+   - Stocke TOUS les résultats sans filtrage
+   - **JAMAIS modifié** après écriture (sauf refresh hebdomadaire)
+
+2. **`filter_deals(raw, foods)`** (pure function)
+   - Lit le raw, applique les filtres, retourne les deals valides
+   - Aucun side effect — le raw reste intact
+   - Filtres: word-boundary matching, exclusion animaux, produits transformés, strict match pour herbes/épices/noix
+
+3. **API `/api/deals`**
+   - Sert les deals filtrés en temps réel
+   - Déclenche un refresh auto si le raw a >1 semaine
+   - Le bouton "🔄 Rafraîchir" (admin) force un refresh manuel
+
+### Pourquoi cette architecture?
+- On ne hammer pas epiceries.ca (1 fetch/semaine, pas plus)
+- Les filtres peuvent changer sans re-fetch
+- Le raw persiste à travers les rebuilds Docker (volume monté)
 
 ## API Endpoints
 
@@ -90,29 +114,26 @@ ai-docker-01 (10.81.69.110)
 - `POST /api/share` — générer un lien de partage
 - `GET /api/share/<token>` — vue partagée (lecture seule)
 
-## Système de deals (epiceries.ca)
+## Sécurité
 
-### Architecture en 3 couches
+### Headers de sécurité (nginx)
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: SAMEORIGIN`
+- `Strict-Transport-Security` (HSTS)
+- `Content-Security-Policy` (CSP)
+- `Referrer-Policy`
+- `Permissions-Policy`
+- `Cross-Origin-Embedder-Policy`
 
-1. **`/data/deals_raw.json`** (source de vérité)
-   - Fetch brut depuis epiceries.ca, une fois par semaine
-   - Stocke TOUS les résultats sans filtrage
-   - **JAMAIS modifié** après écriture (sauf refresh hebdomadaire)
+### Authentification
+- JWT tokens (Bearer), pas de cookies de session
+- Password hashing (PBKDF2)
+- Token invalidation on password change
 
-2. **`filter_deals(raw, foods)`** (pure function)
-   - Lit le raw, applique les filtres, retourne les deals valides
-   - Aucun side effect — le raw reste intact
-   - Filtres: word-boundary matching, exclusion animaux, produits transformés, strict match pour herbes/épices/noix
-
-3. **API `/api/deals`**
-   - Sert les deals filtrés en temps réel
-   - Déclenche un refresh auto si le raw a >1 semaine
-   - Le bouton "🔄 Rafraîchir" (admin) force un refresh manuel
-
-### Pourquoi cette architecture?
-- On ne hammer pas epiceries.ca (1 fetch/semaine, pas plus)
-- Les filtres peuvent changer sans re-fetch
-- Le raw persiste à travers les rebuilds Docker (volume monté)
+### Résultats QA (Lighthouse / SonarQube / OWASP ZAP)
+- **Lighthouse:** Performance 99, Accessibility 100, SEO 100
+- **SonarQube:** 0 bugs, Reliability A, Maintainability A
+- **OWASP ZAP:** 0 FAIL, 53 PASS — aucune vulnérabilité exploitable
 
 ## Installation
 
@@ -120,7 +141,7 @@ ai-docker-01 (10.81.69.110)
 - Docker + Docker Compose
 - Port 5011 disponible (ou modifier docker-compose.yml)
 
-### Déployement
+### Déploiement
 ```bash
 git clone https://github.com/SlopVibe-org/nutri-food.git
 cd nutri-food
@@ -128,11 +149,9 @@ cp .env.example .env  # Éditer avec vos valeurs
 docker compose up -d
 ```
 
-Le site sera accessible sur le port 5011.
-
 ### Configuration (.env)
 ```
-JWT_SECRET=votre_secret_jwt_tres_long
+JWT_SECRET=votre_secret_long_et_aleatoire
 DB_PATH=/data/nutrifood.db
 ```
 

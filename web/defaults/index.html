@@ -693,6 +693,42 @@
   .nutri-progress-fill.ok { background: var(--accent-amber); }
   .nutri-progress-fill.low { background: var(--accent-red); }
 
+  /* ─── Mode tabs (Planification / Suivi) ─── */
+  .mode-tabs {
+    display: flex; gap: 0; margin-bottom: 16px; border-bottom: 2px solid var(--border);
+  }
+  .mode-tab {
+    flex: 1; padding: 12px 16px; background: none; border: none; color: var(--text-dim);
+    font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center;
+    border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.2s;
+  }
+  .mode-tab:hover { color: var(--text); }
+  .mode-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── Tracking day selector ─── */
+  .tracking-day-selector {
+    display: flex; align-items: center; justify-content: center; gap: 16px;
+    margin-bottom: 16px;
+  }
+  .tracking-day-selector button {
+    padding: 8px 16px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 8px; color: var(--text); cursor: pointer; font-size: 1.2rem; transition: border-color 0.15s;
+  }
+  .tracking-day-selector button:hover { border-color: var(--accent); }
+  .tracking-day-selector button:disabled { opacity: 0.3; cursor: default; }
+  .tracking-day-label {
+    font-size: 1rem; font-weight: 700; color: var(--text); min-width: 140px; text-align: center;
+  }
+
+  /* ─── Tracking nutrition panels ─── */
+  .tracking-nutrition-panel {
+    margin-bottom: 12px;
+  }
+  .tracking-nutrition-panel .tnp-label {
+    font-size: 0.8rem; font-weight: 700; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;
+  }
+
   /* ─── Journal ─── */
   .journal-day-nav {
     display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px;
@@ -868,6 +904,15 @@
 <!-- Hidden print area for grocery list -->
 <div id="print-area-grocery" class="print-area"></div>
 
+<div class="mode-tabs" id="mode-tabs">
+  <button class="mode-tab active" data-mode="planning">📋 Planification</button>
+  <button class="mode-tab" data-mode="tracking">📊 Suivi</button>
+</div>
+<div class="tracking-day-selector" id="tracking-day-selector" style="display:none;">
+  <button id="tracking-day-prev" data-day-offset="-1">‹</button>
+  <span class="tracking-day-label" id="tracking-day-label">Aujourd'hui</span>
+  <button id="tracking-day-next" data-day-offset="1">›</button>
+</div>
 <div id="app"><p class="loading">Chargement…</p></div>
 
 <!-- Floating suggestions badge (feature 1) -->
@@ -910,14 +955,7 @@
   </div>
 </div>
 
-<!-- Journal modal -->
-<div class="modal-overlay hidden" id="journal-modal">
-  <div class="modal wide scrollable">
-    <h2>📝 Journal</h2>
-    <div id="journal-content"><p class="loading">Chargement…</p></div>
-    <a class="cancel-link" id="journal-close">Fermer</a>
-  </div>
-</div>
+<!-- JOURNAL REMOVED -->
 
 <!-- Manage products modal (tabs: add / remove) -->
 <div class="modal-overlay hidden" id="manage-products-modal">
@@ -982,6 +1020,15 @@ let currentUser = null;
 let authMode = 'login';
 var autoSaveTimer = null;
 var searchActiveIndex = -1;
+
+// ─── Suivi (Tracking) state ───
+var currentMode = 'planning'; // 'planning' or 'tracking'
+var planningSelections = {}; // saved selections for planning
+var trackingDate = null; // current tracking day (YYYY-MM-DD)
+var trackingSelections = {}; // selections for the tracking day
+var trackingSnapshot = '{}';
+var trackingWeek = {}; // all days of current week
+
 var mobileSelectedDay = 0;
 
 // ─── Deals data (epiceries.ca) ───
@@ -990,6 +1037,226 @@ var STORE_META = {};
 
 // ─── DOM helpers ───
 function $(id) { return document.getElementById(id); }
+
+// ─── Mode switching (Planification / Suivi) ───
+function switchMode(mode) {
+  if (mode === currentMode) return;
+  currentMode = mode;
+
+  // Update tab UI
+  document.querySelectorAll('.mode-tab').forEach(function(t) {
+    t.classList.toggle('active', t.dataset.mode === mode);
+  });
+
+  var daySelector = $('tracking-day-selector');
+
+  if (mode === 'tracking') {
+    // Save current selections as planning
+    planningSelections = JSON.parse(JSON.stringify(selections));
+    // Initialize tracking date to today if not set
+    if (!trackingDate) {
+      trackingDate = new Date().toISOString().split('T')[0];
+    }
+    // Show day selector
+    if (daySelector) daySelector.style.display = 'flex';
+    // Load tracking data for current date
+    loadTrackingDay(trackingDate);
+  } else {
+    // Back to planning: restore planning selections
+    selections = planningSelections;
+    savedSnapshot = JSON.stringify(selections);
+    if (daySelector) daySelector.style.display = 'none';
+    render();
+    updateSaveBar();
+  }
+}
+
+function formatTrackingDateLabel(dateStr) {
+  var today = new Date();
+  today.setHours(0, 0, 0, 0);
+  var date = new Date(dateStr + 'T00:00:00');
+  date.setHours(0, 0, 0, 0);
+  var diffDays = Math.round((date - today) / (1000 * 60 * 60 * 24));
+
+  if (diffDays === 0) return "Aujourd'hui";
+  if (diffDays === -1) return 'Hier';
+  if (diffDays === 1) return 'Demain';
+
+  var days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  var months = ['jan', 'fév', 'mar', 'avr', 'mai', 'juin', 'juil', 'août', 'sep', 'oct', 'nov', 'déc'];
+  return days[date.getDay()] + ' ' + date.getDate() + ' ' + months[date.getMonth()];
+}
+
+function getWeekBounds(dateStr) {
+  var date = new Date(dateStr + 'T00:00:00');
+  var dayOfWeek = date.getDay(); // 0=Sun, 1=Mon
+  // Make Monday the start of the week
+  var offsetToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  var monday = new Date(date);
+  monday.setDate(date.getDate() + offsetToMonday);
+  var sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return { start: monday, end: sunday };
+}
+
+function dateToStr(date) {
+  var y = date.getFullYear();
+  var m = String(date.getMonth() + 1).padStart(2, '0');
+  var d = String(date.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + d;
+}
+
+function navigateTrackingDay(offset) {
+  var currentDate = new Date(trackingDate + 'T00:00:00');
+  var newDate = new Date(currentDate);
+  newDate.setDate(currentDate.getDate() + offset);
+
+  // Clamp to current week bounds (Monday to Sunday)
+  var bounds = getWeekBounds(trackingDate);
+  if (newDate < bounds.start) newDate = new Date(bounds.start);
+  if (newDate > bounds.end) newDate = new Date(bounds.end);
+
+  trackingDate = dateToStr(newDate);
+  loadTrackingDay(trackingDate);
+}
+
+function updateTrackingDayLabel() {
+  var label = $('tracking-day-label');
+  if (label) label.textContent = formatTrackingDateLabel(trackingDate);
+
+  // Update prev/next button disabled states
+  var bounds = getWeekBounds(trackingDate);
+  var current = new Date(trackingDate + 'T00:00:00');
+  var prevBtn = $('tracking-day-prev');
+  var nextBtn = $('tracking-day-next');
+  if (prevBtn) prevBtn.disabled = (current <= bounds.start);
+  if (nextBtn) nextBtn.disabled = (current >= bounds.end);
+}
+
+async function loadTrackingDay(date) {
+  trackingDate = date;
+  var token = getToken();
+  if (!token) return;
+
+  updateTrackingDayLabel();
+
+  try {
+    var res = await fetchWithTimeout(API + '/tracking/' + date, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
+    var data = await res.json();
+    trackingSelections = data.selections || {};
+    // Ensure qty field
+    Object.values(trackingSelections).forEach(function(arr) {
+      arr.forEach(function(item) { if (!item.qty) item.qty = 1; });
+    });
+    if (currentMode === 'tracking') {
+      selections = trackingSelections;
+      trackingSnapshot = JSON.stringify(trackingSelections);
+    }
+    render();
+    updateSaveBar();
+    // Load nutrition dashboard for tracking
+    loadTrackingNutrition(date);
+  } catch(e) {
+    console.error('[NutriFood] Load tracking day error:', e);
+    trackingSelections = {};
+    if (currentMode === 'tracking') {
+      selections = trackingSelections;
+      trackingSnapshot = JSON.stringify(trackingSelections);
+      render();
+      updateSaveBar();
+    }
+  }
+}
+
+async function loadTrackingNutrition(date) {
+  if (currentMode !== 'tracking') return;
+  var token = getToken();
+  if (!token) return;
+  try {
+    var res = await fetchWithTimeout(API + '/tracking/nutrition/' + date, {
+      headers: { 'Authorization': 'Bearer ' + token }
+    }, 10000);
+    if (!res.ok) return;
+    var data = await res.json();
+    // Render dual dashboard: day + week
+    renderTrackingNutrition(data);
+  } catch(e) {
+    console.error('[NutriFood] Load tracking nutrition error:', e);
+  }
+}
+
+function renderTrackingNutrition(data) {
+  // Find the nutri-summary container and replace its content
+  var container = document.querySelector('.nutri-summary');
+  if (!container) return;
+
+  var html = '';
+
+  // Day totals panel
+  if (data.day_totals) {
+    html += '<div class="tracking-nutrition-panel">';
+    html += '<div class="tnp-label">📊 Aujourd\'hui</div>';
+    html += renderDailyNutrition(data.day_totals);
+    html += '</div>';
+  }
+
+  // Week totals panel
+  if (data.week_totals) {
+    html += '<div class="tracking-nutrition-panel">';
+    html += '<div class="tnp-label">📅 Semaine cumulative</div>';
+    html += renderDailyNutrition(data.week_totals);
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+}
+
+async function saveTracking() {
+  clearTimeout(autoSaveTimer);
+  var btn = $('save-btn');
+  var origText = btn.textContent;
+  btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
+  var token = getToken();
+  if (token) {
+    try {
+      trackingSelections = JSON.parse(JSON.stringify(selections));
+      var res = await fetchWithTimeout(API + '/tracking/' + trackingDate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ selections: trackingSelections })
+      }, 10000);
+      if (res.ok) {
+        trackingSnapshot = JSON.stringify(trackingSelections);
+        showToast('Suivi sauvegardé', 'success');
+      } else {
+        showToast('Erreur de sauvegarde', 'error');
+      }
+    } catch(e) {
+      console.error('[NutriFood] Tracking save error:', e);
+      showToast('Erreur de sauvegarde: ' + e.message, 'error');
+    }
+  }
+  btn.textContent = '💾 Sauvegarder';
+  updateSaveBar();
+}
+
+function initModeTabs() {
+  // Mode tab clicks
+  document.querySelectorAll('.mode-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      switchMode(tab.dataset.mode);
+    });
+  });
+
+  // Day selector buttons
+  var prevBtn = $('tracking-day-prev');
+  var nextBtn = $('tracking-day-next');
+  if (prevBtn) prevBtn.addEventListener('click', function() { navigateTrackingDay(-1); });
+  if (nextBtn) nextBtn.addEventListener('click', function() { navigateTrackingDay(1); });
+}
 
 // ─── Toast system ───
 function showToast(message, type) {
@@ -1053,7 +1320,6 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-planner"><span class="icon">📅</span> Planificateur</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
-    menuItems += '<button class="user-menu-item" id="menu-journal"><span class="icon">📝</span> Journal</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>';
     if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-refresh-deals"><span class="icon">🔄</span> Spéciaux</button>';
@@ -1073,7 +1339,6 @@ function renderUserArea() {
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGroceryList(); });
     $('menu-planner').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showPlanner(); });
     $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
-    $('menu-journal').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showJournal(); });
     $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showHistory(); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
@@ -1982,14 +2247,16 @@ function showDealTooltip(foodName) {
 
 // ─── Grocery list ───
 function showGroceryList() {
+  // Grocery list always uses planning selections, regardless of current mode
+  var grocerySelections = currentMode === 'tracking' ? planningSelections : selections;
   var month = new Date().getMonth() + 1;
   var items = [];
   var dealTotal = 0;
   var dealCount = 0;
-  Object.keys(selections).forEach(function(catId) {
+  Object.keys(grocerySelections).forEach(function(catId) {
     var cat = DATA.categories.find(function(c) { return c.id === catId; });
     if (!cat) return;
-    selections[catId].forEach(function(item) {
+    grocerySelections[catId].forEach(function(item) {
       var food = cat.foods.find(function(f) { return f.name === item.name; });
       var icon = cat.icon;
       var seasonIcon = getSeasonIcon(food, month);
@@ -2826,7 +3093,8 @@ async function showHistoryDetail(weekKey) {
   }
 }
 
-// ─── Journal ───
+// ─── JOURNAL REMOVED ───
+// Original journal code retained below but menu entry removed.
 var journalDate = new Date().toISOString().split('T')[0];
 var journalEntries = [];
 var journalSearchTimer = null;
@@ -3154,6 +3422,7 @@ async function init() {
     // Wire up events
     initAuthEvents();
     initPlannerDelegation();
+    initModeTabs();
 
     // Restore session
     var savedUser = null;
@@ -3342,7 +3611,12 @@ function render() {
   html += '<div class="score-details"><div class="score-title">Objectifs nutritionnels</div><div class="score-sub">' + _nutriParts.join(' · ') + '</div><div class="score-cat-dots">' + _nutriDots.join('') + '</div></div>';
   html += '</div>';
   html += '<div class="nutri-summary">';
-  html += renderDailyNutrition(totals);
+  if (currentMode === 'tracking') {
+    // In tracking mode, render placeholder; loadTrackingNutrition will fill it
+    html += '<p class="loading">Chargement nutrition…</p>';
+  } else {
+    html += renderDailyNutrition(totals);
+  }
   html += '</div>';
 
   html += '<div class="tabs">';
@@ -3702,7 +3976,12 @@ function updateScoreBar() {
 }
 
 // ─── Persistence ───
-function isDirty() { return JSON.stringify(selections) !== savedSnapshot; }
+function isDirty() {
+  if (currentMode === 'tracking') {
+    return JSON.stringify(selections) !== trackingSnapshot;
+  }
+  return JSON.stringify(selections) !== savedSnapshot;
+}
 
 function scheduleAutoSave() {
   if (!getToken()) return; // skip if not logged in
@@ -3808,6 +4087,10 @@ function updateSaveBar() {
 }
 
 async function saveSelections() {
+  // Route to tracking save if in tracking mode
+  if (currentMode === 'tracking') {
+    return saveTracking();
+  }
   // Cancel pending auto-save timer since we're saving now
   clearTimeout(autoSaveTimer);
   var btn = $('save-btn');

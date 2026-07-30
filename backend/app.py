@@ -217,6 +217,17 @@ def init_db():
             UNIQUE(user_id, date, food_name)
         );
         CREATE INDEX IF NOT EXISTS idx_journal_user_date ON journal_entries(user_id, date);
+        CREATE TABLE IF NOT EXISTS tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            date TEXT NOT NULL,
+            data TEXT NOT NULL DEFAULT '{}',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, date)
+        );
+        CREATE INDEX IF NOT EXISTS idx_tracking_user_date ON tracking(user_id, date);
     ''')
     conn.commit()
     conn.close()
@@ -1079,6 +1090,108 @@ def seasonal():
     return jsonify({'month': current_month, 'foods': seasonal_foods})
 
 # ─── User Goals ───
+
+# ─── Tracking (Suivi quotidien) ───
+
+@app.route('/api/tracking/<date>', methods=['GET'])
+def get_tracking(date):
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    db = get_db()
+    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date)).fetchone()
+    data = json.loads(row['data']) if row and row['data'] else {}
+    return jsonify({'date': date, 'selections': data})
+
+@app.route('/api/tracking/<date>', methods=['POST'])
+def save_tracking(date):
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    data = request.get_json() or {}
+    selections_data = data.get('selections', {})
+    db = get_db()
+    db.execute('''INSERT INTO tracking (user_id, date, data, updated_at) VALUES (?, ?, ?, datetime('now'))
+                 ON CONFLICT(user_id, date) DO UPDATE SET data = excluded.data, updated_at = datetime('now')''',
+              (user['id'], date, json.dumps(selections_data)))
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/tracking/week', methods=['GET'])
+def get_tracking_week():
+    """Get all tracking entries for current week (Mon-Sun)."""
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    today = date.today()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    db = get_db()
+    rows = db.execute('SELECT date, data FROM tracking WHERE user_id = ? AND date >= ? AND date <= ? ORDER BY date',
+                      (user['id'], monday.isoformat(), sunday.isoformat())).fetchall()
+    week = {}
+    for row in rows:
+        week[row['date']] = json.loads(row['data']) if row['data'] else {}
+    return jsonify({'week_start': monday.isoformat(), 'week_end': sunday.isoformat(), 'days': week})
+
+@app.route('/api/tracking/nutrition/<date>', methods=['GET'])
+def tracking_nutrition(date):
+    """Get nutrition totals for a specific tracking day + week cumulative."""
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    foods_data = load_foods()
+    categories = foods_data.get('categories', [])
+    
+    # Get this day's selections
+    db = get_db()
+    row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date)).fetchone()
+    day_selections = json.loads(row['data']) if row and row['data'] else {}
+    
+    # Compute day totals
+    day_totals = compute_totals_from_selections(day_selections, categories)
+    
+    # Get week cumulative
+    try:
+        day_date = date.fromisoformat(date)
+    except ValueError:
+        day_date = date.today()
+    monday = day_date - timedelta(days=day_date.weekday())
+    week_rows = db.execute('SELECT date, data FROM tracking WHERE user_id = ? AND date >= ? AND date <= ?',
+                           (user['id'], monday.isoformat(), date)).fetchall()
+    week_totals = {'protein': 0, 'fiber': 0, 'iron': 0, 'vitamin_c': 0, 'calcium': 0, 'omega3': 0, 'calories': 0}
+    for wr in week_rows:
+        wr_data = json.loads(wr['data']) if wr['data'] else {}
+        wt = compute_totals_from_selections(wr_data, categories)
+        for k in week_totals:
+            week_totals[k] += wt.get(k, 0)
+    
+    targets = get_user_targets(user['id'])
+    return jsonify({'date': date, 'day_totals': {k: round(v, 2) for k, v in day_totals.items()},
+                    'week_totals': {k: round(v, 2) for k, v in week_totals.items()}, 'targets': targets})
+
+def compute_totals_from_selections(selections_data, categories):
+    """Compute nutrition totals from a selections dict."""
+    totals = {'protein': 0, 'fiber': 0, 'iron': 0, 'vitamin_c': 0, 'calcium': 0, 'omega3': 0, 'calories': 0}
+    for cat_id, items in selections_data.items():
+        cat = next((c for c in categories if c.get('id') == cat_id), None)
+        if not cat:
+            continue
+        food_map = {f['name']: f for f in cat.get('foods', [])}
+        for item in items:
+            food = food_map.get(item.get('name', ''))
+            if not food:
+                continue
+            n = food.get('nutrition', {})
+            qty = item.get('qty', 1)
+            totals['protein'] += n.get('protein', 0) * qty
+            totals['fiber'] += n.get('fiber', 0) * qty
+            totals['iron'] += n.get('iron', 0) * qty
+            totals['vitamin_c'] += n.get('vit_c', 0) * qty
+            totals['calcium'] += n.get('calcium', 0) * qty
+            totals['omega3'] += n.get('omega3', 0) * qty
+            totals['calories'] += n.get('calories', 0) * qty
+    return totals
 
 @app.route('/api/goals', methods=['GET'])
 def get_goals():

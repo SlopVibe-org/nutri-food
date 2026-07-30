@@ -2461,18 +2461,18 @@ var defaultGoals = { protein: 350, fiber: 175, iron: 56, vitamin_c: 280, calcium
 
 async function loadUserGoals() {
   var token = getToken();
-  if (!token) { userGoals = Object.assign({}, defaultGoals); return; }
+  if (!token) { userGoals = { ...defaultGoals }; return; }
   try {
     var res = await fetchWithTimeout(API + '/goals', {
       headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
     if (res.ok) {
       var data = await res.json();
-      userGoals = data.goals || Object.assign({}, defaultGoals);
+      userGoals = data.goals || { ...defaultGoals };
     } else {
-      userGoals = Object.assign({}, defaultGoals);
+      userGoals = { ...defaultGoals };
     }
-  } catch(e) { userGoals = Object.assign({}, defaultGoals); }
+  } catch(e) { userGoals = { ...defaultGoals }; }
 }
 
 async function showGoals() {

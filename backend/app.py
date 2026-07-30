@@ -1037,9 +1037,14 @@ def suggestions():
         json_key = nutrient_key_map.get(nutrient_key, nutrient_key)
         candidates = []
         for cat in categories:
+            # Skip herbs/spices and beverages — too concentrated per 100g, not realistic suggestions
+            if cat.get('section') == 'habitudes' and cat.get('id') in ('habitudes-herbes-epices', 'habitudes-boissons'):
+                continue
             for food in cat.get('foods', []):
                 if food['name'] in selected_names:
                     continue
+                if food.get('processing_level', 1) > 1:
+                    continue  # Only recommend NOVA 1 (non-transformé)
                 n = food.get('nutrition', {})
                 val = n.get(json_key, 0)
                 if val > 0:

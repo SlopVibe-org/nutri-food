@@ -184,22 +184,29 @@
   }
 
   /* User dropdown menu */
-  .user-menu { position: relative; }
+  .user-menu { position: relative; flex-shrink: 0; }
   .user-menu-btn {
     display: flex; align-items: center; gap: 6px; padding: 6px 12px;
     background: var(--card); border: 1px solid var(--border); border-radius: 8px;
     cursor: pointer; font-size: 0.9rem; color: var(--text); transition: border-color 0.2s;
+    max-width: 160px; overflow: hidden;
   }
+  .user-menu-btn .uname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .user-menu-btn:hover { border-color: var(--accent-dim); }
   .user-menu-btn .avatar {
     width: 24px; height: 24px; border-radius: 50%; background: var(--accent-dim);
-    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #0f1117;
+    display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #0f1117; flex-shrink: 0;
   }
   .user-menu-dropdown {
     position: absolute; top: 100%; right: 0; margin-top: 6px;
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     min-width: 180px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 150;
     display: none; overflow: hidden;
+  }
+  @media (max-width: 600px) {
+    .user-menu-btn { max-width: 90px; }
+    .user-menu-btn .uname { display: none; }
+    .user-menu-dropdown { right: 0; left: auto; min-width: 160px; }
   }
   .user-menu-dropdown.visible { display: block; }
   .user-menu-item {
@@ -1055,7 +1062,7 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-logout" style="color:var(--accent-red);"><span class="icon">🚪</span> Déconnexion</button>';
 
     area.innerHTML = '<div class="user-menu">' +
-      '<button class="user-menu-btn" id="user-menu-toggle"><span class="avatar">' + initials + '</span> ' + currentUser.name + ' ▾</button>' +
+      '<button class="user-menu-btn" id="user-menu-toggle"><span class="avatar">' + initials + '</span> <span class="uname">' + currentUser.name + '</span> ▾</button>' +
       '<div class="user-menu-dropdown" id="user-menu-dropdown">' + menuItems + '</div>' +
     '</div>';
 

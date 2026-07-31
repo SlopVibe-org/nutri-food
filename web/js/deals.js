@@ -1,19 +1,28 @@
 // ─── Deals module (lazy-loaded) ───
 
 let STORE_ICONS = {};
+const PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
+
+function isPetFood(name) {
+  let lower = (name || '').toLowerCase();
+  return PET_KEYWORDS.some(function(kw) { return lower.includes(kw); });
+}
 
 function showDealsPage() {
   $('deals-modal').classList.remove('hidden');
   renderDealsContent();
 }
 
+function findCategoryForFood(foodName) {
+  return DATA.categories.find(function(c) {
+    return c.foods.some(function(f) { return f.name === foodName; });
+  });
+}
+
 function flattenDeals() {
   let allDeals = [];
   Object.keys(DEALS).forEach(function(foodName) {
-    let cat = null;
-    DATA.categories.forEach(function(c) {
-      if (c.foods.some(function(f) { return f.name === foodName; })) cat = c;
-    });
+    let cat = findCategoryForFood(foodName);
     DEALS[foodName].forEach(function(deal) {
       allDeals.push({
         foodName: foodName,
@@ -23,16 +32,16 @@ function flattenDeals() {
         store: deal.store || '',
         price: deal.price || 0,
         size: deal.size || '',
-        unitPrice: (deal.unit_price && deal.unit_price.value) ? deal.unit_price.value : null,
-        unitLabel: (deal.unit_price && deal.unit_price.unit) ? deal.unit_price.unit : '',
+        unitPrice: deal.unit_price?.value || null,
+        unitLabel: deal.unit_price?.unit || '',
         link: deal.link || '#'
       });
     });
   });
   allDeals.sort(function(a, b) {
-    if (a.unitPrice && b.unitPrice) return a.unitPrice - b.unitPrice;
-    if (a.unitPrice) return -1;
-    if (b.unitPrice) return 1;
+    if (a.unitPrice && b.unitPrice) { return a.unitPrice - b.unitPrice; }
+    if (a.unitPrice) { return -1; }
+    if (b.unitPrice) { return 1; }
     return a.price - b.price;
   });
   return allDeals;
@@ -41,7 +50,7 @@ function flattenDeals() {
 function groupDealsByCategory(allDeals) {
   let grouped = {};
   allDeals.forEach(function(d) {
-    if (!grouped[d.catName]) grouped[d.catName] = { icon: d.catIcon, items: [] };
+    if (!grouped[d.catName]) { grouped[d.catName] = { icon: d.catIcon, items: [] }; }
     grouped[d.catName].items.push(d);
   });
   return grouped;
@@ -68,7 +77,7 @@ function renderDealsContent() {
   // Render
   let html = '';
   // Refresh button (admin only)
-  if (currentUser && currentUser.is_admin) {
+  if (currentUser?.is_admin) {
     html += '<div style="text-align:right;margin-bottom:8px;"><button id="deals-refresh-btn" class="dt-add-btn">🔄 Rafraîchir</button></div>';
   }
   Object.keys(grouped).sort(function(a, b) { return a.localeCompare(b); }).forEach(function(catName) {
@@ -107,7 +116,7 @@ function renderDealsContent() {
   content.querySelectorAll('[data-deal-link]').forEach(function(row) {
     row.addEventListener('click', function() {
       let link = row.dataset.dealLink.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
-      if (link && link !== '#') window.open(link, '_blank', 'noopener');
+      if (link && link !== '#') { window.open(link, '_blank', 'noopener'); }
     });
   });
   // Wire add buttons
@@ -132,28 +141,23 @@ function renderDealsContent() {
 async function loadDeals() {
   try {
     let res = await fetchWithTimeout(API + '/deals', {}, 10000);
-    if (!res.ok) return;
+    if (!res.ok) { return; }
     let data = await res.json();
     DEALS = data.deals || {};
     STORE_META = data.stores || {};
     // Filter out pet food / non-human food
-    let PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
-    function isPetFood(name) {
-      let lower = (name || '').toLowerCase();
-      return PET_KEYWORDS.some(function(kw) { return lower.includes(kw); });
-    }
     Object.keys(DEALS).forEach(function(food) {
       DEALS[food] = DEALS[food].filter(function(d) {
         return !isPetFood(d.name);
       });
-      if (DEALS[food].length === 0) delete DEALS[food];
+      if (DEALS[food].length === 0) { delete DEALS[food]; }
     });
-  } catch(e) { console.error('[NutriFood] Deals load error:', e); }
+  } catch(e) { /* Deals are non-critical */ console.error('[NutriFood] Deals load error:', e); }
 }
 
 async function refreshDeals() {
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   let btn = document.getElementById('menu-refresh-deals');
   if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
   try {
@@ -180,7 +184,7 @@ async function refreshDeals() {
 // Helper: build deal badges HTML for a food name
 function buildDealBadges(foodName) {
   let deals = DEALS[foodName];
-  if (!deals || deals.length === 0) return '';
+  if (!deals || deals.length === 0) { return ''; }
   let sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
   let maxShow = 3;
   let shown = sorted.slice(0, maxShow);
@@ -193,7 +197,7 @@ function buildDealBadges(foodName) {
     let letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
     html += '<span class="deal-badge" style="background:' + color + ';" title="' + esc(d.name || '') + ' — ' + (d.price || '') + '$">' + letter + '</span>';
   });
-  if (extra > 0) html += '<span class="deal-badges-extra deal-show-all" data-deal-food="' + esc(foodName) + '" style="cursor:pointer;text-decoration:underline;" title="Voir tous les spéciaux">+' + extra + '</span>';
+  if (extra > 0) { html += '<span class="deal-badges-extra deal-show-all" data-deal-food="' + esc(foodName) + '" style="cursor:pointer;text-decoration:underline;" title="Voir tous les spéciaux">+' + extra + '</span>'; }
   html += '</span>';
   return html;
 }
@@ -201,10 +205,10 @@ function buildDealBadges(foodName) {
 // Deal modal: click 'voir plus' opens full list in suggestions modal
 document.addEventListener('click', function(e) {
   let el = e.target.closest('[data-deal-modal-food]');
-  if (!el) return;
+  if (!el) { return; }
   let foodName = el.dataset.dealModalFood.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
   let deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
-  if (deals.length === 0) return;
+  if (deals.length === 0) { return; }
   let mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';
   deals.forEach(function(d) {
     let si = STORE_META[d.store] || {};
@@ -214,9 +218,9 @@ document.addEventListener('click', function(e) {
     mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:8px;margin-left:4px;margin-bottom:8px;">';
     mHtml += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
     mHtml += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
-    if (d.size) mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>';
+    if (d.size) { mHtml += '<div class="ct-deal-meta">Format: ' + esc(d.size) + '</div>'; }
     mHtml += '<div class="ct-deal-store"><span class="ct-deal-store-badge" style="background:' + color + ';">' + letter + '</span> ' + esc(sn) + '</div>';
-    if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
+    if (d.link) { mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>'; }
     mHtml += '</div>';
   });
   let content = document.getElementById('suggestions-content');

@@ -1,26 +1,40 @@
 // ─── Grocery module (lazy-loaded) ───
 
+function findBestDeal(itemName) {
+  let itemDeals = DEALS[itemName];
+  if (!itemDeals?.length) { return null; }
+  return itemDeals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); })[0];
+}
+
+function buildGroceryItem(item, cat, month) {
+  let food = cat.foods.find(function(f) { return f.name === item.name; });
+  let icon = cat.icon;
+  let seasonIcon = getSeasonIcon(food, month);
+  if (seasonIcon) { icon = seasonIcon + ' ' + icon; }
+  let dealInfo = findBestDeal(item.name);
+  return {
+    name: item.name,
+    qty: item.qty || 1,
+    cat: cat.name,
+    icon: icon,
+    dealInfo: dealInfo
+  };
+}
+
 function collectGroceryItems(grocerySelections, month) {
   let items = [];
   let dealTotal = 0;
   let dealCount = 0;
   Object.keys(grocerySelections).forEach(function(catId) {
     let cat = DATA.categories.find(function(c) { return c.id === catId; });
-    if (!cat) return;
+    if (!cat) { return; }
     grocerySelections[catId].forEach(function(item) {
-      let food = cat.foods.find(function(f) { return f.name === item.name; });
-      let icon = cat.icon;
-      let seasonIcon = getSeasonIcon(food, month);
-      if (seasonIcon) icon = seasonIcon + ' ' + icon;
-      let dealInfo = null;
-      let itemDeals = DEALS[item.name];
-      if (itemDeals && itemDeals.length > 0) {
-        let bestDeal = itemDeals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); })[0];
-        dealInfo = bestDeal;
-        dealTotal += (bestDeal.price || 0) * (item.qty || 1);
+      let entry = buildGroceryItem(item, cat, month);
+      if (entry.dealInfo) {
+        dealTotal += (entry.dealInfo.price || 0) * entry.qty;
         dealCount++;
       }
-      items.push({ name: item.name, qty: item.qty || 1, cat: cat.name, icon: icon, dealInfo: dealInfo });
+      items.push(entry);
     });
   });
   items.sort(function(a, b) { return a.name.localeCompare(b.name); });
@@ -65,7 +79,7 @@ function wireGroceryButtons() {
   if (shareBtn) {
     shareBtn.onclick = async function() {
       let token = getToken();
-      if (!token) return;
+      if (!token) { return; }
       let origText = shareBtn.textContent;
       shareBtn.disabled = true; shareBtn.textContent = '⏳…';
       try {
@@ -83,7 +97,7 @@ function wireGroceryButtons() {
           showToast('Erreur de partage', 'error');
           shareBtn.textContent = origText;
         }
-      } catch(e) { console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
+      } catch(e) { /* Share link generation failed — non-critical */ console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
       shareBtn.disabled = false;
     };
   }
@@ -94,7 +108,7 @@ function wireGroceryButtons() {
       let printItems = [];
       Object.keys(selections).forEach(function(catId) {
         let cat = DATA.categories.find(function(c) { return c.id === catId; });
-        if (!cat) return;
+        if (!cat) { return; }
         selections[catId].forEach(function(item) {
           printItems.push({ name: item.name, qty: item.qty || 1 });
         });
@@ -127,7 +141,7 @@ function copyGroceryList() {
   let lines = [];
   Object.keys(selections).forEach(function(catId) {
     let cat = DATA.categories.find(function(c) { return c.id === catId; });
-    if (!cat) return;
+    if (!cat) { return; }
     selections[catId].forEach(function(item) {
       let qty = item.qty > 1 ? ' x' + item.qty : '';
       lines.push(item.name + qty);

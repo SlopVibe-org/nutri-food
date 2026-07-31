@@ -3,14 +3,14 @@
 let globalClickListenersAttached = false;
 function renderUserArea() {
   const area = $('user-area');
-  if (!area) return;
+  if (!area) { return; }
   if (currentUser) {
     let initials = currentUser.name.charAt(0).toUpperCase();
     let menuItems = '';
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
-    if (currentUser.is_admin) menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>';
+    if (currentUser.is_admin) { menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>'; }
     menuItems += '<button class="user-menu-item" id="menu-deals"><span class="icon">🏷️</span> Spéciaux</button>';
     menuItems += '<div class="user-menu-divider"></div>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
@@ -40,7 +40,7 @@ function renderUserArea() {
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.user-menu')) {
           let dd = $('user-menu-dropdown');
-          if (dd) dd.classList.remove('visible');
+          if (dd) { dd.classList.remove('visible'); }
         }
       });
     }
@@ -125,7 +125,7 @@ function showForgotPassword() {
 
 async function submitForgotPassword() {
   let identifier = $('forgot-email').value.trim();
-  if (!identifier) return;
+  if (!identifier) { return; }
   $('forgot-submit').textContent = 'Envoi…';
   $('forgot-submit').disabled = true;
   try {
@@ -137,6 +137,7 @@ async function submitForgotPassword() {
     // Always show success (prevent enumeration)
     $('app').innerHTML = '<div class="welcome"><h2>📧 Courriel envoyé</h2><p style="color:var(--text-dim);margin-bottom:20px;">Si ce compte existe, vous recevrez un lien de réinitialisation par courriel. Vérifiez votre boîte de réception.</p><button class="login-cta" id="forgot-done" onclick="location.reload()">Retour à NutriFood</button></div>';
   } catch(e) {
+    console.error('[NutriFood] Forgot password error:', e);
     $('forgot-submit').textContent = 'Erreur';
   }
 }
@@ -154,7 +155,7 @@ async function submitResetPassword() {
   let hash = window.location.hash;
   let resetToken = '';
   let match = /reset=([^&]+)/.exec(hash);
-  if (match) resetToken = decodeURIComponent(match[1]);
+  if (match) { resetToken = decodeURIComponent(match[1]); }
   if (!resetToken) { errEl.textContent = 'Token manquant'; return; }
 
   $('reset-submit').textContent = 'Changement…';
@@ -242,25 +243,25 @@ function initAuthEvents() {
   // Feature 1: Suggestions FAB & modal
   $('suggestions-fab').addEventListener('click', function() { loadScript('js/suggestions.js', function() { showSuggestions(); }); });
   $('suggestions-close').addEventListener('click', function() { $('suggestions-modal').classList.add('hidden'); });
-  $('suggestions-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
-  $('manage-products-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('suggestions-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
+  $('manage-products-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
   // Feature 3: Goals modal
   $('goals-submit').addEventListener('click', function(e) { e.preventDefault(); submitGoals(); });
   $('goals-cancel').addEventListener('click', function() { $('goals-modal').classList.add('hidden'); });
-  $('goals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('goals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
   // Feature 4: History modal
   $('history-close').addEventListener('click', function() { $('history-modal').classList.add('hidden'); });
-  $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
   // Deals modal
   $('deals-close').addEventListener('click', function() { $('deals-modal').classList.add('hidden'); });
-  $('deals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('deals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
 
   $('auth-submit').addEventListener('click', function(e) { e.preventDefault(); submitAuth(); });
   $('auth-switch-link').addEventListener('click', function(e) { e.preventDefault(); toggleAuthMode(); });
   $('auth-password').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
   $('auth-email').addEventListener('keypress', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitAuth(); } });
   // Close modal on overlay click
-  $('auth-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) e.currentTarget.classList.add('hidden'); });
+  $('auth-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
   // Forgot password
   $('forgot-password-link').addEventListener('click', function(e) { e.preventDefault(); showForgotPassword(); });
   // Change password modal

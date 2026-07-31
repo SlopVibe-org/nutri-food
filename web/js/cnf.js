@@ -30,7 +30,7 @@ function guessCategory(groupCode, nutrients) {
     let omega3 = 0;
     // Sum EPA + DHA + ALA
     nutrients.forEach(function(n) {
-      if (n.code === 629 || n.code === 621 || n.code === 851 || n.code === 631) omega3 += n.amount || 0;
+      if (n.code === 629 || n.code === 621 || n.code === 851 || n.code === 631) omega3 += n.amount ?? 0;
     });
     return omega3 > 1.0 ? 'poissons-gras' : 'poissons-blancs';
   }
@@ -86,18 +86,18 @@ function switchProductTab(tab) {
 
 function loadRemoveProductList() {
   let html = '';
-  (DATA.sections || []).forEach(function(sec) {
-    let cats = (DATA.categories || []).filter(function(c) { return c.section === sec.id; });
-    if (cats.length === 0) return;
+  (DATA.sections ?? []).forEach(function(sec) {
+    let cats = (DATA.categories ?? []).filter(function(c) { return c.section === sec.id; });
+    if (cats.length === 0) { return; }
     cats.forEach(function(cat) {
-      let count = (cat.foods || []).length;
-      if (count === 0) return;
+      let count = (cat.foods ?? []).length;
+      if (count === 0) { return; }
       html += '<div class="remove-cat-header" data-remove-cat="' + cat.id + '" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;margin-bottom:4px;cursor:pointer;user-select:none;">';
       html += '<span style="font-size:0.9rem;font-weight:600;">' + cat.icon + ' ' + esc(cat.name) + '</span>';
       html += '<span style="font-size:0.78rem;color:var(--text-dim);">' + count + ' <span class="remove-cat-arrow">\u25BC</span></span>';
       html += '</div>';
       html += '<div class="remove-cat-items" data-remove-cat-items="' + cat.id + '" style="display:none;margin-bottom:8px;">';
-      (cat.foods || []).forEach(function(food) {
+      (cat.foods ?? []).forEach(function(food) {
         html += '<div class="remove-product-item" data-hide-cat="' + cat.id + '" data-hide-name="' + esc(food.name) + '" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:background 0.15s;">';
         html += '<span style="font-size:0.85rem;">' + esc(food.name) + '</span>';
         html += '<span style="font-size:0.75rem;color:var(--accent-red);">Masquer</span>';
@@ -119,6 +119,17 @@ function cnfMatchAlias(a, ql, food, cat, existingMatches) {
   }
 }
 
+function cnfCheckFoodMatch(food, cat, ql, existingMatches) {
+  let fn = food.name.toLowerCase();
+  if (fn.includes(ql) || ql.includes(fn) || fn.replace(/[èéêë]/g,'e').includes(ql.replace(/[èéêë]/g,'e'))) {
+    existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases ?? [], alias: null });
+  }
+  // Check aliases too
+  if (Array.isArray(food.aliases)) {
+    food.aliases.forEach(function(a) { cnfMatchAlias(a, ql, food, cat, existingMatches); });
+  }
+}
+
 async function cnfDoSearch() {
   let q = $('cnf-search-input').value.trim();
   if (q.length < 2) return;
@@ -130,17 +141,8 @@ async function cnfDoSearch() {
   // Step 1: Check for existing items in foods.json (fuzzy match)
   let existingMatches = [];
   let ql = q.toLowerCase();
-  (DATA.categories || []).forEach(function(cat) {
-    (cat.foods || []).forEach(function(food) {
-      let fn = food.name.toLowerCase();
-      if (fn.includes(ql) || ql.includes(fn) || fn.replace(/[èéêë]/g,'e').includes(ql.replace(/[èéêë]/g,'e'))) {
-        existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases || [], alias: null });
-      }
-      // Check aliases too
-      if (food.aliases && Array.isArray(food.aliases)) {
-        food.aliases.forEach(function(a) { cnfMatchAlias(a, ql, food, cat, existingMatches); });
-      }
-    });
+  (DATA.categories ?? []).forEach(function(cat) {
+    (cat.foods ?? []).forEach(function(food) { cnfCheckFoodMatch(food, cat, ql, existingMatches); });
   });
   
   if (existingMatches.length > 0) {
@@ -193,13 +195,13 @@ async function cnfCnfSearch(q) {
     let res = await fetchWithTimeout(API + '/cnf/search?q=' + encodeURIComponent(q), {}, 10000);
     let data = await res.json();
     if (!res.ok) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">' + esc(data.error || 'Erreur') + '</p>'; return; }
-    let results = data.results || [];
+    let results = data.results ?? [];
     if (results.length === 0) { $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;">Aucun résultat pour « ' + esc(q) + ' ».</p>'; return; }
     let html = '';
     results.forEach(function(r) {
       html += '<div class="cnf-result" data-cnf-id="' + r.food_id + '">' +
-        '<span class="cnf-name">' + esc(r.name_fr || r.name_en || '') + '</span>' +
-        '<span class="cnf-group">' + esc(r.group_fr || '') + '</span>' +
+        '<span class="cnf-name">' + esc(r.name_fr ?? r.name_en ?? '') + '</span>' +
+        '<span class="cnf-group">' + esc(r.group_fr ?? '') + '</span>' +
         '<span class="cnf-check">✓</span></div>';
     });
     $('cnf-results').innerHTML = html;
@@ -226,7 +228,7 @@ async function cnfSelectProduct(foodId) {
     if (!res.ok) { $('cnf-details').innerHTML = '<p style="color:var(--accent-red);">Erreur</p>'; return; }
     let food = data.food;
     let group = data.group;
-    let nutrients = data.nutrients || [];
+    let nutrients = data.nutrients ?? [];
     let html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
     html += '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">' + esc(food.name_fr || food.name_en) + '</div>';
     if (group) html += '<div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;">' + esc(group.name_fr) + '</div>';
@@ -246,12 +248,12 @@ function cnfConfirmAdd(food, nutrients, group) {
   let nutriMap = {};
   nutrients.forEach(function(n) { nutriMap[n.code] = n; });
   let nutrition = {
-    protein: nutriMap[203]?.amount || 0,
-    fiber: nutriMap[291]?.amount || 0,
-    iron: nutriMap[303]?.amount || 0,
-    vit_c: nutriMap[401]?.amount || 0,
-    calcium: nutriMap[301]?.amount || 0,
-    omega3: (nutriMap[629]?.amount || 0) + (nutriMap[621]?.amount || 0) + (nutriMap[631]?.amount || 0) + (nutriMap[851]?.amount || 0)
+    protein: nutriMap[203]?.amount ?? 0,
+    fiber: nutriMap[291]?.amount ?? 0,
+    iron: nutriMap[303]?.amount ?? 0,
+    vit_c: nutriMap[401]?.amount ?? 0,
+    calcium: nutriMap[301]?.amount ?? 0,
+    omega3: (nutriMap[629]?.amount ?? 0) + (nutriMap[621]?.amount ?? 0) + (nutriMap[631]?.amount ?? 0) + (nutriMap[851]?.amount ?? 0)
   };
   Object.keys(nutrition).forEach(function(k) { nutrition[k] = Math.round(nutrition[k] * 100) / 100; });
   let guessedCat = guessCategory(food.group_code, nutrients);
@@ -265,15 +267,15 @@ function cnfConfirmAdd(food, nutrients, group) {
   if (nutriMap[328]?.amount > 2) highlights.push('Vit D');
   if (nutriMap[317]?.amount > 15) highlights.push('Sélénium');
   let allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
-  let foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
+  let foodName = (food.name_fr ?? food.name_en ?? '').split(',')[0].trim();
   let html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
-  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
+  html += '<label for="cnf-add-name" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
   html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add name">';
-  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
+  html += '<label for="cnf-add-cat" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
   html += '<select id="cnf-add-cat" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">' + allCats + '</select>';
-  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts</label>';
+  html += '<label for="cnf-add-highlights" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts</label>';
   html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add highlights">';
-  html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
+  html += '<label for="cnf-add-aliases" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
   // Auto-populate aliases from CNF data + original search term
   let autoAliases = [];
   if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(cnfSearchQuery); }

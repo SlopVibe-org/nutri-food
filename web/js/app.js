@@ -11,7 +11,7 @@ async function init() {
 
     // Restore session
     let savedUser = null;
-    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage read error:', e); }
+    try { savedUser = localStorage.getItem(USER_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage read error:', e); }
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
       let token = getToken();
@@ -76,10 +76,12 @@ async function init() {
     $('app').innerHTML = '<div class="api-error"><h2>⚠️ Serveur indisponible</h2><p>Impossible de se connecter au serveur. Réessayez dans un moment.</p><button id="retry-init">Réessayer</button></div>';
     $('save-bar').classList.remove('visible');
     let retryBtn = $('retry-init');
-    if (retryBtn) retryBtn.addEventListener('click', function() {
-      $('app').innerHTML = '<p class="loading">Chargement…</p>';
-      init();
-    });
+    if (retryBtn) {
+      retryBtn.addEventListener('click', function() {
+        $('app').innerHTML = '<p class="loading">Chargement…</p>';
+        init();
+      });
+    }
   }
 }
 

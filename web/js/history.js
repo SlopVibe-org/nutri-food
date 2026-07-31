@@ -57,7 +57,7 @@ async function showHistoryDetail(weekKey) {
   let content = $('history-content');
   content.innerHTML = '<p class="loading">Chargement de ' + esc(weekKey) + '…</p>';
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/history/' + encodeURIComponent(weekKey), {
       headers: { 'Authorization': 'Bearer ' + token }
@@ -80,7 +80,7 @@ async function showHistoryDetail(weekKey) {
       });
     });
     html += '</ul>';
-    if (total === 0) html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Aucune sélection cette semaine.</p>';
+    if (total === 0) { html += '<p style="color:var(--text-dim);text-align:center;padding:12px;">Aucune sélection cette semaine.</p>'; }
     html += '<p style="margin-top:8px;color:var(--text-dim);font-size:0.82rem;">Total: ' + total + ' aliment(s)</p>';
     content.innerHTML = html;
     $('history-back').addEventListener('click', showHistory);

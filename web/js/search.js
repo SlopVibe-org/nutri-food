@@ -8,9 +8,9 @@ function performSearch() {
 
 function handleSearchKeydown(e) {
   let results = $('search-results');
-  if (!results.classList.contains('visible')) return;
+  if (!results.classList.contains('visible')) { return; }
   let items = results.querySelectorAll('.search-result[data-cat]');
-  if (items.length === 0) return;
+  if (items.length === 0) { return; }
 
   if (e.key === 'ArrowDown') {
     e.preventDefault();
@@ -42,20 +42,15 @@ function updateSearchActive(items) {
   }
 }
 
-function actualSearch() {
-  let rawQuery = $('search-input').value.trim();
-  let query = normalizeForSearch(rawQuery);
-  let results = $('search-results');
-  searchActiveIndex = -1;
-  if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
+function findFoodMatches(query) {
   let matches = [];
   DATA.categories.forEach(function(cat) {
     cat.foods.forEach(function(f) {
       if (normalizeForSearch(f.name).includes(query)) {
         matches.push({ cat: cat, food: f });
-      } else if (f.aliases && Array.isArray(f.aliases)) {
-        for (let i = 0; i < f.aliases.length; i++) {
-          if (normalizeForSearch(f.aliases[i]).includes(query)) {
+      } else if (Array.isArray(f?.aliases)) {
+        for (let alias of f.aliases) {
+          if (normalizeForSearch(alias).includes(query)) {
             matches.push({ cat: cat, food: f });
             break;
           }
@@ -63,12 +58,22 @@ function actualSearch() {
       }
     });
   });
+  return matches;
+}
+
+function actualSearch() {
+  let rawQuery = $('search-input').value.trim();
+  let query = normalizeForSearch(rawQuery);
+  let results = $('search-results');
+  searchActiveIndex = -1;
+  if (query.length < 2) { results.classList.remove('visible'); results.innerHTML = ''; return; }
+  let matches = findFoodMatches(query);
   if (matches.length === 0) {
     results.innerHTML = '<div class="search-result"><span class="sr-meta">Aucun résultat</span></div>';
   } else {
     results.innerHTML = matches.slice(0, 20).map(function(m) {
       let aliasInfo = '';
-      if (m.food.aliases && m.food.aliases.length > 0) aliasInfo = ' <span style="color:var(--text-dim);font-size:0.75rem;">(' + esc(m.food.aliases.slice(0, 3).join(', ')) + ')</span>';
+      if (m.food.aliases?.length > 0) { aliasInfo = ' <span style="color:var(--text-dim);font-size:0.75rem;">(' + esc(m.food.aliases.slice(0, 3).join(', ')) + ')</span>'; }
       return '<div class="search-result" data-cat="' + m.cat.id + '" data-name="' + esc(m.food.name) + '" data-density="' + m.food.density + '" data-nutrients="' + esc(m.food.nutrients) + '"><div><div class="sr-name">' + esc(m.food.name) + aliasInfo + '</div><div class="sr-cat">' + m.cat.icon + ' ' + m.cat.name + '</div></div><div class="sr-density">' + m.food.density + '%</div></div>';
     }).join('');
     // Wire up result clicks

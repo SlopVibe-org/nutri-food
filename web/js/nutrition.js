@@ -18,7 +18,7 @@ function getISOWeek() {
 }
 
 function hasSelections() {
-  return Object.keys(selections).some(function(catId) { return selections[catId] && selections[catId].length > 0; });
+  return Object.keys(selections).some(function(catId) { return selections[catId]?.length > 0; });
 }
 
 // ─── Goals ───
@@ -43,7 +43,7 @@ async function loadUserGoals() {
 
 async function showGoals() {
   $('goals-error').textContent = '';
-  if (!userGoals) await loadUserGoals();
+  if (!userGoals) { await loadUserGoals(); }
   $('goal-protein').value = userGoals.protein || defaultGoals.protein;
   $('goal-fiber').value = userGoals.fiber || defaultGoals.fiber;
   $('goal-iron').value = userGoals.iron || defaultGoals.iron;
@@ -56,13 +56,13 @@ async function showGoals() {
 
 async function submitGoals() {
   let goals = {
-    protein: parseFloat($('goal-protein').value) || 0,
-    fiber: parseFloat($('goal-fiber').value) || 0,
-    iron: parseFloat($('goal-iron').value) || 0,
-    vitamin_c: parseFloat($('goal-vitamin_c').value) || 0,
-    calcium: parseFloat($('goal-calcium').value) || 0,
-    omega3: parseFloat($('goal-omega3').value) || 0,
-    calories: parseFloat($('goal-calories').value) || 0
+    protein: Number.parseFloat($('goal-protein').value) || 0,
+    fiber: Number.parseFloat($('goal-fiber').value) || 0,
+    iron: Number.parseFloat($('goal-iron').value) || 0,
+    vitamin_c: Number.parseFloat($('goal-vitamin_c').value) || 0,
+    calcium: Number.parseFloat($('goal-calcium').value) || 0,
+    omega3: Number.parseFloat($('goal-omega3').value) || 0,
+    calories: Number.parseFloat($('goal-calories').value) || 0
   };
   let token = getToken();
   if (!token) { $('goals-error').textContent = 'Non connecté'; return; }
@@ -145,7 +145,7 @@ async function performPlanningReset() {
 async function performTrackingReset(scope) {
   closeResetConfirm();
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   try {
     if (scope === 'day') {
       await fetchWithTimeout(API + '/tracking/' + trackingDate, {
@@ -165,62 +165,53 @@ async function performTrackingReset(scope) {
 }
 
 // ─── Tracking nutrition dashboard (dual: day + week) ───
+function getPctClass(pct) {
+  if (pct >= 80) { return 'good'; }
+  if (pct >= 50) { return 'ok'; }
+  return 'low';
+}
+
+function computeDayTotals() {
+  return computeNutritionTotals(selections);
+}
+
+const TRACKING_NUTRIENTS = [
+  { key: 'calories', label: 'Calories', unit: 'kcal', goalKey: 'calories' },
+  { key: 'protein', label: 'Protéine', unit: 'g', goalKey: 'protein' },
+  { key: 'fiber', label: 'Fibres', unit: 'g', goalKey: 'fiber' },
+  { key: 'iron', label: 'Fer', unit: 'mg', goalKey: 'iron' },
+  { key: 'vit_c', label: 'Vit C', unit: 'mg', goalKey: 'vitamin_c' },
+  { key: 'calcium', label: 'Calcium', unit: 'mg', goalKey: 'calcium' },
+  { key: 'omega3', label: 'O-3', unit: 'g', goalKey: 'omega3' }
+];
+
+function buildNutrientRow(n, val, goal, isDaily) {
+  let weeklyTarget = goal || 0;
+  let target = isDaily ? weeklyTarget / 7 : weeklyTarget;
+  let pct = target > 0 ? Math.round((val / target) * 100) : 0;
+  let pctCls = getPctClass(pct);
+  let h = '<div class="nutri-stat">';
+  h += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(val).toLocaleString() : Math.round(val)) + '</span>';
+  h += '<span class="ns-label">' + n.label + '</span>';
+  if (target > 0) {
+    h += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
+    h += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
+  }
+  h += '</div>';
+  return h;
+}
+
 async function renderTrackingNutrition() {
   let container = $('tracking-nutrition');
-  if (!container || !DATA) return;
-  let nutrients = [
-    { key: 'calories', label: 'Calories', unit: 'kcal', goalKey: 'calories' },
-    { key: 'protein', label: 'Protéine', unit: 'g', goalKey: 'protein' },
-    { key: 'fiber', label: 'Fibres', unit: 'g', goalKey: 'fiber' },
-    { key: 'iron', label: 'Fer', unit: 'mg', goalKey: 'iron' },
-    { key: 'vit_c', label: 'Vit C', unit: 'mg', goalKey: 'vitamin_c' },
-    { key: 'calcium', label: 'Calcium', unit: 'mg', goalKey: 'calcium' },
-    { key: 'omega3', label: 'O-3', unit: 'g', goalKey: 'omega3' }
-  ];
+  if (!container || !DATA) { return; }
   let targets = userGoals || {};
-  // Compute day totals locally (instant)
-  let dt = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
-  Object.keys(selections).forEach(function(catId) {
-    if (!selections[catId]) return;
-    let cat = DATA.categories.find(function(c) { return c.id === catId; });
-    if (!cat) return;
-    selections[catId].forEach(function(item) {
-      let food = cat.foods.find(function(f) { return f.name === item.name; });
-      if (food && food.nutrition) {
-        let qty = item.qty || 1;
-        dt.protein += (food.nutrition.protein || 0) * qty;
-        dt.fiber += (food.nutrition.fiber || 0) * qty;
-        dt.iron += (food.nutrition.iron || 0) * qty;
-        dt.vit_c += (food.nutrition.vit_c || 0) * qty;
-        dt.calcium += (food.nutrition.calcium || 0) * qty;
-        dt.omega3 += (food.nutrition.omega3 || 0) * qty;
-        dt.calories += (food.nutrition.calories || 0) * qty;
-      }
-    });
-  });
-  function nutrientRow(n, val, goal, isDaily) {
-    let target = isDaily ? (goal ? goal / 7 : 0) : (goal || 0);
-    let pct = target > 0 ? Math.round((val / target) * 100) : 0;
-    let pctCls = '';
-    if (pct >= 80) pctCls = 'good';
-    else if (pct >= 50) pctCls = 'ok';
-    else pctCls = 'low';
-    let h = '<div class="nutri-stat">';
-    h += '<span class="ns-value">' + (n.key === 'calories' ? Math.round(val).toLocaleString() : Math.round(val)) + '</span>';
-    h += '<span class="ns-label">' + n.label + '</span>';
-    if (target > 0) {
-      h += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
-      h += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
-    }
-    h += '</div>';
-    return h;
-  }
+  let dt = computeDayTotals();
   // Render day section immediately
   let html = '';
   html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📊 <strong>' + formatDayLabel(trackingDate) + '</strong></span><span class="reset-badge" style="cursor:pointer;" onclick="openResetConfirm()">🔄 Reset</span></div>';
   html += '<div class="nutri-stats-row">';
-  nutrients.forEach(function(n) {
-    html += nutrientRow(n, dt[n.key] || 0, targets[n.goalKey || n.key], true);
+  TRACKING_NUTRIENTS.forEach(function(n) {
+    html += buildNutrientRow(n, dt[n.key] || 0, targets[n.goalKey || n.key], true);
   });
   html += '</div>';
   // Week section placeholder
@@ -230,21 +221,21 @@ async function renderTrackingNutrition() {
   container.innerHTML = html;
   // Fetch week totals async
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/tracking/nutrition/' + trackingDate, { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
-    if (!res.ok) { let wc1 = $('tracking-week-stats'); if (wc1) wc1.innerHTML = ''; return; }
+    if (!res.ok) { let wc1 = $('tracking-week-stats'); if (wc1) { wc1.innerHTML = ''; } return; }
     let data = await res.json();
     let wt = data.week_totals || {};
-    if (data.targets) targets = data.targets;
+    if (data.targets) { targets = data.targets; }
     let wc2 = $('tracking-week-stats');
-    if (!wc2) return;
+    if (!wc2) { return; }
     let wh = '';
-    nutrients.forEach(function(n) {
-      wh += nutrientRow(n, wt[n.key] || 0, targets[n.goalKey || n.key], false);
+    TRACKING_NUTRIENTS.forEach(function(n) {
+      wh += buildNutrientRow(n, wt[n.key] || 0, targets[n.goalKey || n.key], false);
     });
     wc2.innerHTML = wh;
-  } catch(e) { console.error('[NutriFood] Tracking week fetch error:', e); }
+  } catch(e) { /* Network or tracking data error */ console.error('[NutriFood] Tracking week fetch error:', e); }
 }
 
 function renderDailyNutrition(totals) {
@@ -279,10 +270,7 @@ function renderDailyNutrition(totals) {
     if (goalVal) {
       let dailyTarget = goalVal / 7;
       let pct = dailyTarget > 0 ? Math.round((daily / dailyTarget) * 100) : 0;
-      let pctCls = '';
-      if (pct >= 80) pctCls = 'good';
-      else if (pct >= 50) pctCls = 'ok';
-      else pctCls = 'low';
+      let pctCls = getPctClass(pct);
       html += '<span class="ns-pct ' + pctCls + '">' + pct + '%</span>';
       html += '<div class="nutri-progress"><div class="nutri-progress-fill ' + pctCls + '" style="width:' + Math.min(pct, 100) + '%"></div></div>';
     }

@@ -1,8 +1,6 @@
 // ─── Share module (lazy-loaded) ───
 
-function showShareLink() {
-  // Placeholder — share link generation is handled in grocery.js wireGroceryButtons
-}
+// Share link generation is handled in grocery.js wireGroceryButtons
 
 async function loadSharedView(shareToken) {
   try {

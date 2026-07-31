@@ -47,7 +47,7 @@ function loadScript(url, callback) {
     _loadedScripts[url] = true;
     let cbs = _pendingCallbacks[url] || [];
     delete _pendingCallbacks[url];
-    cbs.forEach(function(cb) { try { cb(); } catch(e) { console.error('[NutriFood] Script callback error for ' + url + ':', e); } });
+    cbs.forEach(function(cb) { try { cb(); } catch(e) { /* Callback error is non-fatal */ console.error('[NutriFood] Script callback error for ' + url + ':', e); } });
   };
   s.onerror = function() {
     console.error('[NutriFood] Failed to load script: ' + url);
@@ -70,9 +70,9 @@ function formatDayLabel(dateStr) {
   let tomorrowStr = d0.toISOString().slice(0,10);
   let d1 = new Date(); d1.setDate(d1.getDate()-1);
   let yesterdayStr = d1.toISOString().slice(0,10);
-  if (dateStr === today) return "Aujourd'hui";
-  if (dateStr === tomorrowStr) return "Demain";
-  if (dateStr === yesterdayStr) return "Hier";
+  if (dateStr === today) { return "Aujourd'hui"; }
+  if (dateStr === tomorrowStr) { return "Demain"; }
+  if (dateStr === yesterdayStr) { return "Hier"; }
   let d = new Date(dateStr + 'T12:00:00');
   let days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
   let months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
@@ -82,7 +82,7 @@ function formatDayLabel(dateStr) {
 // ─── Toast system ───
 function showToast(message, type = 'info') {
   let container = $('toast-container');
-  if (!container) return;
+  if (!container) { return; }
   let toast = document.createElement('div');
   toast.className = 'toast ' + type;
   toast.textContent = message;
@@ -94,8 +94,7 @@ function showToast(message, type = 'info') {
 }
 
 // ─── Fetch with timeout ───
-function fetchWithTimeout(url, options, timeoutMs) {
-  timeoutMs = timeoutMs || 10000;
+function fetchWithTimeout(url, options, timeoutMs = 10000) {
   return Promise.race([
     fetch(url, options),
     new Promise(function(_, reject) {
@@ -105,26 +104,26 @@ function fetchWithTimeout(url, options, timeoutMs) {
 }
 
 // ─── Token helpers ───
-function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { return null; } }
+function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ return null; } }
 
 function setAuth(token, user) {
   try {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
-  } catch(e) { console.error('[NutriFood] localStorage error:', e); }
+  } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage error:', e); }
   currentUser = user;
   renderUserArea();
 }
 
 function clearAuth() {
-  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage clear error:', e); }
+  try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage clear error:', e); }
   currentUser = null;
   selections = {};
   savedSnapshot = '{}';
   let fab = $('suggestions-fab');
-  if (fab) fab.classList.remove('visible', 'pulsing');
+  if (fab) { fab.classList.remove('visible', 'pulsing'); }
   let banner = $('seasonal-banner');
-  if (banner) banner.classList.add('hidden');
+  if (banner) { banner.classList.add('hidden'); }
   renderUserArea();
   render();
   updateSaveBar();

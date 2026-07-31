@@ -51,8 +51,8 @@ function getSectionDotClass(sectionId) {
     totalSelected += sel.reduce(function(s, i) { return s + i.qty; }, 0);
     totalMin += cat.weekly_min; totalMax += cat.weekly_max;
   });
-  if (totalSelected === 0 || totalSelected < totalMin) return 'under';
-  if (totalSelected > totalMax) return 'over';
+  if (totalSelected === 0 || totalSelected < totalMin) { return 'under'; }
+  if (totalSelected > totalMax) { return 'over'; }
   return 'in-range';
 }
 
@@ -72,9 +72,20 @@ function getPortionHint(cat) {
     'lait': '1 portion = 1 tasse (250ml)',
     'oeufs': '1 portion = 1-2 œufs'
   };
-  if (idHints[catId]) return idHints[catId];
-  if (hints[section]) return hints[section];
+  if (idHints[catId]) { return idHints[catId]; }
+  if (hints[section]) { return hints[section]; }
   return null;
+}
+
+function getSeasonPrefix(food) {
+  let month = new Date().getMonth() + 1;
+  if (food.season?.length > 0) {
+    if (food.season.includes(month)) return '🌱 ';
+    if (food.import_season?.includes(month)) return '✈️ ';
+  } else if (food.import_season?.length > 0 && food.import_season.length < 12) {
+    if (food.import_season.includes(month)) return '✈️ ';
+  }
+  return '';
 }
 
 function renderCard(cat) {
@@ -84,8 +95,8 @@ function renderCard(cat) {
   let min = cat.weekly_min, max = cat.weekly_max;
   let target = min === max ? '' + min : min + '-' + max;
   let cls = '';
-  if (totalCount < min) cls = 'under';
-  else if (totalCount > max) cls = 'over';
+  if (totalCount < min) { cls = 'under'; }
+  else if (totalCount > max) { cls = 'over'; }
   else cls = 'in-range';
 
   let html = '<div class="card" data-cat="' + cat.id + '">';
@@ -108,16 +119,8 @@ function renderCard(cat) {
   } else {
     html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
       cat.foods.forEach(function(f) {
-        let seasonPrefix = '';
-        if (f.season && f.season.length > 0) {
-          let month = new Date().getMonth() + 1;
-          if (f.season.includes(month)) seasonPrefix = '🌱 ';
-          else if (f.import_season && f.import_season.includes(month)) seasonPrefix = '✈️ ';
-        } else if (f.import_season && f.import_season.length > 0 && f.import_season.length < 12) {
-          let currentMonth = new Date().getMonth() + 1;
-          if (f.import_season.includes(currentMonth)) seasonPrefix = '✈️ ';
-        }
-        let dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
+        let seasonPrefix = getSeasonPrefix(f);
+        let dealPrefix = DEALS[f.name]?.length > 0 ? '🏷️ ' : '';
         html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
       });
       html += '</select>';
@@ -148,9 +151,9 @@ function renderChips(catId, selected) {
 
 function refreshCard(catId) {
   let card = document.querySelector('[data-cat="' + catId + '"]');
-  if (!card) return;
+  if (!card) { return; }
   let cat = DATA.categories.find(function(c) { return c.id === catId; });
-  if (!cat) return;
+  if (!cat) { return; }
   let selected = selections[catId] || [];
   let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
   let badge = card.querySelector('.counter-badge');
@@ -159,22 +162,22 @@ function refreshCard(catId) {
     let target = min === max ? '' + min : min + '-' + max;
     badge.textContent = totalCount + ' / ' + target + ' ' + (cat.daily ? 'jour.' : 'sem.');
     let rangeClass = '';
-    if (totalCount > 0 && totalCount < min) rangeClass = 'under';
-    else if (totalCount > max) rangeClass = 'over';
-    else if (totalCount > 0) rangeClass = 'in-range';
-    badge.className = 'counter-badge ' + rangeClass;;
+    if (totalCount > 0 && totalCount < min) { rangeClass = 'under'; }
+    else if (totalCount > max) { rangeClass = 'over'; }
+    else if (totalCount > 0) { rangeClass = 'in-range'; }
+    badge.className = 'counter-badge ' + rangeClass;
   }
   let chipsContainer = card.querySelector('#chips-' + catId);
-  if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
+  if (chipsContainer) { chipsContainer.innerHTML = renderChips(catId, selected); }
 }
 
 function updateTabDots() {
   DATA.sections.forEach(function(sec, idx) {
     let dotClass = getSectionDotClass(sec.id);
     let tabs = document.querySelectorAll('.tab');
-    if (tabs[idx]) { let dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
+    if (tabs[idx]) { let dot = tabs[idx].querySelector('.tab-dot'); if (dot) { dot.className = 'tab-dot ' + dotClass; } }
   });
-  if (currentMode === 'tracking') renderTrackingNutrition();
+  if (currentMode === 'tracking') { renderTrackingNutrition(); }
 }
 
 function updateSaveBar() {
@@ -198,68 +201,82 @@ function updateSaveBar() {
 
 function setDirty(dirty) {
   let btn = $('save-btn');
-  if (!btn) return;
+  if (!btn) { return; }
   if (dirty) { btn.classList.add('dirty'); btn.disabled = false; }
   else { btn.classList.remove('dirty'); btn.disabled = true; }
+}
+
+function getFoodNutrition(catId, foodName) {
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
+  if (!cat) { return null; }
+  let food = cat.foods.find(function(f) { return f.name === foodName; });
+  return food?.nutrition || null;
+}
+
+function accumulateNutrition(totals, nutrition, qty) {
+  if (!nutrition) { return; }
+  totals.protein += (nutrition.protein || 0) * qty;
+  totals.fiber += (nutrition.fiber || 0) * qty;
+  totals.iron += (nutrition.iron || 0) * qty;
+  totals.vit_c += (nutrition.vit_c || 0) * qty;
+  totals.calcium += (nutrition.calcium || 0) * qty;
+  totals.omega3 += (nutrition.omega3 || 0) * qty;
+  totals.calories += (nutrition.calories || 0) * qty;
 }
 
 function computeNutritionTotals(sel) {
   let totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
   Object.keys(sel).forEach(function(catId) {
     sel[catId].forEach(function(item) {
-      let cat = DATA.categories.find(function(c) { return c.id === catId; });
-      if (cat) {
-        let food = cat.foods.find(function(f) { return f.name === item.name; });
-        if (food && food.nutrition) {
-          let qty = item.qty || 1;
-          totals.protein += (food.nutrition.protein || 0) * qty;
-          totals.fiber += (food.nutrition.fiber || 0) * qty;
-          totals.iron += (food.nutrition.iron || 0) * qty;
-          totals.vit_c += (food.nutrition.vit_c || 0) * qty;
-          totals.calcium += (food.nutrition.calcium || 0) * qty;
-          totals.omega3 += (food.nutrition.omega3 || 0) * qty;
-          totals.calories += (food.nutrition.calories || 0) * qty;
-        }
-      }
+      let nutrition = getFoodNutrition(catId, item.name);
+      accumulateNutrition(totals, nutrition, item.qty || 1);
     });
   });
   return totals;
 }
 
 function addItem(catId, item) {
-  if (!selections[catId]) selections[catId] = [];
+  if (!selections[catId]) { selections[catId] = []; }
   let existing = selections[catId].find(function(s) { return s.name === item.name; });
-  if (existing) existing.qty = (existing.qty || 1) + 1;
+  if (existing) { existing.qty = (existing.qty || 1) + 1; }
   else selections[catId].push({ ...item, qty: 1 });
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
-  if (currentMode === 'tracking') renderTrackingNutrition();
-  if (currentUser) loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); });
+  if (currentMode === 'tracking') { renderTrackingNutrition(); }
+  if (currentUser) { loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); }); }
 }
 
 function removeItem(catId, name) {
-  if (!selections[catId]) return;
+  if (!selections[catId]) { return; }
   selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
-  if (selections[catId].length === 0) delete selections[catId];
+  if (selections[catId].length === 0) { delete selections[catId]; }
   // Uncheck checkbox if visible
   let cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
-  if (cb) cb.checked = false;
+  if (cb) { cb.checked = false; }
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
-  if (currentMode === 'tracking') renderTrackingNutrition();
-  if (currentUser) loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); });
+  if (currentMode === 'tracking') { renderTrackingNutrition(); }
+  if (currentUser) { loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); }); }
 }
 
 function changeQty(catId, name, delta) {
-  if (!selections[catId]) return;
+  if (!selections[catId]) { return; }
   let item = selections[catId].find(function(s) { return s.name === name; });
-  if (!item) return;
+  if (!item) { return; }
   item.qty = (item.qty || 1) + delta;
-  if (item.qty <= 0) removeItem(catId, name);
-  else { refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave(); if (currentMode === 'tracking') renderTrackingNutrition(); if (currentUser) loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); }); }
+  if (item.qty <= 0) {
+    removeItem(catId, name);
+  } else {
+    refreshCard(catId);
+    updateTabDots();
+    updateSaveBar();
+    scheduleAutoSave();
+    if (currentMode === 'tracking') { renderTrackingNutrition(); }
+    if (currentUser) { loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); }); }
+  }
 }
 
 function addFromSelect(catId, sel) {
   let opt = sel.selectedOptions[0];
-  if (!opt || !opt.value) return;
+  if (!opt || !opt.value) { return; }
   addItem(catId, { name: opt.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
   sel.value = '';
 }
@@ -309,15 +326,15 @@ async function saveSelections() {
 
 async function loadSelectionsFromServer() {
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
     let data = await res.json();
     selections = data.selections || {};
-    Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
+    Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) { item.qty = 1; } }); });
     savedSnapshot = JSON.stringify(selections);
-  } catch(e) { console.error('[NutriFood] Load selections error:', e); }
+  } catch(e) { /* Network or server error */ console.error('[NutriFood] Load selections error:', e); }
 }
 
 // ─── Admin food editing ───
@@ -325,14 +342,14 @@ function adminAddFood(catId) {
   let nameEl = $('add-name-' + catId);
   let densityEl = $('add-density-' + catId);
   let nutrientsEl = $('add-nutrients-' + catId);
-  if (!nameEl || !nameEl.value.trim()) return;
+  if (!nameEl || !nameEl.value.trim()) { return; }
   let name = nameEl.value.trim();
   let density = Number.parseInt(densityEl.value || '50');
   let nutrients = nutrientsEl.value.trim() || 'Non spécifié';
   
   // Add to DATA
   let cat = DATA.categories.find(function(c) { return c.id === catId; });
-  if (!cat) return;
+  if (!cat) { return; }
   if (cat.foods.some(function(f) { return f.name === name; })) { showToast('Cet aliment existe d\u00e9j\u00e0', 'warning'); return; }
   cat.foods.push({ name: name, density: density, nutrients: nutrients });
   
@@ -346,12 +363,12 @@ function adminAddFood(catId) {
 
 function adminRemoveFood(catId, name) {
   let cat = DATA.categories.find(function(c) { return c.id === catId; });
-  if (!cat) return;
+  if (!cat) { return; }
   cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
   // Also remove from selections if present
   if (selections[catId]) {
     selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
-    if (selections[catId].length === 0) delete selections[catId];
+    if (selections[catId].length === 0) { delete selections[catId]; }
   }
   saveFoodsToServer();
   render();
@@ -374,11 +391,11 @@ async function hideFood(catId, name) {
     if (res.ok) {
       // Remove from DATA locally
       let cat = DATA.categories.find(function(c) { return c.id === catId; });
-      if (cat) cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
+      if (cat) { cat.foods = cat.foods.filter(function(f) { return f.name !== name; }); }
       // Remove from selections
       if (selections[catId]) {
         selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
-        if (selections[catId].length === 0) delete selections[catId];
+        if (selections[catId].length === 0) { delete selections[catId]; }
       }
       render();
       updateSaveBar();
@@ -391,11 +408,11 @@ async function hideFood(catId, name) {
 }
 
 function getSeasonIcon(food, month) {
-  if (!food) return '';
-  if (food.season && food.season.length > 0 && food.season.length < 12) {
+  if (!food) { return ''; }
+  if (food.season?.length > 0 && food.season.length < 12) {
     if (food.season.includes(month)) return '🌱';
-    if (food.import_season && food.import_season.includes(month)) return '✈️';
-  } else if (food.import_season && food.import_season.length > 0 && food.import_season.length < 12) {
+    if (food.import_season?.includes(month)) return '✈️';
+  } else if (food.import_season?.length > 0 && food.import_season.length < 12) {
     if (food.import_season.includes(month)) return '✈️';
   }
   return '';
@@ -428,11 +445,11 @@ document.addEventListener('click', function(e) {
     let catId = btn.dataset.cat;
     let name = btn.dataset.name.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
     let action = btn.dataset.action;
-    if (action === 'inc') changeQty(catId, name, 1);
-    else if (action === 'dec') changeQty(catId, name, -1);
-    else if (action === 'remove') removeItem(catId, name);
-    else if (action === 'add-food') adminAddFood(catId);
-    else if (action === 'remove-food') adminRemoveFood(catId, name);
+    if (action === 'inc') { changeQty(catId, name, 1); }
+    else if (action === 'dec') { changeQty(catId, name, -1); }
+    else if (action === 'remove') { removeItem(catId, name); }
+    else if (action === 'add-food') { adminAddFood(catId); }
+    else if (action === 'remove-food') { adminRemoveFood(catId, name); }
     e.stopPropagation();
     e.preventDefault();
     return;
@@ -459,7 +476,7 @@ document.addEventListener('click', function(e) {
       // Toggle this one
       if (!shown) {
         items.style.display = 'block';
-        if (arrow) arrow.textContent = '\u25B2';
+        if (arrow) { arrow.textContent = '\u25B2'; }
       }
     }
     return;
@@ -472,7 +489,7 @@ document.addEventListener('click', function(e) {
     if (content) {
       let shown = content.style.display !== 'none';
       content.style.display = shown ? 'none' : 'block';
-      if (arrow) arrow.textContent = shown ? '\u2193' : '\u2191';
+      if (arrow) { arrow.textContent = shown ? '\u2193' : '\u2191'; }
     }
     return;
   }
@@ -482,8 +499,7 @@ document.addEventListener('click', function(e) {
     e.preventDefault();
     let dealName = dealBadges.dataset.dealFood.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
     loadScript('js/food-modal.js', function() {
-      for (let i = 0; i < DATA.categories.length; i++) {
-        let cat = DATA.categories[i];
+      for (let cat of DATA.categories) {
         if (cat.foods.some(function(f) { return f.name === dealName; })) {
           openFoodModal(cat.id, dealName);
           return;
@@ -516,7 +532,7 @@ document.addEventListener('change', function(e) {
   // Checkbox changes
   if (e.target.type === 'checkbox' && e.target.dataset.cat) {
     let name = e.target.dataset.name.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
-    if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: Number.parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
+    if (e.target.checked) { addItem(e.target.dataset.cat, { name: name, density: Number.parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' }); }
     else removeItem(e.target.dataset.cat, name);
   }
 });
@@ -524,5 +540,5 @@ document.addEventListener('change', function(e) {
 // Mouse hover: highlight chips
 document.addEventListener('mouseover', function(e) {
   let chip = e.target.closest('[data-detail-cat]');
-  if (chip) chip.style.cursor = 'pointer';
+  if (chip) { chip.style.cursor = 'pointer'; }
 });

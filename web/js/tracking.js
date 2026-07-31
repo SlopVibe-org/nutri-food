@@ -1,7 +1,7 @@
 // ─── Tracking module (lazy-loaded) ───
 
 function switchMode(mode) {
-  if (mode === currentMode) return;
+  if (mode === currentMode) { return; }
   if (mode === 'tracking') {
     planningSelections = structuredClone(selections);
     currentMode = 'tracking';
@@ -20,7 +20,7 @@ function switchMode(mode) {
     $('tracking-bar').style.display = 'none';
     render();
     updateSaveBar();
-    if (currentUser) checkSuggestionsBadge();
+    if (currentUser) { checkSuggestionsBadge(); }
   }
 }
 
@@ -38,9 +38,9 @@ async function loadTrackingDay(dateStr) {
     } else {
       trackingSelections = {};
     }
-  } catch(e) { console.error('[NutriFood] Tracking load error:', e); trackingSelections = {}; }
+  } catch(e) { /* Network or parsing error — non-critical */ console.error('[NutriFood] Tracking load error:', e); trackingSelections = {}; }
   selections = structuredClone(trackingSelections);
-  Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
+  Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) { item.qty = 1; } }); });
   trackingSnapshot = JSON.stringify(selections);
   savedSnapshot = trackingSnapshot;
   render();
@@ -48,9 +48,9 @@ async function loadTrackingDay(dateStr) {
 }
 
 async function saveTracking() {
-  if (!currentUser || currentMode !== 'tracking') return;
+  if (!currentUser || currentMode !== 'tracking') { return; }
   let token = getToken();
-  if (!token) return;
+  if (!token) { return; }
   try {
     await fetchWithTimeout(API + '/tracking/' + trackingDate, {
       method: 'POST',
@@ -61,5 +61,5 @@ async function saveTracking() {
     trackingSnapshot = JSON.stringify(selections);
     savedSnapshot = trackingSnapshot;
     updateSaveBar();
-  } catch(e) { console.error('[NutriFood] Tracking save error:', e); }
+  } catch(e) { /* Network or server error — non-critical */ console.error('[NutriFood] Tracking save error:', e); }
 }

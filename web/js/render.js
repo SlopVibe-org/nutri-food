@@ -653,23 +653,24 @@ function renderSimpleCategory(cat) {
   } else {
     // Distribute across 7 days
     let perDay = Math.floor(max / 7);
-    let extra = max % 7; // first `extra` days get +1
+    let extra = max % 7;
     let dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     let slotIdx = 0;
     for (let d = 0; d < 7; d++) {
       let count = perDay + (d < extra ? 1 : 0);
       if (d > 0) { html += '<span class="simple-day-sep"></span>'; }
-      html += '<span class="simple-day-group"><span class="simple-day-label">' + dayLabels[d] + '</span><span class="simple-row">';
+      html += '<span class="simple-row">';
       for (let s = 0; s < count; s++) {
         let slot = slots[slotIdx++];
+        let dayTag = '<span class="sbox-day">' + dayLabels[d] + '</span>';
         if (slot) {
           let fn = esc(slot.name);
-          html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '"></span>';
+          html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '">' + dayTag + '</span>';
         } else {
-          html += '<span class="sbox empty" data-simple-add="' + cat.id + '"></span>';
+          html += '<span class="sbox empty" data-simple-add="' + cat.id + '">' + dayTag + '</span>';
         }
       }
-      html += '</span></span>';
+      html += '</span>';
     }
   }
   html += '</span>';

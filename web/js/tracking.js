@@ -1,5 +1,6 @@
 // ─── Tracking module (lazy-loaded) ───
 
+/* global planningSelections, currentMode, trackingDate, trackingSelections, selections, savedSnapshot, trackingSnapshot */
 function switchMode(mode) {
   if (mode === currentMode) { return; }
   if (mode === 'tracking') {

@@ -60,7 +60,12 @@ function loadScript(url, callback) {
 function $(id) { return document.getElementById(id); }
 
 // ─── Escape HTML ───
-function esc(s) { return String(s == null ? '' : s).replace(/'/g, '&#39;').replace(/"/g, '&quot;'); }
+function esc(s) { return String(s == null ? '' : s).replaceAll(/'/g, '&#39;').replaceAll(/"/g, '&quot;'); }
+
+// ─── HTML entity decode helper ───
+function decodeEntities(str) {
+  return String(str || '').replaceAll('&#39;', "'").replaceAll('&quot;', '"');
+}
 
 // ─── Date helpers (tracking mode) ───
 function getTodayISO() { return new Date().toISOString().slice(0,10); }
@@ -133,10 +138,10 @@ function clearAuth() {
 function normalizeForSearch(str) {
   return (str || '').toLowerCase()
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/œ/g, 'oe')
-    .replace(/æ/g, 'ae')
-    .replace(/Œ/g, 'oe')
-    .replace(/Æ/g, 'ae')
-    .replace(/[^a-z0-9\s]/g, ' ');
+    .replaceAll(/[\u0300-\u036f]/g, '')
+    .replaceAll(/œ/g, 'oe')
+    .replaceAll(/æ/g, 'ae')
+    .replaceAll(/Œ/g, 'oe')
+    .replaceAll(/Æ/g, 'ae')
+    .replaceAll(/[^a-z0-9\s]/g, ' ');
 }

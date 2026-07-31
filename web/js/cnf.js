@@ -1,5 +1,6 @@
 // ─── CNF module (lazy-loaded) ───
 
+/* global DATA */
 let cnfSelectedId = null;
 let cnfSearchQuery = '';
 let cnfSelectedFood = null;

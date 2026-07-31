@@ -1,5 +1,6 @@
 // ─── App module (init, orchestration) ───
 
+/* global DATA, activeTab, currentUser, planningSelections, trackingDate */
 async function init() {
   try {
     let res = await fetchWithTimeout(API + '/foods', {}, 8000);

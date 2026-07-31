@@ -1,5 +1,6 @@
 // ─── Render module ───
 
+/* global activeTab, autoSaveTimer, savedSnapshot, selections */
 function render() {
   let app = $('app');
 
@@ -443,7 +444,7 @@ document.addEventListener('click', function(e) {
   let btn = e.target.closest('[data-action]');
   if (btn) {
     let catId = btn.dataset.cat;
-    let name = btn.dataset.name.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let name = btn.dataset.name.decodeEntities();
     let action = btn.dataset.action;
     if (action === 'inc') { changeQty(catId, name, 1); }
     else if (action === 'dec') { changeQty(catId, name, -1); }
@@ -458,7 +459,7 @@ document.addEventListener('click', function(e) {
   let hideItem = e.target.closest('[data-hide-cat]');
   if (hideItem) {
     let hideCat = hideItem.dataset.hideCat;
-    let hideName = hideItem.dataset.hideName.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let hideName = hideItem.dataset.hideName.decodeEntities();
     hideFood(hideCat, hideName);
     return;
   }
@@ -497,7 +498,7 @@ document.addEventListener('click', function(e) {
   let dealBadges = e.target.closest('[data-deal-food]');
   if (dealBadges) {
     e.preventDefault();
-    let dealName = dealBadges.dataset.dealFood.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let dealName = dealBadges.dataset.dealFood.decodeEntities();
     loadScript('js/food-modal.js', function() {
       for (let cat of DATA.categories) {
         if (cat.foods.some(function(f) { return f.name === dealName; })) {
@@ -512,7 +513,7 @@ document.addEventListener('click', function(e) {
   let chip = e.target.closest('[data-detail-cat]');
   if (chip) {
     e.preventDefault();
-    let chipName = chip.dataset.detailName.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let chipName = chip.dataset.detailName.decodeEntities();
     loadScript('js/food-modal.js', function() {
       openFoodModal(chip.dataset.detailCat, chipName);
     });
@@ -531,7 +532,7 @@ document.addEventListener('change', function(e) {
   }
   // Checkbox changes
   if (e.target.type === 'checkbox' && e.target.dataset.cat) {
-    let name = e.target.dataset.name.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let name = e.target.dataset.name.decodeEntities();
     if (e.target.checked) { addItem(e.target.dataset.cat, { name: name, density: Number.parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' }); }
     else removeItem(e.target.dataset.cat, name);
   }

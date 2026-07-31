@@ -125,7 +125,7 @@ async function showSuggestions() {
     // Wire add buttons
     content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        let name = btn.dataset.suggestAdd.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+        let name = btn.dataset.suggestAdd.decodeEntities();
         addSuggestedFood(name, btn.dataset.suggestCat);
         btn.textContent = '✓';
         btn.style.background = 'var(--accent)';
@@ -173,7 +173,7 @@ async function fetchSeasonalData() {
     if (!res.ok) { return null; }
     let data = await res.json();
     let foods = data.foods || data.seasonal || [];
-    let names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
+    let names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(Boolean);
     _seasonalCache = names;
     return names;
   } catch(e) { /* Seasonal data is non-critical */ console.error('[NutriFood] Seasonal error:', e); return null; }
@@ -205,7 +205,7 @@ async function buildSeasonalHtml() {
 document.addEventListener('click', function(e) {
   let el = e.target.closest('[data-seasonal-food]');
   if (el) {
-    let name = el.dataset.seasonalFood.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
+    let name = el.dataset.seasonalFood.decodeEntities();
     addSuggestedFood(name);
     return;
   }

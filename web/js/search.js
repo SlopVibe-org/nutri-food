@@ -1,5 +1,6 @@
 // ─── Search module ───
 
+/* global searchActiveIndex, activeTab */
 let searchTimer = null;
 function performSearch() {
   clearTimeout(searchTimer);
@@ -79,7 +80,7 @@ function actualSearch() {
     // Wire up result clicks
     results.querySelectorAll('.search-result[data-cat]').forEach(function(el) {
       el.addEventListener('click', function() {
-        addItem(el.dataset.cat, { name: el.dataset.name.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"'), density: Number.parseInt(el.dataset.density), nutrients: el.dataset.nutrients.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"') });
+        addItem(el.dataset.cat, { name: el.dataset.name.decodeEntities(), density: Number.parseInt(el.dataset.density), nutrients: el.dataset.nutrients.decodeEntities() });
         // Switch to that tab
         let cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
         if (cat) { activeTab = cat.section; render(); }

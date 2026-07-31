@@ -1,5 +1,6 @@
 // ─── Nutrition module ───
 
+/* global selections, planningSelections, savedSnapshot */
 function daysUntilReset() {
   let now = new Date();
   let day = now.getDay(); // 0=dimanche, 1=lundi, 

@@ -1,5 +1,6 @@
 // ─── Auth module ───
 
+/* global authMode, searchActiveIndex */
 let globalClickListenersAttached = false;
 function renderUserArea() {
   const area = $('user-area');

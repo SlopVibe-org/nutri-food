@@ -666,10 +666,18 @@ def admin_hide_food():
         return jsonify({'error': ERR_FORBIDDEN}), 403
     data = request.get_json() or {}
     food_id = data.get('id')
-    if not food_id:
-        return jsonify({'error': 'ID requis'}), 400
+    food_name = data.get('name')
+    if not food_id and not food_name:
+        return jsonify({'error': 'ID ou nom requis'}), 400
     db = get_nf_db()
-    db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (food_id,))
+    if food_id:
+        db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (food_id,))
+    else:
+        row = db.execute('SELECT id FROM nf_foods WHERE name_fr = ? AND visible = 1', (food_name,)).fetchone()
+        if not row:
+            db.close()
+            return jsonify({'error': 'Aliment introuvable'}), 404
+        db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (row['id'],))
     db.commit()
     db.close()
     return jsonify({'status': 'ok'})

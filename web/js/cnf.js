@@ -400,7 +400,7 @@ function cnfConfirmAdd(food, nutrients, group) {
 
   let N = cnfBuildNutriPer100g(nutrients);
   let guessedCat = guessCategory(food.group_code, nutrients);
-  let allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
+  let catList = DATA.categories || [];
   let foodName = (food.name_fr ?? food.name_en ?? '').split(',')[0].trim();
 
   // ─── Auto-populate aliases ───
@@ -417,6 +417,8 @@ function cnfConfirmAdd(food, nutrients, group) {
   function renderForm() {
     let catId = $('cnf-add-cat')?.value || guessedCat;
     let portionG = parseInt($('cnf-portion')?.value) || PORTION_GRAMS[catId] || 100;
+    // Build options with current selection preserved
+    let allCats = catList.map(function(c) { return '<option value="' + c.id + '"' + (c.id === catId ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
     let grid = cnfRenderNutriGrid(N, portionG);
     let suggestedHL = cnfSuggestHighlights(grid.items);
 
@@ -453,16 +455,16 @@ function cnfConfirmAdd(food, nutrients, group) {
 
     $('cnf-details').innerHTML = html;
 
-    // Re-render on category or portion change
+    // Re-render on category change (updates portion + nutrients)
     $('cnf-add-cat').addEventListener('change', function() {
       let newCat = this.value;
       let newPortion = PORTION_GRAMS[newCat] || 100;
-      let portionInput = $('cnf-portion');
-      if (portionInput) portionInput.value = newPortion;
-      renderForm.call(this); // re-render with new values
-      // Restore focus
+      renderForm();
+      $('cnf-portion').value = newPortion;
+      renderForm();
       $('cnf-add-cat').focus();
     });
+    // Re-render on portion change (updates nutrients)
     $('cnf-portion').addEventListener('change', renderForm);
     $('cnf-portion').addEventListener('input', renderForm);
 

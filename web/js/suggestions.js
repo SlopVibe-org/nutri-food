@@ -125,7 +125,7 @@ async function showSuggestions() {
     // Wire add buttons
     content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        let name = btn.dataset.suggestAdd.decodeEntities();
+        let name = decodeEntities(btn.dataset.suggestAdd);
         addSuggestedFood(name, btn.dataset.suggestCat);
         btn.textContent = '✓';
         btn.style.background = 'var(--accent)';
@@ -205,7 +205,7 @@ async function buildSeasonalHtml() {
 document.addEventListener('click', function(e) {
   let el = e.target.closest('[data-seasonal-food]');
   if (el) {
-    let name = el.dataset.seasonalFood.decodeEntities();
+    let name = decodeEntities(el.dataset.seasonalFood);
     addSuggestedFood(name);
     return;
   }

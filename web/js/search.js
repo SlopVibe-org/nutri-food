@@ -80,7 +80,7 @@ function actualSearch() {
     // Wire up result clicks
     results.querySelectorAll('.search-result[data-cat]').forEach(function(el) {
       el.addEventListener('click', function() {
-        addItem(el.dataset.cat, { name: el.dataset.name.decodeEntities(), density: Number.parseInt(el.dataset.density), nutrients: el.dataset.nutrients.decodeEntities() });
+        addItem(el.dataset.cat, { name: decodeEntities(el.dataset.name), density: Number.parseInt(el.dataset.density), nutrients: decodeEntities(el.dataset.nutrients) });
         // Switch to that tab
         let cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
         if (cat) { activeTab = cat.section; render(); }

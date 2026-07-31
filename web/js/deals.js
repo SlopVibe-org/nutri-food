@@ -124,14 +124,14 @@ function renderDealsContent() {
   // Wire row clicks → open product page
   content.querySelectorAll('[data-deal-link]').forEach(function(row) {
     row.addEventListener('click', function() {
-      let link = row.dataset.dealLink.decodeEntities();
+      let link = decodeEntities(row.dataset.dealLink);
       if (link && link !== '#') { window.open(link, '_blank', 'noopener'); }
     });
   });
   // Wire add buttons
   content.querySelectorAll('[data-deal-add]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      let foodName = btn.dataset.dealAdd.decodeEntities();
+      let foodName = decodeEntities(btn.dataset.dealAdd);
       let found = findFoodInData(foodName);
       if (found) {
         addItem(found.cat.id, found.food);
@@ -211,7 +211,7 @@ function buildDealBadges(foodName) {
 document.addEventListener('click', function(e) {
   let el = e.target.closest('[data-deal-modal-food]');
   if (!el) { return; }
-  let foodName = el.dataset.dealModalFood.decodeEntities();
+  let foodName = decodeEntities(el.dataset.dealModalFood);
   let deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
   if (deals.length === 0) { return; }
   let mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';

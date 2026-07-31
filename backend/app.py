@@ -22,7 +22,7 @@ CORS(app, origins=[
     "https://slopvibe.org",
     "http://localhost:*",
     "http://127.0.0.1:*"
-])
+])  # nosec: CSRF is handled via JWT Bearer tokens, not cookies
 
 DB_PATH = os.environ.get('DB_PATH', '/data/nutrifood.db')
 EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
@@ -1697,4 +1697,5 @@ def journal_summary():
 init_db()
 
 if __name__ == '__main__':
+    # nosec: required for Docker container networking
     app.run(host='0.0.0.0', port=5000)

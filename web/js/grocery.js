@@ -133,7 +133,7 @@ function copyGroceryList() {
       lines.push(item.name + qty);
     });
   });
-  lines.sort();
+  lines.sort(function(a, b) { return a.localeCompare(b); });
   var text = lines.join('\n');
   navigator.clipboard.writeText(text).then(function() {
     var btn = $('grocery-copy-btn');

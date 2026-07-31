@@ -71,7 +71,7 @@ function renderDealsContent() {
   if (currentUser && currentUser.is_admin) {
     html += '<div style="text-align:right;margin-bottom:8px;"><button id="deals-refresh-btn" class="dt-add-btn">🔄 Rafraîchir</button></div>';
   }
-  Object.keys(grouped).sort().forEach(function(catName) {
+  Object.keys(grouped).sort(function(a, b) { return a.localeCompare(b); }).forEach(function(catName) {
     var g = grouped[catName];
     html += '<div style="margin-bottom:16px;">';
     html += '<div style="font-size:0.85rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">' + g.icon + ' ' + esc(catName) + '</div>';

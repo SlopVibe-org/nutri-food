@@ -579,15 +579,14 @@ function renderSimple() {
   });
   app.innerHTML = html;
 
-  // Wire up + buttons to open the dropdown
-  app.querySelectorAll('[data-simple-add]').forEach(function(btn) {
-    btn.addEventListener('click', function(e) {
+  // Wire up empty square clicks to open the dropdown
+  app.querySelectorAll('[data-simple-add]').forEach(function(box) {
+    box.addEventListener('click', function(e) {
       e.stopPropagation();
-      let catId = btn.dataset.simpleAdd;
+      let catId = box.dataset.simpleAdd;
       let sel = document.querySelector('[data-simple-sel="' + catId + '"]');
       if (sel) {
         let isVisible = sel.classList.contains('visible');
-        // Hide all other visible selects
         document.querySelectorAll('.simple-select.visible').forEach(function(s) { s.classList.remove('visible'); });
         if (!isVisible) { sel.classList.add('visible'); sel.focus(); }
       }
@@ -641,25 +640,24 @@ function renderSimpleCategory(cat) {
   let groupSize = max > 7 ? 7 : max;
   for (let i = 0; i < slots.length; i += groupSize) {
     let group = slots.slice(i, i + groupSize);
-    if (i > 0) { html += '<span class="simple-group-gap"></span>'; }
+    if (i > 0) { html += '<span class="simple-day-sep"></span>'; }
     html += '<span class="simple-row">';
-    group.forEach(function(slot) {
+    group.forEach(function(slot, idx) {
+      let dayNum = max > 7 ? '<span class="sbox-day">' + (idx + i + 1) + '</span>' : '';
       if (slot) {
         let foodName = esc(slot.name);
-        html += '<span class="sbox filled" data-simple-food="' + foodName + '" data-detail-cat="' + cat.id + '" data-detail-name="' + foodName + '" title="' + foodName + '"></span>';
+        html += '<span class="sbox filled" data-simple-food="' + foodName + '" data-detail-cat="' + cat.id + '" data-detail-name="' + foodName + '" title="' + foodName + '">' + dayNum + '</span>';
       } else {
-        html += '<span class="sbox empty"></span>';
+        html += '<span class="sbox empty" data-simple-add="' + cat.id + '">' + dayNum + '</span>';
       }
     });
     html += '</span>';
   }
   html += '</span>';
 
-  // Add button
-  html += '<button class="simple-add-btn" data-simple-add="' + cat.id + '" title="Ajouter une portion">+</button>';
   html += '</div>'; // end row
 
-  // Hidden dropdown (appears below when + clicked)
+  // Hidden dropdown (appears below when empty square clicked)
   html += '<select class="simple-select" data-simple-sel="' + cat.id + '">';
   html += '<option value="">+ Ajouter…</option>';
   let sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });

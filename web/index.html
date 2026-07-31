@@ -185,14 +185,16 @@
   .simple-cat-count.under { color:var(--accent-red); border-color:rgba(248,113,113,0.4); }
   .simple-cat-count.in-range { color:var(--accent); border-color:rgba(74,222,128,0.4); }
   .simple-cat-count.over { color:var(--accent-amber); border-color:rgba(251,191,36,0.4); }
-  .simple-boxes { display:flex; align-items:center; flex-wrap:wrap; gap:4px; flex:1; }
-  .simple-row { display:inline-flex; gap:4px; }
-  .simple-group-gap { width:8px; display:inline-block; }
-  .sbox { width:20px; height:20px; border-radius:4px; border:1.5px solid var(--border); display:inline-block; transition: all 0.15s; }
-  .sbox.empty { background:transparent; }
+  .simple-boxes { display:flex; align-items:center; flex-wrap:wrap; gap:5px; flex:1; }
+  .simple-row { display:inline-flex; gap:5px; }
+  .simple-day-sep { width:2px; height:32px; background:var(--accent-dim); opacity:0.4; border-radius:1px; display:inline-block; margin:0 3px; }
+  .sbox { width:32px; height:32px; border-radius:6px; border:2px solid var(--border); display:inline-flex; align-items:center; justify-content:center; transition: all 0.15s; position:relative; flex-shrink:0; }
+  .sbox.empty { background:transparent; cursor:pointer; }
+  .sbox.empty:hover { border-color:var(--accent-dim); background:rgba(74,222,128,0.08); }
   .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
-  .sbox.filled:hover { background:var(--accent); transform:scale(1.15); }
-  .simple-select { display:none; padding:6px 10px; background:#12141c; color:var(--text); border:1px solid var(--accent-dim); border-radius:8px; font-size:0.85rem; width:100%; margin-top:4px; }
+  .sbox.filled:hover { background:var(--accent); transform:scale(1.1); }
+  .sbox-day { font-size:0.6rem; color:rgba(15,17,23,0.6); font-weight:700; pointer-events:none; }
+  .simple-select { display:none; padding:8px 12px; background:#12141c; color:var(--text); border:1px solid var(--accent-dim); border-radius:8px; font-size:0.9rem; width:100%; margin-top:6px; }
   .simple-select.visible { display:block; }
   .simple-add-btn { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#12141c; color:var(--text-dim); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 24px; transition: all 0.15s; }
   .simple-add-btn:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }

@@ -30,6 +30,17 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
 | [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (31 juillet 2025) |
 
+### Aperçu
+
+| | | |
+|---|---|---|
+| ![Welcome](docs/screenshots/welcome.png) | ![Mode Suivi](docs/screenshots/tracking.png) | ![Mode Planification](docs/screenshots/planning.png) |
+| *Page d'accueil* | *Mode Suivi* | *Mode Planification* |
+| ![Recherche](docs/screenshots/search.png) | ![Spéciaux](docs/screenshots/deals.png) | ![Objectifs](docs/screenshots/goals.png) |
+| *Recherche* | *Spéciaux d'épicerie* | *Objectifs nutritionnels* |
+| ![Liste d'épicerie](docs/screenshots/grocery.png) | | |
+| *Liste d'épicerie* | | |
+
 ---
 
 ## Fonctionnalités

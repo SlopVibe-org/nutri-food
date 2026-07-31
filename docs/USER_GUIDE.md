@@ -28,6 +28,25 @@ Guide complet pour utiliser NutriFood, votre outil de planification nutritionnel
 
 ---
 
+## 📊 Les deux modes : Suivi et Planification
+
+NutriFood a deux modes indépendants, accessibles via les onglets en haut de page :
+
+### Mode Suivi (par défaut)
+- Enregistre ce que vous avez **réellement mangé** jour par jour
+- Navigation par jour (‹ ›) pour consulter l'historique
+- Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
+- Données préservées quand vous changez d'onglet
+
+### Mode Planification
+- Planifiez vos sélections pour la **semaine**
+- Tableau de bord nutritionnel avec objectifs hebdomadaires
+- Le badge "🔄 Reset dans Xj" indique quand la semaine se réinitialise
+
+Le mode actif est mémorisé dans votre navigateur (localStorage).
+
+---
+
 ## 🧭 Navigation — Les 5 sections
 
 NutriFood organise les aliments en 5 sections nutritionnelles :
@@ -39,8 +58,6 @@ NutriFood organise les aliments en 5 sections nutritionnelles :
 | 🥬 **Légumes** | Légumes classés par couleur | Kale, carottes, tomates, brocoli |
 | 🍎 **Fruits** | Fruits classés par type | Bleuets, kiwi, agrumes, avocat |
 | 🌱 **Habitudes** | Bons gras, fermentés, herbes, boissons | Huile d'olive, kéfir, curcuma, thé vert |
-
-Cliquez sur une section pour voir ses catégories, puis sur une catégorie pour voir les aliments.
 
 ---
 
@@ -79,6 +96,23 @@ L'objectif est de garder le plus de compteurs possible en **vert**.
 
 ---
 
+## 🔄 Réinitialiser les données
+
+### Mode Planification
+
+Cliquez sur le badge **🔄 Reset dans Xj** dans le tableau de bord nutritionnel pour vider toutes vos sélections de la semaine.
+
+- Un modal de confirmation s'ouvre avant l'effacement
+- Les données sont immédiatement effacées du serveur
+
+### Mode Suivi
+
+Cliquez sur le badge **🔄 Reset** dans le tableau de bord pour choisir :
+
+- **📅 Journée** — efface seulement les données du jour affiché
+- **📋 Semaine complète** — efface toutes les entrées de la semaine (lundi→dimanche)
+- **Annuler** — ferme sans rien effacer
+
 ---
 
 ## 🔍 Barre de recherche
@@ -88,7 +122,7 @@ La recherche est **normalisée** — elle gère les accents et ligatures automat
 | Vous tapez | Résultat |
 |------------|----------|
 | `boeuf` | ✅ Trouve « Bœuf » |
-| `BŒUF` | ✅ Trouve « Bœuf » |
+| `BŒUF` | ✅ Trouvre « Bœuf » |
 | `bleuet` | ✅ Trouve « Bleuets » |
 | `kale` | ✅ Trouve « Kale » |
 
@@ -101,7 +135,7 @@ La recherche est **normalisée** — elle gère les accents et ligatures automat
 Survolez un aliment pour voir :
 
 - **Valeurs nutritionnelles** — protéines, fibres, fer, vitamine C, calcium, Ω-3 par portion
-- **Conseils d'absorption** — comment maximiser l'absorption des nutriments (ex: « Cuire légèrement pour le lycopène »)
+- **Conseils d'absorption** — comment maximiser l'absorption des nutriments
 - **Combinaisons** — quels aliments manger ensemble (ex: « Fer + vitamine C = meilleure absorption »)
 - **À éviter** — mises en garde (ex: « Riche en oxalates, limiter en cas de calculs rénaux »)
 
@@ -139,7 +173,7 @@ Survolez un badge pour voir :
 - Le **prix unitaire** ($/100g, etc.)
 - Un **lien** direct vers le flyer
 
-Les spéciaux sont mis à jour toutes les 6 heures.
+Cliquez sur 🏷️ dans la liste des spéciaux pour ouvrir le modal comparatif.
 
 ---
 
@@ -147,7 +181,7 @@ Les spéciaux sont mis à jour toutes les 6 heures.
 
 Vos objectifs par défaut sont des valeurs hebdomadaires. Pour les personnaliser :
 
-1. Ouvrez le **menu** (☰ ou avatar)
+1. Ouvrez le **menu** (avatar en haut à droite)
 2. Cliquez sur **🎯 Mes objectifs**
 3. Ajustez les valeurs pour chaque nutriment :
    - Protéines (défaut: 350g/sem)
@@ -155,12 +189,11 @@ Vos objectifs par défaut sont des valeurs hebdomadaires. Pour les personnaliser
    - Fer (défaut: 56mg/sem)
    - Vitamine C (défaut: 280mg/sem)
    - Calcium (défaut: 700mg/sem)
-   - Ω-3 (défaut: 3.5g/sem)
+   - Oméga-3 (défaut: 3.5g/sem)
+   - Calories (défaut: 14000kcal/sem)
 4. **Sauvegarder**
 
-L'anneau de progression et les barres du journal utiliseront ces nouvelles valeurs.
-
----
+Les barres de progression du tableau de bord utiliseront ces nouvelles valeurs.
 
 ---
 
@@ -170,7 +203,7 @@ L'anneau de progression et les barres du journal utiliseront ces nouvelles valeu
 
 **Menu** → **🛒 Liste d'épicerie**
 
-La liste est générée à partir de vos **sélections de la semaine**. Elle inclut :
+La liste est générée à partir de vos sélections. Elle inclut :
 - Tous les aliments sélectionnés
 - Les **meilleurs prix** trouvés chez les marchands partenaires
 - Le **total estimé** de votre panier
@@ -217,26 +250,7 @@ NutriFood analyse vos sélections et suggère des aliments pour :
 - **Varier** votre alimentation
 - **Atteindre** vos objectifs plus rapidement
 
-Les suggestions apparaissent dans le journal et en bas des catégories incomplètes.
-
----
-
-## 🔄 Réinitialiser les données
-
-### Mode Planification
-
-Cliquez sur le badge **🔄 Reset dans Xj** dans le tableau de bord nutritionnel pour vider toutes vos sélections de la semaine.
-
-- Un modal de confirmation s'ouvre avant l'effacement
-- Les données sont immédiatement effacées du serveur
-
-### Mode Suivi
-
-Cliquez sur le badge **🔄 Reset** dans le tableau de bord pour choisir :
-
-- **📅 Journée** — efface seulement les données du jour affiché
-- **📋 Semaine complète** — efface toutes les entrées de la semaine (lundi→dimanche)
-- **Annuler** — ferme sans rien effacer
+Un bouton flottant 💡 apparaît quand des suggestions sont disponibles.
 
 ---
 

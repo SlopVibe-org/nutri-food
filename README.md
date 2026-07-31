@@ -11,6 +11,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 - Liste d'épicerie générée à partir des sélections
 - Suggestions de portions et carences en nutriments
 - Sauvegarde automatique et historique des semaines
+- Réinitialisation rapide (badge 🔄 cliquable)
 
 ### Suivi quotidien (tracking)
 - Onglet "Suivi" (par défaut) pour enregistrer ce que vous mangez réellement
@@ -18,6 +19,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 - Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
 - Données préservées entre les deux modes (planification ↔ suivi)
 - Mode mémorisé dans localStorage
+- Réinitialisation : badge 🔄 cliquable → jour ou semaine complète
 
 ### Spéciaux (deals hebdomadaires)
 - Liste des spéciaux d'épiceries.ca regroupés par catégorie
@@ -31,9 +33,9 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 
 ### Stack
 - **Frontend:** HTML/CSS/JS vanilla (14 modules avec lazy loading)
-- **Backend:** Python Flask (API REST, ~1675 lignes)
-- **DB:** SQLite (nutrifood.db)
-- **Déploiement:** Docker Compose
+- **Backend:** Python Flask (API REST, ~1770 lignes)
+- **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
+- **Déploiement:** Docker Compose (2 conteneurs)
 
 ### Modules frontend
 
@@ -55,21 +57,37 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
 
 ### Docker
+
+Architecture 2 conteneurs :
+
 ```
 nutrifood-api   (Flask/Gunicorn, port 5000 interne)
-nutrifood-web   (Nginx, port 5011 → proxy vers API)
+nutrifood-web   (Nginx, port 5011 hôte → proxy vers API)
 ```
 
-### Données persistantes (volume `./data:/data`)
-- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals)
-- `deals_raw.json` — données brutes des spéciaux (fetch hebdomadaire depuis epiceries.ca)
+Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requêtes `/api/` vers le backend (nutrifood-api).
 
-### Schéma DB
-- `users` — comptes utilisateurs (email, password_hash, is_admin)
-- `selections` — planification hebdomadaire par utilisateur
-- `tracking` — suivi quotidien (user_id, date, data JSON)
-- `history_snapshots` — snapshots des semaines passées
-- `goals` — objectifs nutritionnels personnalisés
+### Données persistantes (volume `./data:/data` et `./config:/usr/share/nginx/html`)
+- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals, foods)
+- `deals_raw.json` — données brutes des spéciaux (fetch depuis epiceries.ca)
+- `config/` — fichiers frontend (index.html, js/) servis par nginx
+
+### Schéma DB (tables principales)
+
+| Table | Description |
+|-------|-------------|
+| `users` | Comptes utilisateurs (email, password_hash, is_admin, token_version) |
+| `selections` | Planification hebdomadaire par utilisateur |
+| `tracking` | Suivi quotidien (user_id, date, data JSON) |
+| `history_snapshots` | Snapshots des semaines passées |
+| `user_goals` | Objectifs nutritionnels personnalisés |
+| `nf_sections` / `nf_categories` / `nf_foods` | Structure des aliments (source: SQLite) |
+| `food` / `food_group` / `nutrient_name` / `nutrient_amount` | Base CNF (Santé Canada) |
+| `food_search` (FTS5) | Index de recherche full-text |
+| `share_links` | Liens de partage (avec expiration) |
+| `reset_tokens` | Tokens de réinitialisation mot de passe (magic links) |
+| `meal_plans` | Plans de repas hebdomadaires |
+| `journal_entries` | Entrées de journal nutritionnel |
 
 ## Système de deals (epiceries.ca)
 
@@ -80,28 +98,28 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
    - Stocke TOUS les résultats sans filtrage
    - **JAMAIS modifié** après écriture (sauf refresh hebdomadaire)
 
-2. **`filter_deals(raw, foods)`** (pure function)
+2. **`filter_deals(raw, foods)` (pure function)**
    - Lit le raw, applique les filtres, retourne les deals valides
    - Aucun side effect — le raw reste intact
-   - Filtres: word-boundary matching, exclusion animaux, produits transformés, strict match pour herbes/épices/noix
+   - Filtres: word-boundary matching, exclusion animaux, strict match pour herbes/épices/noix
 
 3. **API `/api/deals`**
    - Sert les deals filtrés en temps réel
    - Déclenche un refresh auto si le raw a >1 semaine
    - Le bouton "🔄 Rafraîchir" (admin) force un refresh manuel
 
-### Pourquoi cette architecture?
-- On ne hammer pas epiceries.ca (1 fetch/semaine, pas plus)
-- Les filtres peuvent changer sans re-fetch
-- Le raw persiste à travers les rebuilds Docker (volume monté)
-
 ## API Endpoints
 
 ### Aliments
 - `GET /api/foods` — liste des catégories et aliments
+- `GET /api/seasonal` — aliments de saison (mois courant)
+
+### Recherche CNF
+- `GET /api/cnf/search?q=...` — recherche dans la base CNF
+- `GET /api/cnf/product/<id>` — fiche détaillée d'un aliment CNF
 
 ### Authentification
-- `POST /api/signup` — inscription
+- `POST /api/register` — inscription
 - `POST /api/login` — connexion (retourne JWT)
 - `GET /api/me` — profil utilisateur courant
 - `POST /api/change-password` — changement de mot de passe
@@ -113,6 +131,7 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 - `POST /api/selections` — sauvegarder les sélections
 - `GET /api/history` — historique des semaines
 - `GET /api/history/<week>` — détail d'une semaine
+- `GET /api/nutrition-summary` — résumé nutritionnel
 
 ### Suivi (tracking)
 - `GET /api/tracking/<date>` — sélections du jour
@@ -132,8 +151,16 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 
 ### Autres
 - `GET /api/suggestions` — suggestions basées sur carences
-- `POST /api/share` — générer un lien de partage
-- `GET /api/share/<token>` — vue partagée (lecture seule)
+- `POST /api/share` — générer un lien de partage (avec expiration)
+- `GET /api/shared/<token>` — vue partagée (lecture seule)
+- `GET/POST /api/meal-plan` — plan de repas hebdomadaire
+- `GET/POST/DELETE /api/journal` — journal nutritionnel
+- `GET /api/journal/summary` — résumé du journal
+- `GET /api/health` — health check
+
+### Administration
+- `POST /api/admin/food/hide` — masquer un aliment (admin only)
+- `POST /api/admin/food/show` — afficher un aliment (admin only)
 
 ## Sécurité
 
@@ -145,11 +172,14 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 - `Referrer-Policy`
 - `Permissions-Policy`
 - `Cross-Origin-Embedder-Policy`
+- `Cross-Origin-Opener-Policy`
 
 ### Authentification
 - JWT tokens (Bearer), pas de cookies de session
-- Password hashing (PBKDF2)
-- Token invalidation on password change
+- Password hashing: PBKDF2-SHA256
+- Token invalidation on password change (token_version)
+- Rate limiting: 10 req/min sur endpoints sensibles
+- Reset tokens expirent après 1h
 
 ### Résultats QA (31 juillet 2025)
 
@@ -165,7 +195,7 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 ## Installation
 
 ### Prérequis
-- Docker + Docker Compose
+- Docker + Docker Compose v2
 - Port 5011 disponible (ou modifier docker-compose.yml)
 
 ### Déploiement
@@ -173,19 +203,26 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 git clone https://github.com/SlopVibe-org/nutri-food.git
 cd nutri-food
 cp .env.example .env  # Éditer avec vos valeurs
-docker compose up -d
+docker compose up -d --build
 ```
 
 ### Configuration (.env)
 ```
 JWT_SECRET=votre_secret_long_et_aleatoire
 DB_PATH=/data/nutrifood.db
+JWT_EXPIRY_HOURS=2160
+SMTP_HOST=smtp.fastmail.com
+SMTP_PORT=465
+SMTP_USER=votre@email.com
+SMTP_PASS=votre_mot_de_passe
+MAIL_FROM=votre@email.com
+APP_URL=https://votre-domaine.com/nutri-food/
 ```
 
 ## Données nutritionnelles
 
-- **Aliments personnalisés:** ajoutés via l'interface admin
-- **CNF (Canadian Nutrient File):** 5993 aliments de Santé Canada intégrés
+- **Aliments NutriFood:** gérés via SQLite (tables `nf_*`), interface admin
+- **CNF (Canadian Nutrient File):** 5993 aliments de Santé Canada intégrés (tables `food`, `nutrient_*`)
 - **Objectifs par défaut (hebdomadaires):** Protéines 350g, Fibres 175g, Fer 56mg, Vit C 280mg, Calcium 700mg, Oméga-3 3.5g, Calories 14000kcal
 
 ## Licence

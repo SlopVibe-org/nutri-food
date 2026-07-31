@@ -230,9 +230,43 @@ async function cnfSelectProduct(foodId) {
     let food = data.food;
     let group = data.group;
     let nutrients = data.nutrients ?? [];
+    let foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
+
+    // Fetch season + deals preview in parallel
+    let checkRes = null;
+    try {
+      let cr = await fetchWithTimeout(API + '/cnf/check?name=' + encodeURIComponent(foodName), {}, 8000);
+      if (cr.ok) checkRes = await cr.json();
+    } catch(e) { /* non-critical */ }
+
     let html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
     html += '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">' + esc(food.name_fr || food.name_en) + '</div>';
-    if (group) html += '<div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;">' + esc(group.name_fr) + '</div>';
+    if (group) html += '<div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:8px;">' + esc(group.name_fr) + '</div>';
+
+    // Season badge
+    if (checkRes && checkRes.season_status !== 'unknown') {
+      let s = checkRes.season_status;
+      let badge = '';
+      if (s === 'local') badge = '<span style="background:rgba(74,222,128,0.15);color:var(--accent);padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">🌱 En saison (local)</span>';
+      else if (s === 'imported') badge = '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">✈️ Importé</span>';
+      else if (s === 'off') badge = '<span style="background:rgba(248,113,113,0.15);color:var(--accent-red);padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">❄️ Hors saison</span>';
+      if (badge) html += '<div style="margin-bottom:10px;">' + badge + '</div>';
+    }
+
+    // Deals preview
+    if (checkRes && checkRes.deals_count > 0) {
+      html += '<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px;margin-bottom:12px;">';
+      html += '<div style="font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:6px;">🏷️ ' + checkRes.deals_count + ' spécial' + (checkRes.deals_count > 1 ? 'aux' : '') + ' trouvé' + (checkRes.deals_count > 1 ? 's' : '') + '</div>';
+      checkRes.deals.forEach(function(d) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.78rem;border-bottom:1px solid var(--border);">';
+        html += '<span style="flex:1;color:var(--text);">' + esc(d.name || '') + '</span>';
+        html += '<span style="color:var(--text-dim);font-size:0.72rem;margin:0 8px;">' + esc(d.store || '') + '</span>';
+        html += '<span style="font-weight:600;color:var(--accent);">$' + (d.price || '?') + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    }
+
     html += '<div class="cnf-nutrients">';
     nutrients.forEach(function(n) {
       html += '<div class="cnf-nutri-item"><div class="cnf-nutri-name">' + esc(n.name_fr) + '</div><div class="cnf-nutri-val">' + n.amount + ' ' + esc(n.unit) + '</div></div>';

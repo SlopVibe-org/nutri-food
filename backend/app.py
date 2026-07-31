@@ -657,6 +657,21 @@ def admin_show_food():
         cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, name))
     db.commit()
     db.close()
+    # Save season data if available
+    season_info = lookup_quebec_season(name or '')
+    if season_info:
+        db2 = get_nf_db()
+        db2.execute('UPDATE nf_foods SET season = ?, import_season = ? WHERE id = ?',
+                    (json.dumps(season_info['season']), json.dumps(season_info['import']), new_id))
+        db2.commit()
+        db2.close()
+    # Fetch deals and add to raw file
+    try:
+        deals = _fetch_deals_for_food({'name': name, 'epiceries_query': name})
+        if deals:
+            add_to_raw_deals(name, deals)
+    except Exception as e:
+        print(f'[NutriFood] Deal fetch error on add: {e}')
     return jsonify({'status': 'ok', 'id': new_id})
 
 @app.route('/api/admin/food/hide', methods=['POST'])
@@ -676,12 +691,19 @@ def admin_hide_food():
             db.close()
             return jsonify({'error': 'Aliment introuvable'}), 404
         food_id = row['id']
+    # Get food name before deleting (for raw deals cleanup)
+    if not food_name:
+        row = db.execute('SELECT name_fr FROM nf_foods WHERE id = ?', (food_id,)).fetchone()
+        food_name = row['name_fr'] if row else None
     # Delete related rows first (no CASCADE in schema)
     db.execute('DELETE FROM nf_foods_nutrients WHERE nf_food_id = ?', (food_id,))
     db.execute('DELETE FROM nf_foods_aliases WHERE nf_food_id = ?', (food_id,))
     db.execute('DELETE FROM nf_foods WHERE id = ?', (food_id,))
     db.commit()
     db.close()
+    # Remove from raw deals file
+    if food_name:
+        remove_from_raw_deals(food_name)
     return jsonify({'status': 'ok'})
 
 # ─── CNF search (original CNF tables) ───
@@ -722,6 +744,38 @@ def cnf_product(food_id):
     group = db.execute('SELECT * FROM food_group WHERE code = ?', (food['group_code'],)).fetchone() if food['group_code'] else None
     db.close()
     return jsonify({'food': dict(food), 'group': dict(group) if group else None, 'nutrients': [dict(n) for n in nutrients]})
+
+@app.route('/api/cnf/check', methods=['GET'])
+def cnf_check():
+    """Check seasonality and current deals for a food item (preview before adding)."""
+    food_name = (request.args.get('name') or '').strip()
+    if not food_name:
+        return jsonify({'error': 'Nom requis'}), 400
+    # Season lookup
+    season_info = lookup_quebec_season(food_name)
+    current_month = date.today().month
+    season_status = 'unknown'
+    if season_info:
+        local = season_info.get('season', [])
+        imp = season_info.get('import', [])
+        if local and current_month in local:
+            season_status = 'local'
+        elif imp and current_month in imp:
+            season_status = 'imported'
+        else:
+            season_status = 'off'
+    # Deals lookup from raw file (fast, no scraping)
+    raw, _ = load_raw_deals()
+    food_deals = []
+    if raw and food_name in raw:
+        food_deals = raw[food_name][:5]  # max 5 for preview
+    return jsonify({
+        'season_status': season_status,
+        'season': season_info,
+        'current_month': current_month,
+        'deals': food_deals,
+        'deals_count': len(food_deals)
+    })
 
 # ─── Password reset ───
 
@@ -1392,6 +1446,64 @@ def update_goals():
     targets = get_user_targets(user['id'])
     return jsonify({'goals': targets})
 
+# ─── Quebec seasonal produce calendar (month numbers 1-12) ───
+QUEBEC_SEASONS = {
+    # Fruits
+    'bleuet': {'season': [7, 8], 'import': [1,2,3,4,5,6,9,10,11,12]},
+    'fraise': {'season': [6, 7], 'import': [1,2,3,4,5,8,9,10,11,12]},
+    'framboise': {'season': [7, 8], 'import': [1,2,3,4,5,6,9,10,11,12]},
+    'pomme': {'season': [8,9,10,11,12,1,2,3,4,5], 'import': []},
+    'poire': {'season': [8,9,10], 'import': [1,2,3,4,5,6,7,11,12]},
+    'prune': {'season': [8,9], 'import': [1,2,3,4,5,6,7,10,11,12]},
+    'raisin': {'season': [9,10], 'import': [1,2,3,4,5,6,7,8,11,12]},
+    'canneberge': {'season': [9,10,11], 'import': [1,2,3,4,5,6,7,8,12]},
+    'melon': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'nectarine': {'season': [8,9], 'import': [1,2,3,4,5,6,7,10,11,12]},
+    'abricot': {'season': [7,8], 'import': [1,2,3,4,5,6,9,10,11,12]},
+    'cerise': {'season': [6,7], 'import': [1,2,3,4,5,8,9,10,11,12]},
+    'cassis': {'season': [7,8], 'import': [1,2,3,4,5,6,9,10,11,12]},
+    'mure': {'season': [8,9], 'import': [1,2,3,4,5,6,7,10,11,12]},
+    'mûre': {'season': [8,9], 'import': [1,2,3,4,5,6,7,10,11,12]},
+    'groseille': {'season': [7,8], 'import': [1,2,3,4,5,6,9,10,11,12]},
+    'rhubarbe': {'season': [5,6,7], 'import': []},
+    # Vegetables
+    'asperge': {'season': [5,6], 'import': [1,2,3,4,7,8,9,10,11,12]},
+    'radis': {'season': [5,6,7,8,9], 'import': [1,2,3,4,10,11,12]},
+    'laitue': {'season': [6,7,8,9], 'import': [1,2,3,4,5,10,11,12]},
+    'epinard': {'season': [5,6,9,10], 'import': [1,2,3,4,7,8,11,12]},
+    'épinard': {'season': [5,6,9,10], 'import': [1,2,3,4,7,8,11,12]},
+    'tomate': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'mais': {'season': [8,9], 'import': []},
+    'maïs': {'season': [8,9], 'import': []},
+    'courge': {'season': [9,10,11], 'import': []},
+    'citrouille': {'season': [9,10,11], 'import': []},
+    'pomme de terre': {'season': [8,9,10,11,12,1,2,3], 'import': [4,5,6,7]},
+    'carotte': {'season': [6,7,8,9,10], 'import': [1,2,3,4,5,11,12]},
+    'brocoli': {'season': [6,7,8,9,10], 'import': [1,2,3,4,5,11,12]},
+    'haricot': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'pois': {'season': [6,7], 'import': [1,2,3,4,5,8,9,10,11,12]},
+    'poivron': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'chou': {'season': [6,7,8,9,10,11], 'import': [1,2,3,4,5,12]},
+    'ail': {'season': [8,9,10,11,12], 'import': [1,2,3,4,5,6,7]},
+    'oignon': {'season': [8,9,10,11,12,1,2,3], 'import': [4,5,6,7]},
+    'poireau': {'season': [9,10,11], 'import': [1,2,3,4,5,6,7,8,12]},
+    'betterave': {'season': [6,7,8,9,10], 'import': [1,2,3,4,5,11,12]},
+    'navet': {'season': [7,8,9,10,11], 'import': [1,2,3,4,5,6,12]},
+    'celeri': {'season': [8,9,10], 'import': [1,2,3,4,5,6,7,11,12]},
+    'céleri': {'season': [8,9,10], 'import': [1,2,3,4,5,6,7,11,12]},
+    'aubergine': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'courgette': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+    'zucchini': {'season': [7,8,9], 'import': [1,2,3,4,5,6,10,11,12]},
+}
+
+def lookup_quebec_season(food_name):
+    """Look up Quebec seasonality for a food by keyword matching."""
+    name_lower = food_name.lower()
+    for keyword, seasons in QUEBEC_SEASONS.items():
+        if keyword in name_lower:
+            return seasons
+    return None
+
 # ─── Grocery Deals (epiceries.ca) ───
 # Architecture:
 #   1. deals_raw.json — RAW data fetched once per week from epiceries.ca. NEVER modified after fetch.
@@ -1503,6 +1615,44 @@ def load_raw_deals():
     except Exception as e:
         print(f'[NutriFood] Raw deals read error: {e}')
     return None, None
+
+def add_to_raw_deals(food_name, deals):
+    """Add or update deals for a food in the raw file."""
+    try:
+        raw, updated = load_raw_deals()
+        if raw is None:
+            raw = {}
+        if deals:
+            raw[food_name] = deals
+        elif food_name in raw:
+            del raw[food_name]
+        cache_data = {
+            'raw': raw,
+            'updated': datetime.now(timezone.utc).isoformat(),
+            'count': sum(len(v) for v in raw.values())
+        }
+        with open(DEALS_RAW_FILE, 'w') as f:
+            json.dump(cache_data, f, ensure_ascii=False)
+    except Exception as e:
+        print(f'[NutriFood] Error updating raw deals: {e}')
+
+def remove_from_raw_deals(food_name):
+    """Remove a food from the raw deals file."""
+    try:
+        raw, updated = load_raw_deals()
+        if raw is None:
+            return
+        if food_name in raw:
+            del raw[food_name]
+        cache_data = {
+            'raw': raw,
+            'updated': datetime.now(timezone.utc).isoformat(),
+            'count': sum(len(v) for v in raw.values())
+        }
+        with open(DEALS_RAW_FILE, 'w') as f:
+            json.dump(cache_data, f, ensure_ascii=False)
+    except Exception as e:
+        print(f'[NutriFood] Error removing from raw deals: {e}')
 
 
 def is_raw_deals_fresh():

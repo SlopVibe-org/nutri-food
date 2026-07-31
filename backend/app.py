@@ -632,10 +632,17 @@ def admin_show_food():
     if not nf_category:
         return jsonify({'error': 'Catégorie requise'}), 400
     db = get_nf_db()
-    existing = db.execute('SELECT id FROM nf_foods WHERE source_type = ? AND source_id = ?', (source_type, source_id)).fetchone()
+    existing = db.execute('SELECT id, visible FROM nf_foods WHERE source_type = ? AND source_id = ?', (source_type, source_id)).fetchone()
     if existing:
+        if existing['visible'] == 1:
+            db.close()
+            return jsonify({'error': 'Cet aliment est déjà affiché'}), 409
+        # Reactivate hidden item with updated category/data
+        db.execute('UPDATE nf_foods SET visible = 1, nf_category = ?, density = ?, highlights = ?, name_fr = ?, name_en = ? WHERE id = ?',
+                   (nf_category, density, highlights, name, name, existing['id']))
+        db.commit()
         db.close()
-        return jsonify({'error': 'Cet aliment est déjà affiché'}), 409
+        return jsonify({'status': 'ok', 'id': existing['id']})
     cnf_nutrients = []
     if source_type == 1 and source_id:
         cnf = db.execute('SELECT name_fr, name_en FROM food WHERE food_id = ?', (source_id,)).fetchone()

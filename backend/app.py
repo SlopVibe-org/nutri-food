@@ -632,17 +632,10 @@ def admin_show_food():
     if not nf_category:
         return jsonify({'error': 'Catégorie requise'}), 400
     db = get_nf_db()
-    existing = db.execute('SELECT id, visible FROM nf_foods WHERE source_type = ? AND source_id = ?', (source_type, source_id)).fetchone()
+    existing = db.execute('SELECT id FROM nf_foods WHERE source_type = ? AND source_id = ?', (source_type, source_id)).fetchone()
     if existing:
-        if existing['visible'] == 1:
-            db.close()
-            return jsonify({'error': 'Cet aliment est déjà affiché'}), 409
-        # Reactivate hidden item with updated category/data
-        db.execute('UPDATE nf_foods SET visible = 1, nf_category = ?, density = ?, highlights = ?, name_fr = ?, name_en = ? WHERE id = ?',
-                   (nf_category, density, highlights, name, name, existing['id']))
-        db.commit()
         db.close()
-        return jsonify({'status': 'ok', 'id': existing['id']})
+        return jsonify({'error': 'Cet aliment est déjà affiché'}), 409
     cnf_nutrients = []
     if source_type == 1 and source_id:
         cnf = db.execute('SELECT name_fr, name_en FROM food WHERE food_id = ?', (source_id,)).fetchone()
@@ -677,14 +670,16 @@ def admin_hide_food():
     if not food_id and not food_name:
         return jsonify({'error': 'ID ou nom requis'}), 400
     db = get_nf_db()
-    if food_id:
-        db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (food_id,))
-    else:
-        row = db.execute('SELECT id FROM nf_foods WHERE name_fr = ? AND visible = 1', (food_name,)).fetchone()
+    if not food_id:
+        row = db.execute('SELECT id FROM nf_foods WHERE name_fr = ?', (food_name,)).fetchone()
         if not row:
             db.close()
             return jsonify({'error': 'Aliment introuvable'}), 404
-        db.execute('UPDATE nf_foods SET visible = 0 WHERE id = ?', (row['id'],))
+        food_id = row['id']
+    # Delete related rows first (no CASCADE in schema)
+    db.execute('DELETE FROM nf_foods_nutrients WHERE nf_food_id = ?', (food_id,))
+    db.execute('DELETE FROM nf_foods_aliases WHERE nf_food_id = ?', (food_id,))
+    db.execute('DELETE FROM nf_foods WHERE id = ?', (food_id,))
     db.commit()
     db.close()
     return jsonify({'status': 'ok'})

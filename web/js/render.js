@@ -579,18 +579,36 @@ function renderSimple() {
   });
   app.innerHTML = html;
 
-  // Wire up empty square clicks to open the food list
+  // Wire up empty square clicks to open the dropdown
   app.querySelectorAll('[data-simple-add]').forEach(function(box) {
     box.addEventListener('click', function(e) {
       e.stopPropagation();
       let catId = box.dataset.simpleAdd;
-      let list = document.querySelector('[data-simple-list="' + catId + '"]');
-      if (list) {
-        let isVisible = list.classList.contains('visible');
-        document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
-        if (!isVisible) { list.classList.add('visible'); }
+      let dd = document.querySelector('[data-simple-dd="' + catId + '"]');
+      if (dd) {
+        let isVisible = dd.classList.contains('visible');
+        document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
+        if (!isVisible) {
+          dd.classList.add('visible');
+          let search = dd.querySelector('.simple-search');
+          if (search) { search.value = ''; search.focus(); }
+          // Show all items
+          dd.querySelectorAll('.simple-dd-item').forEach(function(it) { it.style.display = ''; });
+        }
       }
     });
+  });
+  // Wire up search filtering
+  app.querySelectorAll('[data-simple-search]').forEach(function(search) {
+    search.addEventListener('input', function() {
+      let q = normalizeForSearch(search.value);
+      let items = search.parentElement.querySelectorAll('.simple-dd-item');
+      items.forEach(function(it) {
+        let name = normalizeForSearch(it.dataset.simplePick);
+        it.style.display = name.indexOf(q) !== -1 ? '' : 'none';
+      });
+    });
+    search.addEventListener('click', function(e) { e.stopPropagation(); });
   });
   // Wire up food item picks
   app.querySelectorAll('[data-simple-pick]').forEach(function(item) {
@@ -598,14 +616,13 @@ function renderSimple() {
       e.stopPropagation();
       let catId = item.dataset.cat;
       addItem(catId, { name: decodeEntities(item.dataset.simplePick), density: Number.parseInt(item.dataset.density || 0), nutrients: item.dataset.nutrients || '' });
-      // Close all lists
-      document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
+      document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
     });
   });
-  // Click outside closes food lists
+  // Click outside closes dropdowns
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.simple-food-list') && !e.target.closest('[data-simple-add]')) {
-      document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
+    if (!e.target.closest('.simple-dropdown') && !e.target.closest('[data-simple-add]')) {
+      document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
     }
   }, true);
   // Tracking nutrition
@@ -676,13 +693,16 @@ function renderSimpleCategory(cat) {
 
   html += '</div>'; // end row
 
-  // Inline food list (appears below when empty square clicked)
-  html += '<div class="simple-food-list" data-simple-list="' + cat.id + '">';
+  // Inline dropdown (appears below when empty square clicked)
+  html += '<div class="simple-dropdown" data-simple-dd="' + cat.id + '">';
+  html += '<input type="text" class="simple-search" placeholder="Rechercher…" data-simple-search="' + cat.id + '" autocomplete="off">';
+  html += '<div class="simple-dd-items" data-simple-items="' + cat.id + '">';
   let sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
   sorted.forEach(function(f) {
     let seasonPrefix = getSeasonPrefix(f);
-    html += '<span class="simple-food-item" data-simple-pick="' + esc(f.name) + '" data-cat="' + cat.id + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" title="' + f.density + '% — ' + esc(f.nutrients) + '">' + seasonPrefix + f.name + '</span>';
+    html += '<div class="simple-dd-item" data-simple-pick="' + esc(f.name) + '" data-cat="' + cat.id + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + seasonPrefix + f.name + ' <span class="simple-dd-dens">' + f.density + '%</span></div>';
   });
+  html += '</div>';
   html += '</div>';
 
   html += '</div>';

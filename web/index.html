@@ -196,10 +196,14 @@
   .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
   .sbox.filled:hover { background:var(--accent); transform:scale(1.1); }
   .sbox-day { font-size:0.6rem; color:rgba(15,17,23,0.6); font-weight:700; pointer-events:none; }
-  .simple-food-list { display:none; flex-wrap:wrap; gap:6px; padding:8px 0 4px; width:100%; }
-  .simple-food-list.visible { display:flex; }
-  .simple-food-item { padding:4px 10px; background:#12141c; border:1px solid var(--border); border-radius:16px; font-size:0.8rem; color:var(--text); cursor:pointer; transition: all 0.15s; white-space:nowrap; }
-  .simple-food-item:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
+  .simple-dropdown { display:none; position:absolute; background:var(--card); border:1px solid var(--accent-dim); border-radius:8px; padding:8px; width:100%; max-width:320px; z-index:50; margin-top:4px; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+  .simple-dropdown.visible { display:block; }
+  .simple-search { width:100%; padding:8px 10px; background:#12141c; color:var(--text); border:1px solid var(--border); border-radius:6px; font-size:0.85rem; margin-bottom:6px; }
+  .simple-search:focus { outline:none; border-color:var(--accent); }
+  .simple-dd-items { max-height:240px; overflow-y:auto; }
+  .simple-dd-item { padding:8px 10px; border-radius:6px; font-size:0.85rem; color:var(--text); cursor:pointer; transition:background 0.1s; display:flex; justify-content:space-between; align-items:center; }
+  .simple-dd-item:hover { background:rgba(74,222,128,0.12); }
+  .simple-dd-dens { font-size:0.72rem; color:var(--text-dim); font-weight:700; flex-shrink:0; margin-left:8px; }
   .simple-add-btn { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#12141c; color:var(--text-dim); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 24px; transition: all 0.15s; }
   .simple-add-btn:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
 

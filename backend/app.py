@@ -626,7 +626,7 @@ def admin_show_food():
     source_type = data.get('source_type', 1)
     nf_category = data.get('nf_category')
     name = data.get('name')
-    density = data.get('density', 50)
+    density = data.get('density')  # may be overridden by auto-calc
     highlights = data.get('highlights', '')
     aliases = data.get('aliases', [])
     if not nf_category:
@@ -643,6 +643,14 @@ def admin_show_food():
             name = name or cnf['name_fr'] or cnf['name_en']
             cnf_nutrients = db.execute('SELECT nutrient_code, amount FROM nutrient_amount WHERE food_id = ?', (source_id,)).fetchall()
     cur = db.cursor()
+    # Auto-calculate density from real nutrient data if available
+    if density is None:
+        nutrient_map = {}
+        if cnf_nutrients:
+            nutrient_map = {nv['nutrient_code']: nv['amount'] for nv in cnf_nutrients}
+        density = calculate_density(nutrient_map, nf_category)
+    elif density == 0:
+        density = 50
     cur.execute('''INSERT INTO nf_foods
         (source_type, source_id, visible, nf_category, density, highlights, name_fr, name_en)
         VALUES (?,?,?,?,?,?,?,?)''',
@@ -705,6 +713,27 @@ def admin_hide_food():
     if food_name:
         remove_from_raw_deals(food_name)
     return jsonify({'status': 'ok'})
+
+@app.route('/api/admin/recalculate-density', methods=['POST'])
+def admin_recalculate_density():
+    """Recalculate density for all foods from real nutrient data."""
+    user = get_auth_user()
+    if not user or not user['is_admin']:
+        return jsonify({'error': ERR_FORBIDDEN}), 403
+    db = get_nf_db()
+    foods = db.execute('SELECT id, nf_category FROM nf_foods').fetchall()
+    updated = 0
+    for f in foods:
+        nuts = db.execute('SELECT nutrient_code, amount FROM nf_foods_nutrients WHERE nf_food_id = ?', (f['id'],)).fetchall()
+        if not nuts:
+            continue
+        nutrient_map = {n['nutrient_code']: n['amount'] for n in nuts}
+        new_density = calculate_density(nutrient_map, f['nf_category'])
+        db.execute('UPDATE nf_foods SET density = ? WHERE id = ?', (new_density, f['id']))
+        updated += 1
+    db.commit()
+    db.close()
+    return jsonify({'status': 'ok', 'updated': updated})
 
 # ─── CNF search (original CNF tables) ───
 
@@ -1445,6 +1474,62 @@ def update_goals():
     # Return updated goals
     targets = get_user_targets(user['id'])
     return jsonify({'goals': targets})
+
+# ─── Daily Values (Canadian, per day) for density calculation ───
+# Only beneficial micronutrients + fiber; excludes macros, calories, sodium
+DAILY_VALUES = {
+    291: 28.0,    # Fibres (g)
+    301: 1300.0,  # Calcium (mg)
+    303: 18.0,    # Fer (mg)
+    304: 370.0,   # Magnésium (mg) — avg M/F
+    305: 1250.0,  # Phosphore (mg)
+    306: 4700.0,  # Potassium (mg)
+    309: 11.0,    # Zinc (mg)
+    312: 2.0,     # Cuivre (mg)
+    315: 2.3,     # Manganèse (mg)
+    317: 55.0,    # Sélénium (µg)
+    328: 15.0,    # Vitamine D (µg)
+    401: 75.0,    # Vitamine C (mg)
+    404: 1.1,     # Thiamine (mg)
+    405: 1.1,     # Riboflavine (mg)
+    406: 14.0,    # Niacine (mg)
+    415: 1.5,     # Vitamine B-6 (mg)
+    417: 400.0,   # Folacine (µg)
+    418: 2.4,     # Vitamine B-12 (µg)
+    430: 120.0,   # Vitamine K (µg)
+}
+
+# Portion sizes per category (grams) — must match frontend PORTION_GRAMS
+PORTION_GRAMS_DB = {
+    'poissons-gras': 100, 'poissons-blancs': 100, 'fruits-mer': 100,
+    'poulet': 100, 'viande-rouge': 100, 'oeufs': 120,
+    'legumineuses': 100, 'noix-graines': 30, 'lait': 250,
+    'legumes-verts-fonces': 80, 'legumes-jaune-orange': 80,
+    'legumes-rouges': 80, 'legumes-blancs': 80, 'legumes-mauves': 80,
+    'fruits-petits': 150, 'fruits-protecteurs': 150, 'fruits-autres': 150,
+    'feculents-tres-bons': 150, 'feculents-bons': 150, 'feculents-tubercules': 150,
+    'habitudes-bons-gras': 15, 'habitudes-boissons': 250,
+    'habitudes-fermentes': 100, 'habitudes-herbes-epices': 2,
+}
+
+def calculate_density(nutrients_per_100g, category):
+    """Calculate nutrient density using Canadian regulatory thresholds.
+    Source >=5% DV = 5pts, Bonne source >=15% = 10pts, Excellente source >=30% = 20pts.
+    Capped at 100."""
+    portion_g = PORTION_GRAMS_DB.get(category, 100)
+    portion_factor = portion_g / 100.0
+    score = 0
+    for code, amount in nutrients_per_100g.items():
+        if code not in DAILY_VALUES or DAILY_VALUES[code] <= 0:
+            continue
+        dv_pct = (amount * portion_factor / DAILY_VALUES[code]) * 100
+        if dv_pct >= 30:
+            score += 20
+        elif dv_pct >= 15:
+            score += 10
+        elif dv_pct >= 5:
+            score += 5
+    return min(score, 100)
 
 # ─── Quebec seasonal produce calendar (month numbers 1-12) ───
 QUEBEC_SEASONS = {

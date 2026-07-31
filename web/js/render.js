@@ -122,7 +122,7 @@ function renderCard(cat) {
       cat.foods.forEach(function(f) {
         let seasonPrefix = getSeasonPrefix(f);
         let dealPrefix = DEALS[f.name]?.length > 0 ? '🏷️ ' : '';
-        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
+        html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + truncateNutrients(f.nutrients, 3) + ')</option>';
       });
       html += '</select>';
   }
@@ -130,6 +130,13 @@ function renderCard(cat) {
   html += '<div class="chips" id="chips-' + cat.id + '">' + renderChips(cat.id, selected) + '</div>';
   html += '</div>';
   return html;
+}
+
+function truncateNutrients(str, max) {
+  if (!str) return '';
+  let parts = str.split(',').map(function(s) { return s.trim(); }).filter(Boolean);
+  if (parts.length <= max) return str;
+  return parts.slice(0, max).join(', ') + ' +' + (parts.length - max);
 }
 
 function renderChips(catId, selected) {
@@ -145,7 +152,7 @@ function renderChips(catId, selected) {
     let qtyControls = item.qty > 1
       ? '<span class="qty-controls"><button class="qty-btn" data-action="dec" data-cat="' + catId + '" data-name="' + esc(item.name) + '">−</button><span class="qty-num">×' + item.qty + '</span><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>'
       : '<span class="qty-controls"><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>';
-    return '<span class="chip" title="' + esc(item.nutrients) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + buildDealBadges(item.name) + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
+    return '<span class="chip" title="' + esc(truncateNutrients(item.nutrients, 4)) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + buildDealBadges(item.name) + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
   }).join('');
 }
 

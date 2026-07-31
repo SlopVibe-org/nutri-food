@@ -1,12 +1,12 @@
 // ─── CNF module (lazy-loaded) ───
 
-var cnfSelectedId = null;
-var cnfSearchQuery = '';
-var cnfSelectedFood = null;
-var cnfSelectedNutrients = null;
+let cnfSelectedId = null;
+let cnfSearchQuery = '';
+let cnfSelectedFood = null;
+let cnfSelectedNutrients = null;
 
 // CNF group code → NutriFood category mapping
-var CNF_GROUP_MAP = {
+let CNF_GROUP_MAP = {
   1: 'lait',           // Dairy and Egg Products
   2: 'habitudes-herbes-epices', // Spices and Herbs
   4: 'habitudes-bons-gras',     // Fats and Oils
@@ -27,7 +27,7 @@ var CNF_GROUP_MAP = {
 function guessCategory(groupCode, nutrients) {
   // Refine based on omega-3 content for fish
   if (groupCode === 15) {
-    var omega3 = 0;
+    let omega3 = 0;
     // Sum EPA + DHA + ALA
     nutrients.forEach(function(n) {
       if (n.code === 629 || n.code === 621 || n.code === 851 || n.code === 631) omega3 += n.amount || 0;
@@ -85,12 +85,12 @@ function switchProductTab(tab) {
 }
 
 function loadRemoveProductList() {
-  var html = '';
+  let html = '';
   (DATA.sections || []).forEach(function(sec) {
-    var cats = (DATA.categories || []).filter(function(c) { return c.section === sec.id; });
+    let cats = (DATA.categories || []).filter(function(c) { return c.section === sec.id; });
     if (cats.length === 0) return;
     cats.forEach(function(cat) {
-      var count = (cat.foods || []).length;
+      let count = (cat.foods || []).length;
       if (count === 0) return;
       html += '<div class="remove-cat-header" data-remove-cat="' + cat.id + '" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.25);border-radius:8px;margin-bottom:4px;cursor:pointer;user-select:none;">';
       html += '<span style="font-size:0.9rem;font-weight:600;">' + cat.icon + ' ' + esc(cat.name) + '</span>';
@@ -110,7 +110,7 @@ function loadRemoveProductList() {
 }
 
 function cnfMatchAlias(a, ql, food, cat, existingMatches) {
-  var al = a.toLowerCase();
+  let al = a.toLowerCase();
   if (al.includes(ql) || ql.includes(al)) {
     // Avoid duplicate if already matched by name
     if (!existingMatches.some(function(m) { return m.name === food.name; })) {
@@ -120,7 +120,7 @@ function cnfMatchAlias(a, ql, food, cat, existingMatches) {
 }
 
 async function cnfDoSearch() {
-  var q = $('cnf-search-input').value.trim();
+  let q = $('cnf-search-input').value.trim();
   if (q.length < 2) return;
   cnfSearchQuery = q;
   $('cnf-results').innerHTML = '<p class="loading">Recherche…</p>';
@@ -128,11 +128,11 @@ async function cnfDoSearch() {
   cnfSelectedId = null;
   
   // Step 1: Check for existing items in foods.json (fuzzy match)
-  var existingMatches = [];
-  var ql = q.toLowerCase();
+  let existingMatches = [];
+  let ql = q.toLowerCase();
   (DATA.categories || []).forEach(function(cat) {
     (cat.foods || []).forEach(function(food) {
-      var fn = food.name.toLowerCase();
+      let fn = food.name.toLowerCase();
       if (fn.includes(ql) || ql.includes(fn) || fn.replace(/[èéêë]/g,'e').includes(ql.replace(/[èéêë]/g,'e'))) {
         existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases || [], alias: null });
       }
@@ -144,11 +144,11 @@ async function cnfDoSearch() {
   });
   
   if (existingMatches.length > 0) {
-    var html = '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);border-radius:10px;padding:14px;margin-bottom:16px;">';
+    let html = '<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.4);border-radius:10px;padding:14px;margin-bottom:16px;">';
     html += '<div style="font-size:0.9rem;font-weight:700;color:var(--accent-amber);margin-bottom:8px;">⚠ Ces items existent déjà!</div>';
     existingMatches.forEach(function(m) {
       html += '<div class="cnf-existing-item" data-exist-name="' + esc(m.name) + '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#12141c;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;">';
-      var displayName = esc(m.name);
+      let displayName = esc(m.name);
       if (m.allAliases?.length > 0) displayName += ' <span style="color:var(--text-dim);font-size:0.8rem;">(' + esc(m.allAliases.join(', ')) + ')</span>';
       html += '<span style="flex:1;font-size:0.88rem;color:var(--text);">' + displayName + '</span>';
       html += '<span style="font-size:0.75rem;color:var(--text-dim);">' + esc(m.category) + '</span>';
@@ -164,13 +164,13 @@ async function cnfDoSearch() {
     // Wire existing item clicks (toggle details)
     document.querySelectorAll('.cnf-existing-item').forEach(function(el) {
       el.addEventListener('click', function() {
-        var name = el.dataset.existName;
+        let name = el.dataset.existName;
         document.querySelectorAll('.cnf-existing-item').forEach(function(e) { e.style.borderColor = 'var(--border)'; });
-        var details = $('exist-details');
+        let details = $('exist-details');
         if (details.dataset.shown === name) { details.innerHTML = ''; details.dataset.shown = ''; return; }
         el.style.borderColor = 'var(--accent-amber)';
-        var match = existingMatches.find(function(m) { return m.name === name; });
-        var aliasNote = match.alias ? ' · Trouvé via: « ' + esc(match.alias) + ' »' : '';
+        let match = existingMatches.find(function(m) { return m.name === name; });
+        let aliasNote = match.alias ? ' · Trouvé via: « ' + esc(match.alias) + ' »' : '';
         details.innerHTML = '<div style="background:#12141c;border:1px solid var(--border);border-radius:8px;padding:10px;margin-top:4px;"><div style="font-size:0.85rem;color:var(--text);margin-bottom:4px;"><strong>' + esc(match.name) + '</strong></div><div style="font-size:0.78rem;color:var(--text-dim);">Catégorie: ' + esc(match.category) + ' · Densité: ' + match.density + aliasNote + '</div><div style="font-size:0.78rem;color:var(--text-dim);">Points forts: ' + esc(match.nutrients) + '</div></div>';
         details.dataset.shown = name;
       });
@@ -190,12 +190,12 @@ async function cnfCnfSearch(q) {
   $('cnf-details').innerHTML = '';
   cnfSelectedId = null;
   try {
-    var res = await fetchWithTimeout(API + '/cnf/search?q=' + encodeURIComponent(q), {}, 10000);
-    var data = await res.json();
+    let res = await fetchWithTimeout(API + '/cnf/search?q=' + encodeURIComponent(q), {}, 10000);
+    let data = await res.json();
     if (!res.ok) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">' + esc(data.error || 'Erreur') + '</p>'; return; }
-    var results = data.results || [];
+    let results = data.results || [];
     if (results.length === 0) { $('cnf-results').innerHTML = '<p style="color:var(--text-dim);text-align:center;">Aucun résultat pour « ' + esc(q) + ' ».</p>'; return; }
-    var html = '';
+    let html = '';
     results.forEach(function(r) {
       html += '<div class="cnf-result" data-cnf-id="' + r.food_id + '">' +
         '<span class="cnf-name">' + esc(r.name_fr || r.name_en || '') + '</span>' +
@@ -221,13 +221,13 @@ async function cnfSelectProduct(foodId) {
   document.querySelector('.cnf-result[data-cnf-id="' + foodId + '"]').classList.add('selected');
   $('cnf-details').innerHTML = '<p class="loading">Chargement des détails…</p>';
   try {
-    var res = await fetchWithTimeout(API + '/cnf/product/' + foodId, {}, 10000);
-    var data = await res.json();
+    let res = await fetchWithTimeout(API + '/cnf/product/' + foodId, {}, 10000);
+    let data = await res.json();
     if (!res.ok) { $('cnf-details').innerHTML = '<p style="color:var(--accent-red);">Erreur</p>'; return; }
-    var food = data.food;
-    var group = data.group;
-    var nutrients = data.nutrients || [];
-    var html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
+    let food = data.food;
+    let group = data.group;
+    let nutrients = data.nutrients || [];
+    let html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
     html += '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">' + esc(food.name_fr || food.name_en) + '</div>';
     if (group) html += '<div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:12px;">' + esc(group.name_fr) + '</div>';
     html += '<div class="cnf-nutrients">';
@@ -243,9 +243,9 @@ async function cnfSelectProduct(foodId) {
 
 function cnfConfirmAdd(food, nutrients, group) {
   function handleAlias(a) { a = a.trim(); if (a && !autoAliases.includes(a)) { autoAliases.push(a); } }
-  var nutriMap = {};
+  let nutriMap = {};
   nutrients.forEach(function(n) { nutriMap[n.code] = n; });
-  var nutrition = {
+  let nutrition = {
     protein: nutriMap[203]?.amount || 0,
     fiber: nutriMap[291]?.amount || 0,
     iron: nutriMap[303]?.amount || 0,
@@ -254,8 +254,8 @@ function cnfConfirmAdd(food, nutrients, group) {
     omega3: (nutriMap[629]?.amount || 0) + (nutriMap[621]?.amount || 0) + (nutriMap[631]?.amount || 0) + (nutriMap[851]?.amount || 0)
   };
   Object.keys(nutrition).forEach(function(k) { nutrition[k] = Math.round(nutrition[k] * 100) / 100; });
-  var guessedCat = guessCategory(food.group_code, nutrients);
-  var highlights = [];
+  let guessedCat = guessCategory(food.group_code, nutrients);
+  let highlights = [];
   if (nutrition.omega3 > 1) highlights.push('Ω-3');
   if (nutrition.protein > 15) highlights.push('Protéine');
   if (nutrition.iron > 2) highlights.push('Fer');
@@ -264,9 +264,9 @@ function cnfConfirmAdd(food, nutrients, group) {
   if (nutriMap[418]?.amount > 1) highlights.push('B12');
   if (nutriMap[328]?.amount > 2) highlights.push('Vit D');
   if (nutriMap[317]?.amount > 15) highlights.push('Sélénium');
-  var allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
-  var foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
-  var html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
+  let allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
+  let foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
+  let html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
   html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add name">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
@@ -275,7 +275,7 @@ function cnfConfirmAdd(food, nutrients, group) {
   html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add highlights">';
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
   // Auto-populate aliases from CNF data + original search term
-  var autoAliases = [];
+  let autoAliases = [];
   if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(cnfSearchQuery); }
   if (food.name_fr && food.name_fr !== foodName) { autoAliases.push(food.name_fr); }
   if (food.name_en && food.name_en.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(food.name_en); }
@@ -283,7 +283,7 @@ function cnfConfirmAdd(food, nutrients, group) {
   if (food.alt_name_en) { food.alt_name_en.split(',').forEach(handleAlias); }
   if (food.scientific_name) { autoAliases.push(food.scientific_name); }
   // Dedupe
-  var seen = {};
+  let seen = {};
   autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) { return false; } seen[a] = true; return true; });
   html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="ex: cheval, viande de cheval">';
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
@@ -301,25 +301,25 @@ function cnfConfirmAdd(food, nutrients, group) {
 }
 
 async function cnfSaveToDatabase(food, nutrition) {
-  var name = $('cnf-add-name').value.trim();
-  var catId = $('cnf-add-cat').value;
-  var highlights = $('cnf-add-highlights').value.trim();
-  var aliasesRaw = $('cnf-add-aliases').value.trim();
-  var aliases = aliasesRaw ? aliasesRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
+  let name = $('cnf-add-name').value.trim();
+  let catId = $('cnf-add-cat').value;
+  let highlights = $('cnf-add-highlights').value.trim();
+  let aliasesRaw = $('cnf-add-aliases').value.trim();
+  let aliases = aliasesRaw ? aliasesRaw.split(',').map(function(s) { return s.trim(); }).filter(Boolean) : [];
   if (!name) { showToast('Le nom est requis', 'error'); return; }
-  var cat = (DATA.categories || []).find(function(c) { return c.id === catId; });
+  let cat = (DATA.categories || []).find(function(c) { return c.id === catId; });
   if (!cat) { showToast('Catégorie invalide', 'error'); return; }
   if (cat.foods?.some(function(f) { return f.name.toLowerCase() === name.toLowerCase(); })) {
     showToast('Cet aliment existe déjà', 'error'); return;
   }
-  var densityScore = Math.round((nutrition.protein * 2 + nutrition.fiber * 3 + nutrition.iron * 2 + nutrition.vit_c + nutrition.calcium * 0.1 + nutrition.omega3 * 10) / 3);
+  let densityScore = Math.round((nutrition.protein * 2 + nutrition.fiber * 3 + nutrition.iron * 2 + nutrition.vit_c + nutrition.calcium * 0.1 + nutrition.omega3 * 10) / 3);
   densityScore = Math.max(10, Math.min(100, densityScore));
-  var token = getToken();
+  let token = getToken();
   if (!token) { showToast('Session expirée', 'error'); return; }
   $('cnf-save-btn').textContent = 'Sauvegarde…';
   $('cnf-save-btn').disabled = true;
   try {
-    var res = await fetchWithTimeout(API + '/admin/food/show', {
+    let res = await fetchWithTimeout(API + '/admin/food/show', {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
         source_type: 1,
@@ -331,10 +331,10 @@ async function cnfSaveToDatabase(food, nutrition) {
         aliases: aliases
       })
     }, 10000);
-    var data = await res.json();
+    let data = await res.json();
     if (!res.ok) { showToast(data.error || 'Erreur', 'error'); $('cnf-save-btn').textContent = '✓ Ajouter'; $('cnf-save-btn').disabled = false; return; }
     // Reload DATA from server to get the updated list
-    var foodsRes = await fetchWithTimeout(API + '/foods', {}, 10000);
+    let foodsRes = await fetchWithTimeout(API + '/foods', {}, 10000);
     if (foodsRes.ok) { DATA = await foodsRes.json(); }
     $('manage-products-modal').classList.add('hidden');
     showToast(name + ' ajouté!', 'success');

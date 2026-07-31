@@ -115,7 +115,7 @@ async function showSuggestions() {
     // Wire add buttons
     content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        let name = btn.dataset.suggestAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        let name = btn.dataset.suggestAdd.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
         addSuggestedFood(name, btn.dataset.suggestCat);
         btn.textContent = '✓';
         btn.style.background = 'var(--accent)';
@@ -194,7 +194,7 @@ async function buildSeasonalHtml() {
 document.addEventListener('click', function(e) {
   let el = e.target.closest('[data-seasonal-food]');
   if (el) {
-    let name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let name = el.dataset.seasonalFood.replaceAll(/&#39;/g, "'").replaceAll(/&quot;/g, '"');
     addSuggestedFood(name);
     return;
   }

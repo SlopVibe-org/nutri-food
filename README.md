@@ -1,19 +1,55 @@
-# NutriFood
+# 🍎 NutriFood
 
 App de planification de repas et suivi nutritionnel basée sur le Guide alimentaire canadien.
+
+## 📑 Table des matières
+
+- [Fonctionnalités](#fonctionnalités)
+  - [Planification hebdomadaire](#planification-hebdomadaire)
+  - [Suivi quotidien (tracking)](#suivi-quotidien-tracking)
+  - [Spéciaux (deals hebdomadaires)](#spéciaux-deals-hebdomadaires)
+- [Architecture](#architecture)
+  - [Stack](#stack)
+  - [Modules frontend](#modules-frontend)
+  - [Docker](#docker)
+  - [Données persistantes](#données-persistantes)
+  - [Schéma DB](#schéma-db)
+- [Système de deals (epiceries.ca)](#système-de-deals-epiceriesca)
+- [API Endpoints](#api-endpoints)
+- [Sécurité](#sécurité)
+- [Installation](#installation)
+- [Données nutritionnelles](#données-nutritionnelles)
+- [Licence](#licence)
+
+## 📖 Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [📖 Guide utilisateur](docs/USER_GUIDE.md) | Comment utiliser NutriFood : comptes, navigation, sélection, recherche, objectifs, listes d'épicerie, reset |
+| [🚀 Guide de déploiement](docs/DEPLOYMENT.md) | Installation complète : Docker, configuration, reverse proxy, Cloudflare, sauvegardes |
+| [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
+| [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (31 juillet 2025) |
+
+---
 
 ## Fonctionnalités
 
 ### Planification hebdomadaire
+
+> 📖 Voir : [Guide utilisateur — Sélectionner des aliments](docs/USER_GUIDE.md#🖱️-sélectionner-des-aliments)
+
 - Sélection d'aliments par catégorie (protéines, légumes, fruits, grains, etc.)
 - Calcul automatique des objectifs nutritionnels (protéines, fibres, fer, vitamine C, calcium, oméga-3, calories)
-- Objectifs personnalisables par semaine
-- Liste d'épicerie générée à partir des sélections
+- Objectifs personnalisables par semaine → [Guide utilisateur — Objectifs](docs/USER_GUIDE.md#🎯-objectifs-nutritionnels-personnalisés)
+- Liste d'épicerie générée à partir des sélections → [Guide utilisateur — Liste d'épicerie](docs/USER_GUIDE.md#🛒-liste-dépicerie)
 - Suggestions de portions et carences en nutriments
 - Sauvegarde automatique et historique des semaines
-- Réinitialisation rapide (badge 🔄 cliquable)
+- Réinitialisation rapide (badge 🔄 cliquable) → [Guide utilisateur — Reset](docs/USER_GUIDE.md#🔄-réinitialiser-les-données)
 
 ### Suivi quotidien (tracking)
+
+> 📖 Voir : [Guide utilisateur — Les deux modes](docs/USER_GUIDE.md#📊-les-deux-modes--suivi-et-planification)
+
 - Onglet "Suivi" (par défaut) pour enregistrer ce que vous mangez réellement
 - Navigation par jour (‹ ›) pour consulter l'historique
 - Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
@@ -22,6 +58,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 - Réinitialisation : badge 🔄 cliquable → jour ou semaine complète
 
 ### Spéciaux (deals hebdomadaires)
+
 - Liste des spéciaux d'épiceries.ca regroupés par catégorie
 - Classés du meilleur rabais (prix unitaire le plus bas)
 - Logos des chaînes (IGA, Metro, Super C, Maxi, Provigo, Walmart)
@@ -29,13 +66,18 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 - Clic sur une ligne → fiche produit sur le site du marchand
 - Tooltips au survol : nom complet du produit, magasin, format/prix/rabais
 
+---
+
 ## Architecture
 
 ### Stack
+
 - **Frontend:** HTML/CSS/JS vanilla (14 modules avec lazy loading)
 - **Backend:** Python Flask (API REST, ~1770 lignes)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
 - **Déploiement:** Docker Compose (2 conteneurs)
+
+> 📖 Voir : [Guide de déploiement](docs/DEPLOYMENT.md)
 
 ### Modules frontend
 
@@ -58,6 +100,8 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 
 ### Docker
 
+> 📖 Voir : [Guide de déploiement — Démarrer les conteneurs](docs/DEPLOYMENT.md#🐳-étape-3--démarrer-les-conteneurs)
+
 Architecture 2 conteneurs :
 
 ```
@@ -67,12 +111,17 @@ nutrifood-web   (Nginx, port 5011 hôte → proxy vers API)
 
 Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requêtes `/api/` vers le backend (nutrifood-api).
 
-### Données persistantes (volume `./data:/data` et `./config:/usr/share/nginx/html`)
-- `nutrifood.db` — base de données SQLite (users, selections, tracking, history, goals, foods)
-- `deals_raw.json` — données brutes des spéciaux (fetch depuis epiceries.ca)
-- `config/` — fichiers frontend (index.html, js/) servis par nginx
+### Données persistantes
 
-### Schéma DB (tables principales)
+> 📖 Voir : [Guide de déploiement — Structure de déploiement](docs/DEPLOYMENT.md#📁-structure-de-déploiement)
+
+Volumes Docker :
+- `./data:/data` — `nutrifood.db`, `deals_raw.json`
+- `./config:/usr/share/nginx/html` — fichiers frontend (index.html, js/)
+
+### Schéma DB
+
+> 📖 Voir : [Guide administrateur — Structure de la base de données](docs/ADMIN_GUIDE.md#🗄️-structure-de-la-base-de-données)
 
 | Table | Description |
 |-------|-------------|
@@ -88,6 +137,8 @@ Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requ�
 | `reset_tokens` | Tokens de réinitialisation mot de passe (magic links) |
 | `meal_plans` | Plans de repas hebdomadaires |
 | `journal_entries` | Entrées de journal nutritionnel |
+
+---
 
 ## Système de deals (epiceries.ca)
 
@@ -108,7 +159,11 @@ Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requ�
    - Déclenche un refresh auto si le raw a >1 semaine
    - Le bouton "🔄 Rafraîchir" (admin) force un refresh manuel
 
+---
+
 ## API Endpoints
+
+> 📖 Voir : [Guide administrateur — Gérer les aliments](docs/ADMIN_GUIDE.md#✏️-gérer-les-aliments) pour les endpoints admin
 
 ### Aliments
 - `GET /api/foods` — liste des catégories et aliments
@@ -162,6 +217,8 @@ Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requ�
 - `POST /api/admin/food/hide` — masquer un aliment (admin only)
 - `POST /api/admin/food/show` — afficher un aliment (admin only)
 
+---
+
 ## Sécurité
 
 ### Headers de sécurité (nginx)
@@ -192,13 +249,17 @@ Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requ�
 | **SonarQube** | 0 bugs · 0 hotspots · 18 code smells · 0.4% duplications |
 | **Sécurité** | 8/8 security headers · JWT auth · rate limiting |
 
+---
+
 ## Installation
+
+> 📖 Voir : [Guide de déploiement complet](docs/DEPLOYMENT.md)
 
 ### Prérequis
 - Docker + Docker Compose v2
 - Port 5011 disponible (ou modifier docker-compose.yml)
 
-### Déploiement
+### Déploiement rapide
 ```bash
 git clone https://github.com/SlopVibe-org/nutri-food.git
 cd nutri-food
@@ -219,11 +280,15 @@ MAIL_FROM=votre@email.com
 APP_URL=https://votre-domaine.com/nutri-food/
 ```
 
+---
+
 ## Données nutritionnelles
 
-- **Aliments NutriFood:** gérés via SQLite (tables `nf_*`), interface admin
+- **Aliments NutriFood:** gérés via SQLite (tables `nf_*`), interface admin → [Guide admin](docs/ADMIN_GUIDE.md#✏️-gérer-les-aliments)
 - **CNF (Canadian Nutrient File):** 5993 aliments de Santé Canada intégrés (tables `food`, `nutrient_*`)
 - **Objectifs par défaut (hebdomadaires):** Protéines 350g, Fibres 175g, Fer 56mg, Vit C 280mg, Calcium 700mg, Oméga-3 3.5g, Calories 14000kcal
+
+---
 
 ## Licence
 

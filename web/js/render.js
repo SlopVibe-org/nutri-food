@@ -579,34 +579,33 @@ function renderSimple() {
   });
   app.innerHTML = html;
 
-  // Wire up empty square clicks to open the dropdown
+  // Wire up empty square clicks to open the food list
   app.querySelectorAll('[data-simple-add]').forEach(function(box) {
     box.addEventListener('click', function(e) {
       e.stopPropagation();
       let catId = box.dataset.simpleAdd;
-      let sel = document.querySelector('[data-simple-sel="' + catId + '"]');
-      if (sel) {
-        let isVisible = sel.classList.contains('visible');
-        document.querySelectorAll('.simple-select.visible').forEach(function(s) { s.classList.remove('visible'); });
-        if (!isVisible) { sel.classList.add('visible'); sel.focus(); }
+      let list = document.querySelector('[data-simple-list="' + catId + '"]');
+      if (list) {
+        let isVisible = list.classList.contains('visible');
+        document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
+        if (!isVisible) { list.classList.add('visible'); }
       }
     });
   });
-  // Wire up selects
-  app.querySelectorAll('[data-simple-sel]').forEach(function(sel) {
-    sel.addEventListener('change', function() {
-      if (sel.value) {
-        let opt = sel.selectedOptions[0];
-        addItem(sel.dataset.simpleSel, { name: sel.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
-        sel.value = '';
-        sel.classList.remove('visible');
-      }
+  // Wire up food item picks
+  app.querySelectorAll('[data-simple-pick]').forEach(function(item) {
+    item.addEventListener('click', function(e) {
+      e.stopPropagation();
+      let catId = item.dataset.cat;
+      addItem(catId, { name: decodeEntities(item.dataset.simplePick), density: Number.parseInt(item.dataset.density || 0), nutrients: item.dataset.nutrients || '' });
+      // Close all lists
+      document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
     });
   });
-  // Click outside closes dropdowns
+  // Click outside closes food lists
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.simple-select') && !e.target.closest('[data-simple-add]')) {
-      document.querySelectorAll('.simple-select.visible').forEach(function(s) { s.classList.remove('visible'); });
+    if (!e.target.closest('.simple-food-list') && !e.target.closest('[data-simple-add]')) {
+      document.querySelectorAll('.simple-food-list.visible').forEach(function(l) { l.classList.remove('visible'); });
     }
   }, true);
   // Tracking nutrition
@@ -677,15 +676,14 @@ function renderSimpleCategory(cat) {
 
   html += '</div>'; // end row
 
-  // Hidden dropdown (appears below when empty square clicked)
-  html += '<select class="simple-select" data-simple-sel="' + cat.id + '">';
-  html += '<option value="">+ Ajouter…</option>';
+  // Inline food list (appears below when empty square clicked)
+  html += '<div class="simple-food-list" data-simple-list="' + cat.id + '">';
   let sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
   sorted.forEach(function(f) {
     let seasonPrefix = getSeasonPrefix(f);
-    html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + seasonPrefix + f.name + ' — ' + f.density + '%</option>';
+    html += '<span class="simple-food-item" data-simple-pick="' + esc(f.name) + '" data-cat="' + cat.id + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" title="' + f.density + '% — ' + esc(f.nutrients) + '">' + seasonPrefix + f.name + '</span>';
   });
-  html += '</select>';
+  html += '</div>';
 
   html += '</div>';
   return html;

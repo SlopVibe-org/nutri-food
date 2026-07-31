@@ -196,8 +196,10 @@
   .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
   .sbox.filled:hover { background:var(--accent); transform:scale(1.1); }
   .sbox-day { font-size:0.6rem; color:rgba(15,17,23,0.6); font-weight:700; pointer-events:none; }
-  .simple-select { display:none; padding:8px 12px; background:#12141c; color:var(--text); border:1px solid var(--accent-dim); border-radius:8px; font-size:0.9rem; width:100%; margin-top:6px; }
-  .simple-select.visible { display:block; }
+  .simple-food-list { display:none; flex-wrap:wrap; gap:6px; padding:8px 0 4px; width:100%; }
+  .simple-food-list.visible { display:flex; }
+  .simple-food-item { padding:4px 10px; background:#12141c; border:1px solid var(--border); border-radius:16px; font-size:0.8rem; color:var(--text); cursor:pointer; transition: all 0.15s; white-space:nowrap; }
+  .simple-food-item:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
   .simple-add-btn { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#12141c; color:var(--text-dim); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 24px; transition: all 0.15s; }
   .simple-add-btn:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
 

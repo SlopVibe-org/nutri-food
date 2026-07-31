@@ -867,7 +867,6 @@ def get_shared(token):
     current_month = date.today().month
 
     for cat_id, items in selections_data.items():
-        cat_name = cat_id
         cat_icon = ''
         for cat in foods_data.get('categories', []):
             if cat['id'] == cat_id:

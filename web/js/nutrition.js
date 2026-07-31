@@ -40,6 +40,7 @@ async function loadUserGoals() {
       userGoals = { ...defaultGoals };
     }
   } catch(e) { userGoals = { ...defaultGoals }; }
+    console.error("[NutriFood] Error:", e);
 }
 
 async function showGoals() {
@@ -86,6 +87,7 @@ async function submitGoals() {
       $('goals-error').textContent = data.error || 'Erreur';
     }
   } catch(e) {
+    console.error("[NutriFood] Error:", e);
     $('goals-error').textContent = 'Erreur: ' + e.message;
   }
   $('goals-submit').disabled = false;
@@ -140,6 +142,7 @@ async function performPlanningReset() {
       }, 10000);
       showToast('Sélections réinitialisées', 'success');
     } catch(e) { showToast('Erreur lors du reset', 'error'); }
+      console.error("[NutriFood] Error:", e);
   }
 }
 
@@ -163,6 +166,7 @@ async function performTrackingReset(scope) {
     }
     loadTrackingDay(trackingDate);
   } catch(e) { showToast('Erreur lors du reset', 'error'); }
+    console.error("[NutriFood] Error:", e);
 }
 
 // ─── Tracking nutrition dashboard (dual: day + week) ───
@@ -237,6 +241,7 @@ async function renderTrackingNutrition() {
     });
     wc2.innerHTML = wh;
   } catch(e) { /* Network or tracking data error */ console.error('[NutriFood] Tracking week fetch error:', e); }
+    console.error("[NutriFood] Error:", e);
 }
 
 function renderDailyNutrition(totals) {

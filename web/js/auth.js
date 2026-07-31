@@ -174,6 +174,7 @@ async function submitResetPassword() {
     window.location.hash = '';
     window.location.reload();
   } catch(e) {
+    console.error("[NutriFood] Auth error:", e);
     errEl.textContent = 'Erreur de connexion'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false;
   }
 }
@@ -216,6 +217,7 @@ async function submitChangePassword() {
     $('save-bar').classList.add('visible');
     $('save-info').textContent = 'Mot de passe changé ✓';
   } catch(e) {
+    console.error("[NutriFood] Auth error:", e);
     errEl.textContent = 'Erreur de connexion'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false;
   }
 }

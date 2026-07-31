@@ -57,6 +57,14 @@ function groupDealsByCategory(allDeals) {
   return grouped;
 }
 
+function findFoodInData(foodName) {
+  for (let cat of DATA.categories) {
+    let f = cat.foods.find(function(x) { return x.name === foodName; });
+    if (f) { return { cat: cat, food: f }; }
+  }
+  return null;
+}
+
 function renderDealsContent() {
   let content = $('deals-content');
   if (!DATA) { content.innerHTML = '<p class="loading">Chargement…</p>'; return; }
@@ -124,13 +132,9 @@ function renderDealsContent() {
   content.querySelectorAll('[data-deal-add]').forEach(function(btn) {
     btn.addEventListener('click', function() {
       let foodName = btn.dataset.dealAdd.decodeEntities();
-      let foundCat = null, foundFood = null;
-      DATA.categories.forEach(function(c) {
-        let f = c.foods.find(function(x) { return x.name === foodName; });
-        if (f) { foundCat = c; foundFood = f; }
-      });
-      if (foundCat && foundFood) {
-        addItem(foundCat.id, foundFood);
+      let found = findFoodInData(foodName);
+      if (found) {
+        addItem(found.cat.id, found.food);
         btn.textContent = '✓';
         btn.disabled = true;
         setTimeout(function() { btn.textContent = '+'; btn.disabled = false; }, 2000);

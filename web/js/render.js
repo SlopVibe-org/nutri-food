@@ -517,7 +517,6 @@ document.addEventListener('click', function(e) {
     loadScript('js/food-modal.js', function() {
       openFoodModal(chip.dataset.detailCat, chipName);
     });
-    return;
   }
 });
 

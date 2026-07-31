@@ -248,36 +248,108 @@ function cnfConfirmAdd(food, nutrients, group) {
   function handleAlias(a) { a = a.trim(); if (a && !autoAliases.includes(a)) { autoAliases.push(a); } }
   let nutriMap = {};
   nutrients.forEach(function(n) { nutriMap[n.code] = n; });
-  let nutrition = {
-    protein: nutriMap[203]?.amount ?? 0,
-    fiber: nutriMap[291]?.amount ?? 0,
-    iron: nutriMap[303]?.amount ?? 0,
-    vit_c: nutriMap[401]?.amount ?? 0,
-    calcium: nutriMap[301]?.amount ?? 0,
-    omega3: (nutriMap[629]?.amount ?? 0) + (nutriMap[621]?.amount ?? 0) + (nutriMap[631]?.amount ?? 0) + (nutriMap[851]?.amount ?? 0)
-  };
-  Object.keys(nutrition).forEach(function(k) { nutrition[k] = Math.round(nutrition[k] * 100) / 100; });
-  let guessedCat = guessCategory(food.group_code, nutrients);
+
+  // ─── Build full nutrition profile (per 100g, CNF standard) ───
+  let N = {};
+  function amt(code) { let v = nutriMap[code]?.amount ?? 0; return Math.round(v * 100) / 100; }
+  N.protein    = amt(203);
+  N.fiber      = amt(291);
+  N.iron       = amt(303);
+  N.vit_c      = amt(401);
+  N.calcium    = amt(301);
+  N.omega3     = Math.round(((nutriMap[629]?.amount ?? 0) + (nutriMap[621]?.amount ?? 0) + (nutriMap[631]?.amount ?? 0) + (nutriMap[851]?.amount ?? 0)) * 1000) / 1000;
+  N.b12        = amt(418);
+  N.vit_d      = amt(328);
+  N.selenium   = amt(317);
+  N.vit_k      = amt(430);
+  N.manganese  = amt(315);
+  N.zinc       = amt(309);
+  N.potassium  = amt(306);
+  N.magnesium  = amt(304);
+  N.phosphorus = amt(305);
+  N.folate     = amt(435);
+  N.vit_e      = amt(323);
+  N.niacin     = amt(406);
+  N.b6         = amt(415);
+  N.thiamine   = amt(404);
+  N.riboflavin = amt(405);
+  N.copper     = amt(312);
+  N.pantothenic = amt(410);
+
+  // ─── Auto-detect highlights (≥10% Daily Value per 100g) ───
+  // DV thresholds based on Canadian Daily Values
+  let HL = [
+    { key: 'protein',    label: 'Protéine',  dv: 50,   unit: 'g' },
+    { key: 'fiber',      label: 'Fibres',    dv: 25,   unit: 'g' },
+    { key: 'iron',       label: 'Fer',       dv: 14,   unit: 'mg' },
+    { key: 'vit_c',      label: 'Vit C',     dv: 60,   unit: 'mg' },
+    { key: 'calcium',    label: 'Calcium',   dv: 1100, unit: 'mg' },
+    { key: 'omega3',     label: 'Ω-3',       dv: 1.1,  unit: 'g' },
+    { key: 'b12',        label: 'B12',       dv: 0.0024, unit: 'mg' },
+    { key: 'vit_d',      label: 'Vit D',     dv: 0.015,  unit: 'mg' },
+    { key: 'selenium',   label: 'Sélénium',  dv: 0.055,  unit: 'mg' },
+    { key: 'vit_k',      label: 'Vit K',     dv: 0.12,   unit: 'mg' },
+    { key: 'manganese',  label: 'Manganèse', dv: 2.3,  unit: 'mg' },
+    { key: 'zinc',       label: 'Zinc',      dv: 11,   unit: 'mg' },
+    { key: 'potassium',  label: 'Potassium', dv: 4700, unit: 'mg' },
+    { key: 'magnesium',  label: 'Magnésium', dv: 200,  unit: 'mg' },
+    { key: 'phosphorus', label: 'Phosphore', dv: 700,  unit: 'mg' },
+    { key: 'folate',     label: 'Folate',    dv: 0.4,  unit: 'mg' },
+    { key: 'vit_e',      label: 'Vit E',     dv: 15,   unit: 'mg' },
+    { key: 'niacin',     label: 'Niacine',   dv: 14,   unit: 'mg' },
+    { key: 'b6',         label: 'B6',        dv: 1.3,  unit: 'mg' },
+    { key: 'thiamine',   label: 'Thiamine',  dv: 1.2,  unit: 'mg' },
+    { key: 'riboflavin', label: 'Riboflavine', dv: 1.1, unit: 'mg' },
+    { key: 'copper',     label: 'Cuivre',    dv: 0.9,  unit: 'mg' },
+    { key: 'pantothenic',label: 'Acide pantothénique', dv: 5, unit: 'mg' }
+  ];
+
   let highlights = [];
-  if (nutrition.omega3 > 1) highlights.push('Ω-3');
-  if (nutrition.protein > 15) highlights.push('Protéine');
-  if (nutrition.iron > 2) highlights.push('Fer');
-  if (nutrition.calcium > 100) highlights.push('Calcium');
-  if (nutrition.vit_c > 10) highlights.push('Vit C');
-  if (nutriMap[418]?.amount > 1) highlights.push('B12');
-  if (nutriMap[328]?.amount > 2) highlights.push('Vit D');
-  if (nutriMap[317]?.amount > 15) highlights.push('Sélénium');
+  let allNutriItems = [];
+  HL.forEach(function(h) {
+    let val = N[h.key];
+    if (val > 0) {
+      let pctDV = Math.round((val / h.dv) * 100);
+      allNutriItems.push({ label: h.label, val: val, unit: h.unit, pct: pctDV });
+      if (pctDV >= 10) { highlights.push(h.label); }
+    }
+  });
+  // Sort by %DV descending
+  allNutriItems.sort(function(a, b) { return b.pct - a.pct; });
+
+  let guessedCat = guessCategory(food.group_code, nutrients);
   let allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
   let foodName = (food.name_fr ?? food.name_en ?? '').split(',')[0].trim();
+
   let html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
   html += '<label for="cnf-add-name" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Nom</label>';
   html += '<input type="text" id="cnf-add-name" value="' + esc(foodName) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add name">';
   html += '<label for="cnf-add-cat" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Catégorie</label>';
   html += '<select id="cnf-add-cat" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;">' + allCats + '</select>';
-  html += '<label for="cnf-add-highlights" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts</label>';
+
+  // ─── Nutrient profile grid (sorted by %DV) ───
+  html += '<div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:6px;">Profil nutritionnel (per 100g · % VQ)</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
+  allNutriItems.forEach(function(n) {
+    let barColor = n.pct >= 20 ? 'var(--accent)' : (n.pct >= 10 ? 'rgba(74,222,128,0.7)' : 'var(--text-dim)');
+    let barWidth = Math.min(n.pct, 100);
+    html += '<div style="background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;position:relative;overflow:hidden;">';
+    html += '<div style="font-size:0.7rem;color:var(--text-dim);">' + esc(n.label) + '</div>';
+    html += '<div style="font-size:0.85rem;font-weight:700;color:' + barColor + ';">' + n.val + ' ' + esc(n.unit) + '</div>';
+    html += '<div style="font-size:0.65rem;color:' + barColor + ';">' + n.pct + '% VQ</div>';
+    if (n.pct >= 10) {
+      html += '<div style="position:absolute;bottom:0;left:0;height:2px;background:' + barColor + ';width:' + barWidth + '%;"></div>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // ─── Highlights field (auto-suggested) ───
+  html += '<label for="cnf-add-highlights" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Points forts <span style="opacity:0.6;">(≥10% VQ — auto-suggéré)</span></label>';
   html += '<input type="text" id="cnf-add-highlights" value="' + esc(highlights.join(', ')) + '" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="cnf add highlights">';
+
+  // ─── Aliases ───
   html += '<label for="cnf-add-aliases" style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
-  // Auto-populate aliases from CNF data + original search term
   let autoAliases = [];
   if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(cnfSearchQuery); }
   if (food.name_fr && food.name_fr !== foodName) { autoAliases.push(food.name_fr); }
@@ -285,21 +357,17 @@ function cnfConfirmAdd(food, nutrients, group) {
   if (food.alt_name_fr) { food.alt_name_fr.split(',').forEach(handleAlias); }
   if (food.alt_name_en) { food.alt_name_en.split(',').forEach(handleAlias); }
   if (food.scientific_name) { autoAliases.push(food.scientific_name); }
-  // Dedupe
   let seen = {};
   autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) { return false; } seen[a] = true; return true; });
   html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="ex: cheval, viande de cheval">';
-  html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
-  [['Protéine', nutrition.protein, 'g'], ['Fibres', nutrition.fiber, 'g'], ['Fer', nutrition.iron, 'mg'], ['Vit C', nutrition.vit_c, 'mg'], ['Calcium', nutrition.calcium, 'mg'], ['Ω-3', nutrition.omega3, 'g']].forEach(function(n) {
-    html += '<div style="background:#0f1117;border:1px solid var(--border);border-radius:6px;padding:6px;text-align:center;"><div style="font-size:0.7rem;color:var(--text-dim);">' + n[0] + '</div><div style="font-size:0.9rem;font-weight:700;color:var(--accent);">' + n[1] + ' ' + n[2] + '</div></div>';
-  });
-  html += '</div></div>';
+  html += '</div>';
+
   html += '<div style="display:flex;gap:8px;">';
   html += '<button class="login-cta" id="cnf-save-btn" style="flex:1;padding:12px;">✓ Ajouter</button>';
   html += '<button id="cnf-back-btn" style="padding:12px 20px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:0.9rem;cursor:pointer;">← Retour</button>';
   html += '</div>';
   $('cnf-details').innerHTML = html;
-  $('cnf-save-btn').addEventListener('click', function() { cnfSaveToDatabase(food, nutrition); });
+  $('cnf-save-btn').addEventListener('click', function() { cnfSaveToDatabase(food, N); });
   $('cnf-back-btn').addEventListener('click', function() { cnfSelectProduct(cnfSelectedId); });
 }
 

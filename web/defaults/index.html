@@ -305,63 +305,6 @@
     border: 1px solid var(--border); border-radius: var(--radius);
     padding: 10px 16px; margin-bottom: 16px;
   }
-  .nutri-stat { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-  .nutri-stat .ns-value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-  .nutri-stat .ns-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
-
-  /* Grocery list */
-  .grocery-modal h2 { font-size: 1.3rem; margin-bottom: 16px; color: var(--accent); }
-  .grocery-item {
-    display: flex; align-items: center; gap: 10px; padding: 8px 0;
-    border-bottom: 1px solid var(--border); font-size: 0.95rem;
-  }
-  .grocery-item:last-child { border-bottom: none; }
-  .grocery-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
-  .grocery-item .gi-name { flex: 1; }
-  .grocery-item .gi-qty { font-weight: 700; color: var(--accent); }
-  .grocery-item.checked .gi-name { text-decoration: line-through; color: var(--text-dim); }
-  .grocery-actions { display: flex; gap: 8px; margin-top: 16px; }
-  .grocery-actions button {
-    flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
-  }
-  .grocery-copy { background: var(--accent-dim); color: #0f1117; }
-  .grocery-copy:hover { background: var(--accent); }
-  .grocery-close { background: transparent; color: var(--text-dim); border: 1px solid var(--border) !important; }
-
-  /* Food detail tooltip */
-  .food-detail.hidden { display: none; }
-
-  /* Chip hover tooltip */
-  .chip-tooltip {
-    position: fixed; z-index: 300; background: var(--card); border: 1px solid var(--accent-dim);
-    border-radius: 10px; padding: 12px 16px; max-width: 280px; pointer-events: none;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.5); display: none; font-size: 0.85rem;
-  }
-  .chip-tooltip.visible { display: block; }
-  .chip-tooltip .ct-title { font-weight: 700; color: var(--accent); margin-bottom: 4px; }
-  .chip-tooltip .ct-density { font-size: 0.75rem; color: var(--accent); font-weight: 700; margin-bottom: 6px; }
-  .chip-tooltip .ct-nutrients { color: var(--text); line-height: 1.4; }
-  .chip-tooltip .ct-also { font-size: 0.72rem; color: var(--text-dim); margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
-
-  /* Season badge */
-  .season-badge {
-    display: inline-block; font-size: 0.65rem; font-weight: 700; padding: 1px 6px;
-    border-radius: 10px; margin-left: 4px; vertical-align: middle;
-  }
-  .season-badge.in-season { background: rgba(74,222,128,0.15); color: var(--accent); border: 1px solid rgba(74,222,128,0.3); }
-  .season-badge.out-season { background: rgba(148,163,184,0.1); color: var(--text-dim); border: 1px solid var(--border); }
-
-  /* Nutrition summary bar */
-  .nutri-summary {
-    display: flex; gap: 12px; flex-wrap: wrap; background: var(--card);
-    border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 10px 16px; margin-bottom: 16px;
-  }
-  .nutri-stat { display: flex; flex-direction: column; align-items: center; min-width: 60px; }
-  .nutri-stat .ns-value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
-  .nutri-stat .ns-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; }
-
-  
 
   /* API error state */
   .api-error {
@@ -513,7 +456,7 @@
   .dt-unit { color: var(--accent); font-weight: 600; white-space: nowrap; text-align: right; }
   .dt-add-btn { padding: 4px 10px; background: rgba(74,222,128,0.15); border: 1px solid rgba(74,222,128,0.35); color: var(--accent); border-radius: 6px; font-size: 0.85rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
   .dt-add-btn:hover { background: rgba(74,222,128,0.3); }
-  .dt-add-btn:disabled { opacity: 0.5; cursor: default; }
+  .dt-add-btn:disabled { opacity: 0.6; cursor: default; }
 
   /* Deal tooltip (inside chip-tooltip) */
   .chip-tooltip .ct-deals-title { font-size: 0.75rem; color: var(--accent-amber); font-weight: 700; margin-top: 8px; padding-top: 6px; border-top: 1px solid var(--border); }
@@ -622,15 +565,15 @@
     <h2 id="auth-title">Connexion</h2>
     <div class="error-msg" id="auth-error"></div>
     <div class="field" id="name-field" style="display:none;">
-      <label>Nom</label>
+      <label for="auth-name">Nom</label>
       <input type="text" id="auth-name" autocomplete="name" aria-label="auth name">
     </div>
     <div class="field">
-      <label>Email ou nom d'usager</label>
+      <label for="auth-email">Email ou nom d'usager</label>
       <input type="text" id="auth-email" autocomplete="username" aria-label="auth email">
     </div>
     <div class="field">
-      <label>Mot de passe</label>
+      <label for="auth-password">Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" aria-label="auth password">
     </div>
     <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
@@ -650,15 +593,15 @@
     <h2>🔑 Changer le mot de passe</h2>
     <div class="error-msg" id="pw-error"></div>
     <div class="field">
-      <label>Mot de passe actuel</label>
+      <label for="pw-current">Mot de passe actuel</label>
       <input type="password" id="pw-current" autocomplete="current-password" aria-label="pw current">
     </div>
     <div class="field">
-      <label>Nouveau mot de passe</label>
+      <label for="pw-new">Nouveau mot de passe</label>
       <input type="password" id="pw-new" autocomplete="new-password" aria-label="pw new">
     </div>
     <div class="field">
-      <label>Confirmer</label>
+      <label for="pw-confirm">Confirmer</label>
       <input type="password" id="pw-confirm" autocomplete="new-password" aria-label="pw confirm">
     </div>
     <button type="button" class="submit-btn" id="pw-submit">Changer</button>
@@ -674,11 +617,11 @@
     <h2>🔑 Nouveau mot de passe</h2>
     <div class="error-msg" id="reset-error"></div>
     <div class="field">
-      <label>Nouveau mot de passe</label>
+      <label for="reset-password">Nouveau mot de passe</label>
       <input type="password" id="reset-password" autocomplete="new-password" aria-label="reset password">
     </div>
     <div class="field">
-      <label>Confirmer</label>
+      <label for="reset-confirm">Confirmer</label>
       <input type="password" id="reset-confirm" autocomplete="new-password" aria-label="reset confirm">
     </div>
     <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
@@ -719,13 +662,13 @@
     <h2>🎯 Mes objectifs</h2>
     <div class="error-msg" id="goals-error"></div>
     <div class="goals-grid">
-      <div class="goal-field"><label>Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1" aria-label="goal protein"></div>
-      <div class="goal-field"><label>Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1" aria-label="goal fiber"></div>
-      <div class="goal-field"><label>Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1" aria-label="goal iron"></div>
-      <div class="goal-field"><label>Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1" aria-label="goal vitamin c"></div>
-      <div class="goal-field"><label>Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1" aria-label="goal calcium"></div>
-      <div class="goal-field"><label>Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1" aria-label="goal omega3"></div>
-      <div class="goal-field"><label>Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50" aria-label="goal calories"></div>
+      <div class="goal-field"><label for="goal-protein">Protéine (g/sem)</label><input type="number" id="goal-protein" min="0" step="1" aria-label="goal protein"></div>
+      <div class="goal-field"><label for="goal-fiber">Fibres (g/sem)</label><input type="number" id="goal-fiber" min="0" step="1" aria-label="goal fiber"></div>
+      <div class="goal-field"><label for="goal-iron">Fer (mg/sem)</label><input type="number" id="goal-iron" min="0" step="1" aria-label="goal iron"></div>
+      <div class="goal-field"><label for="goal-vitamin_c">Vitamine C (mg/sem)</label><input type="number" id="goal-vitamin_c" min="0" step="1" aria-label="goal vitamin c"></div>
+      <div class="goal-field"><label for="goal-calcium">Calcium (mg/sem)</label><input type="number" id="goal-calcium" min="0" step="1" aria-label="goal calcium"></div>
+      <div class="goal-field"><label for="goal-omega3">Oméga-3 (g/sem)</label><input type="number" id="goal-omega3" min="0" step="0.1" aria-label="goal omega3"></div>
+      <div class="goal-field"><label for="goal-calories">Calories (kcal/sem)</label><input type="number" id="goal-calories" min="0" step="50" aria-label="goal calories"></div>
     </div>
     <button type="button" class="submit-btn" id="goals-submit">💾 Sauvegarder</button>
     <a class="cancel-link" id="goals-cancel">Annuler</a>

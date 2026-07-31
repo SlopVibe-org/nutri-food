@@ -6,10 +6,10 @@ function showShareLink() {
 
 async function loadSharedView(shareToken) {
   try {
-    var res = await fetch(API + '/shared/' + shareToken);
+    let res = await fetch(API + '/shared/' + shareToken);
     if (!res.ok) { renderWelcome(); return; }
-    var data = await res.json();
-    var items = data.grocery || [];
+    let data = await res.json();
+    let items = data.grocery || [];
 
     $('user-area').innerHTML = '<span class="user-name" style="color:var(--accent);">🛒 Liste de ' + esc(data.user_name || '') + '</span>';
     $('search-bar-container').style.display = 'none';
@@ -19,11 +19,11 @@ async function loadSharedView(shareToken) {
       return;
     }
 
-    var html = '<div style="max-width:500px;margin:0 auto;">';
+    let html = '<div style="max-width:500px;margin:0 auto;">';
     html += '<div style="margin-bottom:16px;"><h2 style="color:var(--accent);font-size:1.3rem;">🛒 Liste d\'épicerie</h2>';
     html += '<p style="color:var(--text-dim);font-size:0.9rem;">' + items.length + ' article(s) — cliquez pour cocher</p></div>';
     items.forEach(function(item) {
-      var qtyLabel = item.qty > 1 ? ' <span class="gi-qty">×' + item.qty + '</span>' : '';
+      let qtyLabel = item.qty > 1 ? ' <span class="gi-qty">×' + item.qty + '</span>' : '';
       html += '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + esc(item.name) + '</span>' + qtyLabel + '</div>';
     });
     html += '</div>';

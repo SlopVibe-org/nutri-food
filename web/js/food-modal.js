@@ -1,11 +1,11 @@
 // ─── Food modal module (lazy-loaded) ───
 
-var tooltipEl = null;
+let tooltipEl = null;
 
 function getNutritionTips(food) {
-  var tips = [];
-  var n = food.nutrition || {};
-  var nutrientsStr = (food.nutrients || '').toLowerCase();
+  let tips = [];
+  let n = food.nutrition || {};
+  let nutrientsStr = (food.nutrients || '').toLowerCase();
 
   // ─── Absorption tips (from food.absorption or auto-generated) ───
   if (food.absorption) {
@@ -56,7 +56,7 @@ function getNutritionTips(food) {
 
 function renderFoodNutritionHTML(n) {
   if (!n) return '';
-  var html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
+  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;">';
   if (n.protein) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Protéines</span><br><strong>' + n.protein + 'g</strong></div>';
   if (n.fiber) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fibres</span><br><strong>' + n.fiber + 'g</strong></div>';
   if (n.iron) html += '<div style="background:#12141c;padding:6px 10px;border-radius:6px;border:1px solid var(--border);"><span style="color:var(--text-dim);font-size:0.75rem;">Fer</span><br><strong>' + n.iron + 'mg</strong></div>';
@@ -80,8 +80,8 @@ function renderFoodSeasonHTML(food, month) {
 }
 
 function renderFoodTipsHTML(food, cat) {
-  var html = '';
-  var tips = getNutritionTips(food);
+  let html = '';
+  let tips = getNutritionTips(food);
   if (tips.length > 0) {
     html += '<div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">';
     tips.forEach(function(t) {
@@ -101,16 +101,16 @@ function renderFoodTipsHTML(food, cat) {
 }
 
 function renderFoodDealsHTML(food) {
-  var deals = (DEALS[food.name] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  let deals = (DEALS[food.name] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
   if (deals.length === 0) return '';
-  var html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
+  let html = '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border);">';
   html += '<h3 id="deals-toggle" style="margin:0;cursor:pointer;user-select:none;display:flex;align-items:center;gap:4px;">🏷️ Voir les spéciaux (' + deals.length + ') <span id="deals-arrow" style="font-size:0.7rem;">▼</span></h3>';
   html += '<div id="deals-content" style="display:none;margin-top:8px;">';
   deals.forEach(function(d) {
-    var si = STORE_META[d.store] || {};
-    var color = si.color || '#666';
-    var sn = si.name || d.store || '?';
-    var letter = sn.charAt(0).toUpperCase();
+    let si = STORE_META[d.store] || {};
+    let color = si.color || '#666';
+    let sn = si.name || d.store || '?';
+    let letter = sn.charAt(0).toUpperCase();
     html += '<div style="border-left:3px solid ' + color + ';padding-left:10px;margin-left:4px;margin-bottom:8px;">';
     html += '<div style="font-weight:600;">' + esc(d.name || food.name) + '</div>';
     html += '<div style="font-size:1.05rem;color:var(--accent);font-weight:700;margin:2px 0;">' + (d.price || '') + '$</div>';
@@ -124,17 +124,17 @@ function renderFoodDealsHTML(food) {
 }
 
 function openFoodModal(catId, name) {
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
-  var food = cat.foods.find(function(f) { return f.name === name; });
+  let food = cat.foods.find(function(f) { return f.name === name; });
   if (!food) return;
   $('suggestions-title').textContent = '📋 Informations nutritionnelles';
-  var alsoIn = [];
+  let alsoIn = [];
   DATA.categories.forEach(function(c) {
     if (c.id !== catId && c.foods.some(function(f) { return f.name === name; })) alsoIn.push(c.icon + ' ' + c.name);
   });
-  var month = new Date().getMonth() + 1;
-  var html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
+  let month = new Date().getMonth() + 1;
+  let html = '<h2 style="margin-bottom:4px;">' + esc(food.name) + '</h2>';
   html += '<div style="color:var(--accent);font-weight:700;margin-bottom:8px;">Densité nutritionnelle: ' + food.density + '%</div>';
   if (food.nutrients) html += '<div style="margin-bottom:8px;color:var(--text);">' + food.nutrients + '</div>';
   html += renderFoodNutritionHTML(food.nutrition);
@@ -143,7 +143,7 @@ function openFoodModal(catId, name) {
   html += renderFoodDealsHTML(food);
   if (alsoIn.length > 0) html += '<div style="font-size:0.82rem;color:var(--text-dim);margin-top:8px;">Aussi dans: ' + alsoIn.join(', ') + '</div>';
   // Show in suggestions modal (reuse)
-  var content = document.getElementById('suggestions-content');
+  let content = document.getElementById('suggestions-content');
   if (content) {
     content.innerHTML = html;
     document.getElementById('suggestions-modal').classList.remove('hidden');

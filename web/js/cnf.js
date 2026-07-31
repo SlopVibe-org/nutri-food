@@ -109,6 +109,16 @@ function loadRemoveProductList() {
   $('remove-product-list').innerHTML = html;
 }
 
+function cnfMatchAlias(a, ql, food, cat, existingMatches) {
+  var al = a.toLowerCase();
+  if (al.includes(ql) || ql.includes(al)) {
+    // Avoid duplicate if already matched by name
+    if (!existingMatches.some(function(m) { return m.name === food.name; })) {
+      existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases, alias: a });
+    }
+  }
+}
+
 async function cnfDoSearch() {
   var q = $('cnf-search-input').value.trim();
   if (q.length < 2) return;
@@ -128,15 +138,7 @@ async function cnfDoSearch() {
       }
       // Check aliases too
       if (food.aliases && Array.isArray(food.aliases)) {
-        food.aliases.forEach(function(a) {
-          var al = a.toLowerCase();
-          if (al.includes(ql) || ql.includes(al)) {
-            // Avoid duplicate if already matched by name
-            if (!existingMatches.some(function(m) { return m.name === food.name; })) {
-              existingMatches.push({ name: food.name, category: cat.name, catId: cat.id, density: food.density, nutrients: food.nutrients, allAliases: food.aliases, alias: a });
-            }
-          }
-        });
+        food.aliases.forEach(function(a) { cnfMatchAlias(a, ql, food, cat, existingMatches); });
       }
     });
   });
@@ -147,7 +149,7 @@ async function cnfDoSearch() {
     existingMatches.forEach(function(m) {
       html += '<div class="cnf-existing-item" data-exist-name="' + esc(m.name) + '" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#12141c;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;">';
       var displayName = esc(m.name);
-      if (m.allAliases && m.allAliases.length > 0) displayName += ' <span style="color:var(--text-dim);font-size:0.8rem;">(' + esc(m.allAliases.join(', ')) + ')</span>';
+      if (m.allAliases?.length > 0) displayName += ' <span style="color:var(--text-dim);font-size:0.8rem;">(' + esc(m.allAliases.join(', ')) + ')</span>';
       html += '<span style="flex:1;font-size:0.88rem;color:var(--text);">' + displayName + '</span>';
       html += '<span style="font-size:0.75rem;color:var(--text-dim);">' + esc(m.category) + '</span>';
       html += '</div>';
@@ -240,15 +242,16 @@ async function cnfSelectProduct(foodId) {
 }
 
 function cnfConfirmAdd(food, nutrients, group) {
+  function handleAlias(a) { a = a.trim(); if (a && !autoAliases.includes(a)) { autoAliases.push(a); } }
   var nutriMap = {};
   nutrients.forEach(function(n) { nutriMap[n.code] = n; });
   var nutrition = {
-    protein: (nutriMap[203] || {}).amount || 0,
-    fiber: (nutriMap[291] || {}).amount || 0,
-    iron: (nutriMap[303] || {}).amount || 0,
-    vit_c: (nutriMap[401] || {}).amount || 0,
-    calcium: (nutriMap[301] || {}).amount || 0,
-    omega3: ((nutriMap[629] || {}).amount || 0) + ((nutriMap[621] || {}).amount || 0) + ((nutriMap[631] || {}).amount || 0) + ((nutriMap[851] || {}).amount || 0)
+    protein: nutriMap[203]?.amount || 0,
+    fiber: nutriMap[291]?.amount || 0,
+    iron: nutriMap[303]?.amount || 0,
+    vit_c: nutriMap[401]?.amount || 0,
+    calcium: nutriMap[301]?.amount || 0,
+    omega3: (nutriMap[629]?.amount || 0) + (nutriMap[621]?.amount || 0) + (nutriMap[631]?.amount || 0) + (nutriMap[851]?.amount || 0)
   };
   Object.keys(nutrition).forEach(function(k) { nutrition[k] = Math.round(nutrition[k] * 100) / 100; });
   var guessedCat = guessCategory(food.group_code, nutrients);
@@ -258,9 +261,9 @@ function cnfConfirmAdd(food, nutrients, group) {
   if (nutrition.iron > 2) highlights.push('Fer');
   if (nutrition.calcium > 100) highlights.push('Calcium');
   if (nutrition.vit_c > 10) highlights.push('Vit C');
-  if ((nutriMap[418] || {}).amount > 1) highlights.push('B12');
-  if ((nutriMap[328] || {}).amount > 2) highlights.push('Vit D');
-  if ((nutriMap[317] || {}).amount > 15) highlights.push('Sélénium');
+  if (nutriMap[418]?.amount > 1) highlights.push('B12');
+  if (nutriMap[328]?.amount > 2) highlights.push('Vit D');
+  if (nutriMap[317]?.amount > 15) highlights.push('Sélénium');
   var allCats = (DATA.categories || []).map(function(c) { return '<option value="' + c.id + '"' + (c.id === guessedCat ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
   var foodName = (food.name_fr || food.name_en || '').split(',')[0].trim();
   var html = '<div style="background:#12141c;border:1px solid var(--accent);border-radius:10px;padding:14px;margin-bottom:12px;">';
@@ -273,15 +276,15 @@ function cnfConfirmAdd(food, nutrients, group) {
   html += '<label style="font-size:0.78rem;color:var(--text-dim);display:block;margin-bottom:4px;">Noms alternatifs (s\u00e9par\u00e9s par des virgules)</label>';
   // Auto-populate aliases from CNF data + original search term
   var autoAliases = [];
-  if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(cnfSearchQuery);
-  if (food.name_fr && food.name_fr !== foodName) autoAliases.push(food.name_fr);
-  if (food.name_en && food.name_en.toLowerCase() !== foodName.toLowerCase()) autoAliases.push(food.name_en);
-  if (food.alt_name_fr) food.alt_name_fr.split(',').forEach(function(a) { a = a.trim(); if (a && !autoAliases.includes(a)) autoAliases.push(a); });
-  if (food.alt_name_en) food.alt_name_en.split(',').forEach(function(a) { a = a.trim(); if (a && !autoAliases.includes(a)) autoAliases.push(a); });
-  if (food.scientific_name) autoAliases.push(food.scientific_name);
+  if (cnfSearchQuery && cnfSearchQuery.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(cnfSearchQuery); }
+  if (food.name_fr && food.name_fr !== foodName) { autoAliases.push(food.name_fr); }
+  if (food.name_en && food.name_en.toLowerCase() !== foodName.toLowerCase()) { autoAliases.push(food.name_en); }
+  if (food.alt_name_fr) { food.alt_name_fr.split(',').forEach(handleAlias); }
+  if (food.alt_name_en) { food.alt_name_en.split(',').forEach(handleAlias); }
+  if (food.scientific_name) { autoAliases.push(food.scientific_name); }
   // Dedupe
   var seen = {};
-  autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) return false; seen[a] = true; return true; });
+  autoAliases = autoAliases.filter(function(a) { a = a.toLowerCase(); if (seen[a]) { return false; } seen[a] = true; return true; });
   html += '<input type="text" id="cnf-add-aliases" value="' + esc(autoAliases.join(', ')) + '" placeholder="ex: cheval, viande de cheval" style="width:100%;padding:8px 10px;background:#0f1117;color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:0.9rem;margin-bottom:12px;" aria-label="ex: cheval, viande de cheval">';
   html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px;">';
   [['Protéine', nutrition.protein, 'g'], ['Fibres', nutrition.fiber, 'g'], ['Fer', nutrition.iron, 'mg'], ['Vit C', nutrition.vit_c, 'mg'], ['Calcium', nutrition.calcium, 'mg'], ['Ω-3', nutrition.omega3, 'g']].forEach(function(n) {
@@ -306,7 +309,7 @@ async function cnfSaveToDatabase(food, nutrition) {
   if (!name) { showToast('Le nom est requis', 'error'); return; }
   var cat = (DATA.categories || []).find(function(c) { return c.id === catId; });
   if (!cat) { showToast('Catégorie invalide', 'error'); return; }
-  if (cat.foods && cat.foods.some(function(f) { return f.name.toLowerCase() === name.toLowerCase(); })) {
+  if (cat.foods?.some(function(f) { return f.name.toLowerCase() === name.toLowerCase(); })) {
     showToast('Cet aliment existe déjà', 'error'); return;
   }
   var densityScore = Math.round((nutrition.protein * 2 + nutrition.fiber * 3 + nutrition.iron * 2 + nutrition.vit_c + nutrition.calcium * 0.1 + nutrition.omega3 * 10) / 3);

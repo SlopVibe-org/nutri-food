@@ -28,12 +28,12 @@ async function loadTrackingDay(dateStr) {
   trackingDate = dateStr;
   $('tracking-day-label').textContent = formatDayLabel(dateStr);
   if (!currentUser) { selections = {}; render(); return; }
-  var token = getToken();
+  let token = getToken();
   if (!token) { selections = {}; render(); return; }
   try {
-    var res = await fetchWithTimeout(API + '/tracking/' + dateStr, { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+    let res = await fetchWithTimeout(API + '/tracking/' + dateStr, { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (res.ok) {
-      var data = await res.json();
+      let data = await res.json();
       trackingSelections = data.selections || {};
     } else {
       trackingSelections = {};
@@ -49,7 +49,7 @@ async function loadTrackingDay(dateStr) {
 
 async function saveTracking() {
   if (!currentUser || currentMode !== 'tracking') return;
-  var token = getToken();
+  let token = getToken();
   if (!token) return;
   try {
     await fetchWithTimeout(API + '/tracking/' + trackingDate, {

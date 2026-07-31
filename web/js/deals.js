@@ -1,6 +1,6 @@
 // ─── Deals module (lazy-loaded) ───
 
-var STORE_ICONS = {};
+let STORE_ICONS = {};
 
 function showDealsPage() {
   $('deals-modal').classList.remove('hidden');
@@ -8,11 +8,11 @@ function showDealsPage() {
 }
 
 function flattenDeals() {
-  var allDeals = [];
+  let allDeals = [];
   Object.keys(DEALS).forEach(function(foodName) {
-    var cat = null;
+    let cat = null;
     DATA.categories.forEach(function(c) {
-      if (c.foods.find(function(f) { return f.name === foodName; })) cat = c;
+      if (c.foods.some(function(f) { return f.name === foodName; })) cat = c;
     });
     DEALS[foodName].forEach(function(deal) {
       allDeals.push({
@@ -39,7 +39,7 @@ function flattenDeals() {
 }
 
 function groupDealsByCategory(allDeals) {
-  var grouped = {};
+  let grouped = {};
   allDeals.forEach(function(d) {
     if (!grouped[d.catName]) grouped[d.catName] = { icon: d.catIcon, items: [] };
     grouped[d.catName].items.push(d);
@@ -48,14 +48,14 @@ function groupDealsByCategory(allDeals) {
 }
 
 function renderDealsContent() {
-  var content = $('deals-content');
+  let content = $('deals-content');
   if (!DATA) { content.innerHTML = '<p class="loading">Chargement…</p>'; return; }
-  var allDeals = flattenDeals();
+  let allDeals = flattenDeals();
   if (allDeals.length === 0) {
     content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun spécial disponible actuellement.</p>';
     return;
   }
-  var grouped = groupDealsByCategory(allDeals);
+  let grouped = groupDealsByCategory(allDeals);
   // Store icons
   STORE_ICONS = {
     'iga': '<img src="favicon-iga.png" alt="IGA" style="width:24px;height:24px;vertical-align:middle;" loading="lazy">',
@@ -66,23 +66,23 @@ function renderDealsContent() {
     'walmart': '<img src="favicon-walmart.png" alt="Walmart" style="width:24px;height:24px;vertical-align:middle;" loading="lazy">'
   };
   // Render
-  var html = '';
+  let html = '';
   // Refresh button (admin only)
   if (currentUser && currentUser.is_admin) {
     html += '<div style="text-align:right;margin-bottom:8px;"><button id="deals-refresh-btn" class="dt-add-btn">🔄 Rafraîchir</button></div>';
   }
   Object.keys(grouped).sort(function(a, b) { return a.localeCompare(b); }).forEach(function(catName) {
-    var g = grouped[catName];
+    let g = grouped[catName];
     html += '<div style="margin-bottom:16px;">';
     html += '<div style="font-size:0.85rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">' + g.icon + ' ' + esc(catName) + '</div>';
     html += '<table class="deals-table"><thead><tr>';
     html += '<th>Produit</th><th>Magasin</th><th>Prix</th><th>Rabais</th><th></th>';
     html += '</tr></thead><tbody>';
     g.items.forEach(function(d) {
-      var storeIcon = STORE_ICONS[d.store.toLowerCase()] || '🏷️';
-      var storeSites = { 'iga': 'iga.ca', 'metro': 'metro.ca', 'superc': 'superc.ca', 'maxi': 'maxi.ca', 'provigo': 'provigo.ca', 'walmart': 'walmart.ca' };
-      var storeFull = storeSites[d.store.toLowerCase()] || d.store;
-      var priceTooltip = esc(d.size) + ' — ' + (d.price ? d.price.toFixed(2) + '$' : '') + (d.unitPrice ? ' — ' + d.unitPrice.toFixed(2) + '$/' + esc(d.unitLabel) : '');
+      let storeIcon = STORE_ICONS[d.store.toLowerCase()] || '🏷️';
+      let storeSites = { 'iga': 'iga.ca', 'metro': 'metro.ca', 'superc': 'superc.ca', 'maxi': 'maxi.ca', 'provigo': 'provigo.ca', 'walmart': 'walmart.ca' };
+      let storeFull = storeSites[d.store.toLowerCase()] || d.store;
+      let priceTooltip = esc(d.size) + ' — ' + (d.price ? d.price.toFixed(2) + '$' : '') + (d.unitPrice ? ' — ' + d.unitPrice.toFixed(2) + '$/' + esc(d.unitLabel) : '');
       html += '<tr style="cursor:pointer;" data-deal-link="' + esc(d.link) + '">';
       html += '<td class="dt-name" title="' + esc(d.dealName) + '">' + esc(d.foodName) + '</td>';
       html += '<td class="dt-store" style="cursor:help;"><a href="https://www.' + esc(storeFull) + '" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;" title="' + esc(d.store) + ' — ' + esc(storeFull) + '">' + storeIcon + '</a></td>';
@@ -95,7 +95,7 @@ function renderDealsContent() {
   });
   content.innerHTML = html;
   // Wire refresh button
-  var refreshBtn = $('deals-refresh-btn');
+  let refreshBtn = $('deals-refresh-btn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async function() {
       refreshBtn.disabled = true; refreshBtn.textContent = '⏳ Patientez…';
@@ -106,17 +106,17 @@ function renderDealsContent() {
   // Wire row clicks → open product page
   content.querySelectorAll('[data-deal-link]').forEach(function(row) {
     row.addEventListener('click', function() {
-      var link = row.dataset.dealLink.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+      let link = row.dataset.dealLink.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
       if (link && link !== '#') window.open(link, '_blank', 'noopener');
     });
   });
   // Wire add buttons
   content.querySelectorAll('[data-deal-add]').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      var foodName = btn.dataset.dealAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-      var foundCat = null, foundFood = null;
+      let foodName = btn.dataset.dealAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+      let foundCat = null, foundFood = null;
       DATA.categories.forEach(function(c) {
-        var f = c.foods.find(function(x) { return x.name === foodName; });
+        let f = c.foods.find(function(x) { return x.name === foodName; });
         if (f) { foundCat = c; foundFood = f; }
       });
       if (foundCat && foundFood) {
@@ -131,15 +131,15 @@ function renderDealsContent() {
 
 async function loadDeals() {
   try {
-    var res = await fetchWithTimeout(API + '/deals', {}, 10000);
+    let res = await fetchWithTimeout(API + '/deals', {}, 10000);
     if (!res.ok) return;
-    var data = await res.json();
+    let data = await res.json();
     DEALS = data.deals || {};
     STORE_META = data.stores || {};
     // Filter out pet food / non-human food
-    var PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
+    let PET_KEYWORDS = ['chat', 'chien', 'animal', 'pâtée', 'patée', 'pet food', 'animal food', 'kitten', 'puppy', 'wet food', 'dry food', 'croquettes'];
     function isPetFood(name) {
-      var lower = (name || '').toLowerCase();
+      let lower = (name || '').toLowerCase();
       return PET_KEYWORDS.some(function(kw) { return lower.includes(kw); });
     }
     Object.keys(DEALS).forEach(function(food) {
@@ -152,18 +152,18 @@ async function loadDeals() {
 }
 
 async function refreshDeals() {
-  var token = getToken();
+  let token = getToken();
   if (!token) return;
-  var btn = document.getElementById('menu-refresh-deals');
+  let btn = document.getElementById('menu-refresh-deals');
   if (btn) { btn.disabled = true; btn.textContent = '⏳…'; }
   try {
-    var res = await fetchWithTimeout(API + '/deals/refresh', {
+    let res = await fetchWithTimeout(API + '/deals/refresh', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + token }
     }, 30000);
     if (res.ok) {
-      var data = await res.json();
-      var count = data.count || 0;
+      let data = await res.json();
+      let count = data.count || 0;
       showToast(count + ' spéciaux mis à jour', 'success');
       await loadDeals();
       render();
@@ -179,18 +179,18 @@ async function refreshDeals() {
 
 // Helper: build deal badges HTML for a food name
 function buildDealBadges(foodName) {
-  var deals = DEALS[foodName];
+  let deals = DEALS[foodName];
   if (!deals || deals.length === 0) return '';
-  var sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
-  var maxShow = 3;
-  var shown = sorted.slice(0, maxShow);
-  var extra = sorted.length > maxShow ? sorted.length - maxShow : 0;
-  var html = '<span class="deal-badges" data-deal-food="' + esc(foodName) + '">';
+  let sorted = deals.slice().sort(function(a, b) { return (a.price || 0) - (b.price || 0); });
+  let maxShow = 3;
+  let shown = sorted.slice(0, maxShow);
+  let extra = sorted.length > maxShow ? sorted.length - maxShow : 0;
+  let html = '<span class="deal-badges" data-deal-food="' + esc(foodName) + '">';
   html += '\uD83C\uDFF7\uFE0F';
   shown.forEach(function(d) {
-    var storeInfo = STORE_META[d.store] || {};
-    var color = storeInfo.color || '#666';
-    var letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
+    let storeInfo = STORE_META[d.store] || {};
+    let color = storeInfo.color || '#666';
+    let letter = (storeInfo.name || d.store || '?').charAt(0).toUpperCase();
     html += '<span class="deal-badge" style="background:' + color + ';" title="' + esc(d.name || '') + ' — ' + (d.price || '') + '$">' + letter + '</span>';
   });
   if (extra > 0) html += '<span class="deal-badges-extra deal-show-all" data-deal-food="' + esc(foodName) + '" style="cursor:pointer;text-decoration:underline;" title="Voir tous les spéciaux">+' + extra + '</span>';
@@ -200,17 +200,17 @@ function buildDealBadges(foodName) {
 
 // Deal modal: click 'voir plus' opens full list in suggestions modal
 document.addEventListener('click', function(e) {
-  var el = e.target.closest('[data-deal-modal-food]');
+  let el = e.target.closest('[data-deal-modal-food]');
   if (!el) return;
-  var foodName = el.dataset.dealModalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-  var deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
+  let foodName = el.dataset.dealModalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+  let deals = (DEALS[foodName] || []).slice().sort(function(a,b) { return (a.price||0) - (b.price||0); });
   if (deals.length === 0) return;
-  var mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';
+  let mHtml = '<div class="ct-title">\uD83C\uDFF7\uFE0F ' + esc(foodName) + ' \u2014 ' + deals.length + ' sp\u00e9ciaux</div>';
   deals.forEach(function(d) {
-    var si = STORE_META[d.store] || {};
-    var color = si.color || '#666';
-    var sn = si.name || d.store || '?';
-    var letter = sn.charAt(0).toUpperCase();
+    let si = STORE_META[d.store] || {};
+    let color = si.color || '#666';
+    let sn = si.name || d.store || '?';
+    let letter = sn.charAt(0).toUpperCase();
     mHtml += '<div class="ct-deal-item" style="border-left:3px solid ' + color + ';padding-left:8px;margin-left:4px;margin-bottom:8px;">';
     mHtml += '<div class="ct-deal-name">' + esc(d.name || foodName) + '</div>';
     mHtml += '<div class="ct-deal-price">' + (d.price || '') + '$</div>';
@@ -219,7 +219,7 @@ document.addEventListener('click', function(e) {
     if (d.link) mHtml += '<a class="ct-deal-link" href="' + esc(d.link) + '" target="_blank" rel="noopener">Voir sur le site →</a>';
     mHtml += '</div>';
   });
-  var content = document.getElementById('suggestions-content');
+  let content = document.getElementById('suggestions-content');
   if (content) {
     content.innerHTML = mHtml;
     document.getElementById('suggestions-modal').classList.remove('hidden');

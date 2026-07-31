@@ -1,25 +1,25 @@
 // ─── Suggestions module (lazy-loaded) ───
 
-var suggestionsFab = null;
+let suggestionsFab = null;
 
 async function checkSuggestionsBadge() {
   if (!currentUser || !hasSelections()) {
     if (suggestionsFab) suggestionsFab.classList.remove('visible', 'pulsing');
     return;
   }
-  var token = getToken();
+  let token = getToken();
   if (!token) return;
   try {
-    var res = await fetchWithTimeout(API + '/suggestions', {
+    let res = await fetchWithTimeout(API + '/suggestions', {
       headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
     if (!res.ok) return;
-    var data = await res.json();
-    var gaps = data.gaps || [];
-    var portionGaps = data.portion_gaps || [];
-    var totalCount = gaps.length + portionGaps.length;
+    let data = await res.json();
+    let gaps = data.gaps || [];
+    let portionGaps = data.portion_gaps || [];
+    let totalCount = gaps.length + portionGaps.length;
     suggestionsFab = $('suggestions-fab');
-    var countEl = $('fab-count');
+    let countEl = $('fab-count');
     if (totalCount > 0) {
       suggestionsFab.classList.add('visible', 'pulsing');
       countEl.textContent = totalCount;
@@ -33,36 +33,36 @@ async function checkSuggestionsBadge() {
 }
 
 async function showSuggestions() {
-  var content = $('suggestions-content');
+  let content = $('suggestions-content');
   content.innerHTML = '<p class="loading">Chargement…</p>';
   $('suggestions-title').textContent = '💡 Suggestions nutritionnelles';
   $('suggestions-modal').classList.remove('hidden');
-  var token = getToken();
+  let token = getToken();
   if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
   try {
-    var seasHtml = '';
-    var res = await fetchWithTimeout(API + '/suggestions', {
+    let seasHtml = '';
+    let res = await fetchWithTimeout(API + '/suggestions', {
       headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
     if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
-    var data = await res.json();
-    var gaps = data.gaps || [];
-    var portionGaps = data.portion_gaps || [];
-    var suggestions = data.suggestions || [];
+    let data = await res.json();
+    let gaps = data.gaps || [];
+    let portionGaps = data.portion_gaps || [];
+    let suggestions = data.suggestions || [];
     if (gaps.length === 0 && portionGaps.length === 0) {
-      var allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
+      let allGoodHtml = '<p style="text-align:center;padding:20px;color:var(--accent);font-size:1.05rem;">🎉 Excellente semaine! Tous vos objectifs nutritionnels sont atteints.</p>';
       seasHtml = await buildSeasonalHtml();
       if (seasHtml) allGoodHtml += seasHtml;
       content.innerHTML = allGoodHtml;
       return;
     }
-    var html = '';
+    let html = '';
     // Portion gaps section
     if (portionGaps.length > 0) {
       html += '<h3 style="margin:0 0 8px;font-size:0.9rem;color:var(--accent-amber);">🍽️ Portions par catégorie</h3>';
       portionGaps.forEach(function(pg) {
-        var pct = pg.percentage || 0;
-        var barClass = '';
+        let pct = pg.percentage || 0;
+        let barClass = '';
         if (pct >= 75) barClass = 'good';
         else if (pct >= 50) barClass = 'ok';
         html += '<div class="suggestion-gap">';
@@ -76,18 +76,18 @@ async function showSuggestions() {
       html += '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:var(--accent);">📊 Nutriments</h3>';
     }
     gaps.forEach(function(gap) {
-      var pct = Math.round(gap.percentage || 0);
-      var barClass = '';
+      let pct = Math.round(gap.percentage || 0);
+      let barClass = '';
       if (pct >= 75) barClass = 'good';
       else if (pct >= 50) barClass = 'ok';
       html += '<div class="suggestion-gap">';
       html += '<div class="sg-header"><span class="sg-name">' + esc(gap.nutrient || gap.name || '') + '</span><span class="sg-pct">' + pct + '%</span></div>';
       html += '<div class="sg-bar"><div class="sg-bar-fill ' + barClass + '" style="width:' + pct + '%"></div></div>';
-      var foods = gap.foods || gap.suggestions || [];
+      let foods = gap.foods || gap.suggestions || [];
       foods.forEach(function(f) {
-        var fName = f.name || f.food || '';
-        var fVal = f.value || f.amount || '';
-        var fCat = f.category || f.cat || '';
+        let fName = f.name || f.food || '';
+        let fVal = f.value || f.amount || '';
+        let fCat = f.category || f.cat || '';
         html += '<div class="sg-food">';
         html += '<div class="sg-food-info"><div class="sg-food-name">' + esc(fName) + '</div>';
         if (fVal) html += '<div class="sg-food-val">' + esc(String(fVal)) + (fCat ? ' · ' + esc(fCat) : '') + '</div>';
@@ -115,7 +115,7 @@ async function showSuggestions() {
     // Wire add buttons
     content.querySelectorAll('[data-suggest-add]').forEach(function(btn) {
       btn.addEventListener('click', function() {
-        var name = btn.dataset.suggestAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+        let name = btn.dataset.suggestAdd.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
         addSuggestedFood(name, btn.dataset.suggestCat);
         btn.textContent = '✓';
         btn.style.background = 'var(--accent)';
@@ -130,17 +130,17 @@ async function showSuggestions() {
 
 function addSuggestedFood(name, catHint) {
   // Search in DATA for this food
-  var found = false;
-  for (var i = 0; i < DATA.categories.length; i++) {
-    var cat = DATA.categories[i];
-    var food = cat.foods.find(function(f) { return f.name === name; });
+  let found = false;
+  for (let i = 0; i < DATA.categories.length; i++) {
+    let cat = DATA.categories[i];
+    let food = cat.foods.find(function(f) { return f.name === name; });
     if (food) {
       // If catHint provided, try to match it, otherwise use found cat
-      var useCatId = cat.id;
+      let useCatId = cat.id;
       if (catHint) {
-        var hintedCat = DATA.categories.find(function(c) { return c.id === catHint || c.name === catHint; });
+        let hintedCat = DATA.categories.find(function(c) { return c.id === catHint || c.name === catHint; });
         if (hintedCat) {
-          var inHinted = hintedCat.foods.find(function(f) { return f.name === name; });
+          let inHinted = hintedCat.foods.find(function(f) { return f.name === name; });
           if (inHinted) { useCatId = hintedCat.id; food = inHinted; }
         }
       }
@@ -154,26 +154,26 @@ function addSuggestedFood(name, catHint) {
 }
 
 // ─── Seasonal (inside suggestions panel) ───
-var _seasonalCache = null;
+let _seasonalCache = null;
 async function fetchSeasonalData() {
   if (_seasonalCache) return _seasonalCache;
   try {
-    var res = await fetchWithTimeout(API + '/seasonal', {}, 10000);
+    let res = await fetchWithTimeout(API + '/seasonal', {}, 10000);
     if (!res.ok) return null;
-    var data = await res.json();
-    var foods = data.foods || data.seasonal || [];
-    var names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
+    let data = await res.json();
+    let foods = data.foods || data.seasonal || [];
+    let names = foods.map(function(f) { return typeof f === 'string' ? f : (f.name || f.food || ''); }).filter(function(n) { return n; });
     _seasonalCache = names;
     return names;
   } catch(e) { console.error('[NutriFood] Seasonal error:', e); return null; }
 }
 
 async function buildSeasonalHtml() {
-  var names = await fetchSeasonalData();
+  let names = await fetchSeasonalData();
   if (!names || names.length === 0) return '';
-  var display = names.slice(0, 8);
-  var extraCount = names.length - 8;
-  var html = '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:#4ade80;">\uD83C\uDF31 De saison ce mois-ci</h3>';
+  let display = names.slice(0, 8);
+  let extraCount = names.length - 8;
+  let html = '<h3 style="margin:12px 0 8px;font-size:0.9rem;color:#4ade80;">\uD83C\uDF31 De saison ce mois-ci</h3>';
   html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
   display.forEach(function(n) {
     html += '<span class="sb-item" data-seasonal-food="' + esc(n) + '" style="display:inline-block;padding:2px 10px;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.3);border-radius:12px;font-size:0.8rem;color:#4ade80;cursor:pointer;margin:2px;">' + esc(n) + '</span>';
@@ -192,18 +192,18 @@ async function buildSeasonalHtml() {
 
 // Delegated clicks for seasonal items and expand/collapse
 document.addEventListener('click', function(e) {
-  var el = e.target.closest('[data-seasonal-food]');
+  let el = e.target.closest('[data-seasonal-food]');
   if (el) {
-    var name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let name = el.dataset.seasonalFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     addSuggestedFood(name);
     return;
   }
   if (e.target.id === 'seasonal-more-btn') {
-    var extra = $('seasonal-extra-list');
+    let extra = $('seasonal-extra-list');
     if (extra) {
-      var shown = extra.style.display !== 'none';
+      let shown = extra.style.display !== 'none';
       extra.style.display = shown ? 'none' : 'flex';
-      var count = e.target.textContent.match(/\d+/);
+      let count = e.target.textContent.match(/\d+/);
       e.target.textContent = shown ? '+' + (count ? count[0] : '') : '\u2212';
     }
   }

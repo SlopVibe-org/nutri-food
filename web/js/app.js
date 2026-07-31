@@ -2,7 +2,7 @@
 
 async function init() {
   try {
-    var res = await fetchWithTimeout(API + '/foods', {}, 8000);
+    let res = await fetchWithTimeout(API + '/foods', {}, 8000);
     DATA = await res.json();
     activeTab = DATA.sections[0].id;
 
@@ -10,14 +10,14 @@ async function init() {
     initAuthEvents();
 
     // Restore session
-    var savedUser = null;
+    let savedUser = null;
     try { savedUser = localStorage.getItem(USER_KEY); } catch(e) { console.error('[NutriFood] localStorage read error:', e); }
     if (savedUser) {
       currentUser = JSON.parse(savedUser);
-      var token = getToken();
+      let token = getToken();
       if (token) {
         try {
-          var meRes = await fetchWithTimeout(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+          let meRes = await fetchWithTimeout(API + '/me', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
           if (meRes.ok) {
             renderUserArea();
             await loadSelectionsFromServer();
@@ -75,7 +75,7 @@ async function init() {
     console.error('[NutriFood] Init error:', e);
     $('app').innerHTML = '<div class="api-error"><h2>⚠️ Serveur indisponible</h2><p>Impossible de se connecter au serveur. Réessayez dans un moment.</p><button id="retry-init">Réessayer</button></div>';
     $('save-bar').classList.remove('visible');
-    var retryBtn = $('retry-init');
+    let retryBtn = $('retry-init');
     if (retryBtn) retryBtn.addEventListener('click', function() {
       $('app').innerHTML = '<p class="loading">Chargement…</p>';
       init();
@@ -91,9 +91,9 @@ if (window.location.hash) {
       $('reset-password').focus();
     });
   } else if (window.location.hash.includes('share=')) {
-    var shareMatch = window.location.hash.match(/share=([^&]+)/);
+    let shareMatch = /share=([^&]+)/.exec(window.location.hash);
     if (shareMatch) {
-      var shareToken = decodeURIComponent(shareMatch[1]);
+      let shareToken = decodeURIComponent(shareMatch[1]);
       // Override init to load shared view
       window._shareToken = shareToken;
     }

@@ -1,12 +1,12 @@
 // ─── Auth module ───
 
-var globalClickListenersAttached = false;
+let globalClickListenersAttached = false;
 function renderUserArea() {
   const area = $('user-area');
   if (!area) return;
   if (currentUser) {
-    var initials = currentUser.name.charAt(0).toUpperCase();
-    var menuItems = '';
+    let initials = currentUser.name.charAt(0).toUpperCase();
+    let menuItems = '';
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
@@ -39,7 +39,7 @@ function renderUserArea() {
       globalClickListenersAttached = true;
       document.addEventListener('click', function(e) {
         if (!e.target.closest('.user-menu')) {
-          var dd = $('user-menu-dropdown');
+          let dd = $('user-menu-dropdown');
           if (dd) dd.classList.remove('visible');
         }
       });
@@ -66,29 +66,29 @@ function showAuth(mode) {
 function toggleAuthMode() { showAuth(authMode === 'login' ? 'register' : 'login'); }
 
 async function submitAuth() {
-  var email = $('auth-email').value.trim();
-  var password = $('auth-password').value;
-  var name = $('auth-name').value.trim();
-  var errEl = $('auth-error');
-  var submitBtn = $('auth-submit');
+  let email = $('auth-email').value.trim();
+  let password = $('auth-password').value;
+  let name = $('auth-name').value.trim();
+  let errEl = $('auth-error');
+  let submitBtn = $('auth-submit');
   errEl.textContent = '';
 
   if (!email || !password) { errEl.textContent = 'Identifiant et mot de passe requis'; return; }
   if (authMode === 'register' && !name) { errEl.textContent = 'Nom requis'; return; }
 
-  var endpoint = authMode === 'register' ? '/register' : '/login';
-  var body = authMode === 'register' ? { email: email.toLowerCase(), name: name, password: password } : { email: email.toLowerCase(), password: password };
+  let endpoint = authMode === 'register' ? '/register' : '/login';
+  let body = authMode === 'register' ? { email: email.toLowerCase(), name: name, password: password } : { email: email.toLowerCase(), password: password };
 
   submitBtn.disabled = true;
   submitBtn.textContent = authMode === 'register' ? 'Inscription…' : 'Connexion…';
 
   try {
-    var res = await fetchWithTimeout(API + endpoint, {
+    let res = await fetchWithTimeout(API + endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     }, 10000);
-    var data = await res.json();
+    let data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Erreur'; submitBtn.disabled = false; submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion'; return; }
 
     // Success - smooth transition without page reload
@@ -115,7 +115,7 @@ async function submitAuth() {
 
 // ─── Forgot password ───
 function showForgotPassword() {
-  var email = $('auth-email').value.trim();
+  let email = $('auth-email').value.trim();
   $('auth-modal').classList.add('hidden');
   $('app').innerHTML = '<div class="welcome"><h2>🔑 Mot de passe oublié</h2><p style="color:var(--text-dim);margin-bottom:20px;">Entrez votre email ou nom d usager. Vous recevrez un lien par courriel.</p><div style="max-width:340px;margin:0 auto;"><input type="text" id="forgot-email" placeholder="Email ou nom d usager" value="' + esc(email || '') + '" style="width:100%;padding:12px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:1rem;margin-bottom:12px;" aria-label="Email ou nom d usager"><button class="login-cta" id="forgot-submit">Envoyer le lien</button></div><div style="text-align:center;margin-top:12px;"><a style="color:var(--text-dim);font-size:0.85rem;cursor:pointer;" id="forgot-back">← Retour</a></div></div>';
   $('forgot-submit').addEventListener('click', submitForgotPassword);
@@ -124,7 +124,7 @@ function showForgotPassword() {
 }
 
 async function submitForgotPassword() {
-  var identifier = $('forgot-email').value.trim();
+  let identifier = $('forgot-email').value.trim();
   if (!identifier) return;
   $('forgot-submit').textContent = 'Envoi…';
   $('forgot-submit').disabled = true;
@@ -143,29 +143,29 @@ async function submitForgotPassword() {
 
 // ─── Reset via magic link ───
 async function submitResetPassword() {
-  var newPw = $('reset-password').value;
-  var confirmPw = $('reset-confirm').value;
-  var errEl = $('reset-error');
+  let newPw = $('reset-password').value;
+  let confirmPw = $('reset-confirm').value;
+  let errEl = $('reset-error');
   errEl.textContent = '';
   if (!newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
   if (newPw !== confirmPw) { errEl.textContent = 'Les mots de passe ne correspondent pas'; return; }
   if (newPw.length < 6) { errEl.textContent = 'Minimum 6 caractères'; return; }
 
-  var hash = window.location.hash;
-  var resetToken = '';
-  var match = hash.match(/reset=([^&]+)/);
+  let hash = window.location.hash;
+  let resetToken = '';
+  let match = /reset=([^&]+)/.exec(hash);
   if (match) resetToken = decodeURIComponent(match[1]);
   if (!resetToken) { errEl.textContent = 'Token manquant'; return; }
 
   $('reset-submit').textContent = 'Changement…';
   $('reset-submit').disabled = true;
   try {
-    var res = await fetchWithTimeout(API + '/reset-password', {
+    let res = await fetchWithTimeout(API + '/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token: resetToken, password: newPw })
     }, 10000);
-    var data = await res.json();
+    let data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('reset-submit').textContent = 'Changer le mot de passe'; $('reset-submit').disabled = false; return; }
     // Success: log in and redirect
     setAuth(data.token, data.user);
@@ -187,10 +187,10 @@ function showChangePassword() {
 }
 
 async function submitChangePassword() {
-  var current = $('pw-current').value;
-  var newPw = $('pw-new').value;
-  var confirmPw = $('pw-confirm').value;
-  var errEl = $('pw-error');
+  let current = $('pw-current').value;
+  let newPw = $('pw-new').value;
+  let confirmPw = $('pw-confirm').value;
+  let errEl = $('pw-error');
   errEl.textContent = '';
   if (!current || !newPw || !confirmPw) { errEl.textContent = 'Tous les champs sont requis'; return; }
   if (newPw !== confirmPw) { errEl.textContent = 'Les nouveaux mots de passe ne correspondent pas'; return; }
@@ -199,14 +199,14 @@ async function submitChangePassword() {
 
   $('pw-submit').textContent = 'Changement…';
   $('pw-submit').disabled = true;
-  var token = getToken();
+  let token = getToken();
   try {
-    var res = await fetchWithTimeout(API + '/change-password', {
+    let res = await fetchWithTimeout(API + '/change-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ current_password: current, new_password: newPw })
     }, 10000);
-    var data = await res.json();
+    let data = await res.json();
     if (!res.ok) { errEl.textContent = data.error || 'Erreur'; $('pw-submit').textContent = 'Changer'; $('pw-submit').disabled = false; return; }
     // Success
     $('pw-modal').classList.add('hidden');
@@ -227,14 +227,14 @@ function initAuthEvents() {
   // Tracking day navigation
   $('tracking-prev').addEventListener('click', function() {
     loadScript('js/tracking.js', function() {
-      var d = new Date(trackingDate + 'T12:00:00');
+      let d = new Date(trackingDate + 'T12:00:00');
       d.setDate(d.getDate() - 1);
       loadTrackingDay(d.toISOString().slice(0,10));
     });
   });
   $('tracking-next').addEventListener('click', function() {
     loadScript('js/tracking.js', function() {
-      var d = new Date(trackingDate + 'T12:00:00');
+      let d = new Date(trackingDate + 'T12:00:00');
       d.setDate(d.getDate() + 1);
       loadTrackingDay(d.toISOString().slice(0,10));
     });

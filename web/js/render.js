@@ -1,10 +1,10 @@
 // ─── Render module ───
 
 function render() {
-  var app = $('app');
+  let app = $('app');
 
-  var totals = computeNutritionTotals(selections);
-  var html = '';
+  let totals = computeNutritionTotals(selections);
+  let html = '';
   html += '<div class="nutri-summary">';
   if (currentMode === 'tracking') {
     html += '<div id="tracking-nutrition"><p class="loading">Chargement nutrition…</p></div>';
@@ -19,11 +19,11 @@ function render() {
   });
   html += '</div>';
   DATA.sections.forEach(function(sec) {
-    var cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
+    let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
     html += '<div class="tab-content ' + (sec.id === activeTab ? 'active' : '') + '" id="tab-' + sec.id + '"><div class="grid">';
     cats.forEach(function(cat) {
-      var sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
-      html += renderCard(Object.assign({}, cat, { foods: sorted }));
+      let sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
+      html += renderCard({ ...cat, foods: sorted });
     });
     html += '</div></div>';
   });
@@ -44,10 +44,10 @@ function render() {
 }
 
 function getSectionDotClass(sectionId) {
-  var cats = DATA.categories.filter(function(c) { return c.section === sectionId; });
-  var totalSelected = 0, totalMin = 0, totalMax = 0;
+  let cats = DATA.categories.filter(function(c) { return c.section === sectionId; });
+  let totalSelected = 0, totalMin = 0, totalMax = 0;
   cats.forEach(function(cat) {
-    var sel = selections[cat.id] || [];
+    let sel = selections[cat.id] || [];
     totalSelected += sel.reduce(function(s, i) { return s + i.qty; }, 0);
     totalMin += cat.weekly_min; totalMax += cat.weekly_max;
   });
@@ -57,9 +57,9 @@ function getSectionDotClass(sectionId) {
 }
 
 function getPortionHint(cat) {
-  var section = cat.section || '';
-  var catId = cat.id || '';
-  var hints = {
+  let section = cat.section || '';
+  let catId = cat.id || '';
+  let hints = {
     'viandes-laitiers': '1 portion = paume de la main (~100g)',
     'legumes': '1 portion = 1 tasse crue ou ½ tasse cuite',
     'fruits': '1 portion = 1 fruit moyen ou ½ tasse',
@@ -67,7 +67,7 @@ function getPortionHint(cat) {
     'habitudes': 'Consommer avec modération'
   };
   // Also check by category id for more specific hints
-  var idHints = {
+  let idHints = {
     'noix-graines': '1 portion = 1 petite poignée (~30g)',
     'lait': '1 portion = 1 tasse (250ml)',
     'oeufs': '1 portion = 1-2 œufs'
@@ -78,46 +78,46 @@ function getPortionHint(cat) {
 }
 
 function renderCard(cat) {
-  var selected = selections[cat.id] || [];
-  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
-  var suffix = cat.daily ? 'jour.' : 'sem.';
-  var min = cat.weekly_min, max = cat.weekly_max;
-  var target = min === max ? '' + min : min + '-' + max;
-  var cls = '';
+  let selected = selections[cat.id] || [];
+  let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  let suffix = cat.daily ? 'jour.' : 'sem.';
+  let min = cat.weekly_min, max = cat.weekly_max;
+  let target = min === max ? '' + min : min + '-' + max;
+  let cls = '';
   if (totalCount < min) cls = 'under';
   else if (totalCount > max) cls = 'over';
   else cls = 'in-range';
 
-  var html = '<div class="card" data-cat="' + cat.id + '">';
+  let html = '<div class="card" data-cat="' + cat.id + '">';
   html += '<div class="card-header">';
   html += '<span class="cat-label"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
   html += '<span class="counter-badge ' + (totalCount > 0 ? cls : '') + '">' + totalCount + ' / ' + target + ' ' + suffix + '</span>';
   html += '</div>';
 
-  var portionHint = getPortionHint(cat);
+  let portionHint = getPortionHint(cat);
   if (portionHint) {
     html += '<div style="font-size:0.72rem;color:var(--text-dim);margin-bottom:8px;font-style:italic;">📏 ' + esc(portionHint) + '</div>';
   }
 
   if (cat.type === 'checkbox') {
     cat.foods.forEach(function(f) {
-        var isChecked = selected.some(function(s) { return s.name === f.name; });
-        var dealBadgesHtml = buildDealBadges(f.name);
+        let isChecked = selected.some(function(s) { return s.name === f.name; });
+        let dealBadgesHtml = buildDealBadges(f.name);
         html += '<label class="checkbox-add"><input type="checkbox" data-cat="' + cat.id + '" data-name="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '" ' + (isChecked ? 'checked' : '') + '><span>+ ' + f.name + ' (' + f.density + '%)</span>' + dealBadgesHtml + '</label>';
     });
   } else {
     html += '<select data-cat="' + cat.id + '"><option value="">+ Ajouter…</option>';
       cat.foods.forEach(function(f) {
-        var seasonPrefix = '';
+        let seasonPrefix = '';
         if (f.season && f.season.length > 0) {
-          var month = new Date().getMonth() + 1;
+          let month = new Date().getMonth() + 1;
           if (f.season.includes(month)) seasonPrefix = '🌱 ';
           else if (f.import_season && f.import_season.includes(month)) seasonPrefix = '✈️ ';
         } else if (f.import_season && f.import_season.length > 0 && f.import_season.length < 12) {
-          var month = new Date().getMonth() + 1;
-          if (f.import_season.includes(month)) seasonPrefix = '✈️ ';
+          let currentMonth = new Date().getMonth() + 1;
+          if (f.import_season.includes(currentMonth)) seasonPrefix = '✈️ ';
         }
-        var dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
+        let dealPrefix = DEALS[f.name] && DEALS[f.name].length > 0 ? '🏷️ ' : '';
         html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + dealPrefix + seasonPrefix + f.name + ' — ' + f.density + '% (' + f.nutrients + ')</option>';
       });
       html += '</select>';
@@ -129,17 +129,17 @@ function renderCard(cat) {
 }
 
 function renderChips(catId, selected) {
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   return selected.slice().sort(function(a, b) { return b.density - a.density; }).map(function(item) {
     // Check if food exists in another category
-    var alsoIn = [];
+    let alsoIn = [];
     DATA.categories.forEach(function(c) {
       if (c.id !== catId && c.foods.some(function(f) { return f.name === item.name; })) {
         alsoIn.push(c.icon + ' ' + c.name);
       }
     });
-    var alsoTag = alsoIn.length > 0 ? ' <span style="font-size:0.68rem;color:var(--text-dim);">aussi: ' + alsoIn.join(', ') + '</span>' : '';
-    var qtyControls = item.qty > 1
+    let alsoTag = alsoIn.length > 0 ? ' <span style="font-size:0.68rem;color:var(--text-dim);">aussi: ' + alsoIn.join(', ') + '</span>' : '';
+    let qtyControls = item.qty > 1
       ? '<span class="qty-controls"><button class="qty-btn" data-action="dec" data-cat="' + catId + '" data-name="' + esc(item.name) + '">−</button><span class="qty-num">×' + item.qty + '</span><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>'
       : '<span class="qty-controls"><button class="qty-btn" data-action="inc" data-cat="' + catId + '" data-name="' + esc(item.name) + '">+</button></span>';
     return '<span class="chip" title="' + esc(item.nutrients) + '" data-detail-cat="' + catId + '" data-detail-name="' + esc(item.name) + '" style="cursor:pointer;">' + item.name + '<span class="density-tag">' + item.density + '%</span>' + buildDealBadges(item.name) + alsoTag + qtyControls + '<button class="remove-btn" data-action="remove" data-cat="' + catId + '" data-name="' + esc(item.name) + '" title="Retirer">×</button></span>';
@@ -147,41 +147,41 @@ function renderChips(catId, selected) {
 }
 
 function refreshCard(catId) {
-  var card = document.querySelector('[data-cat="' + catId + '"]');
+  let card = document.querySelector('[data-cat="' + catId + '"]');
   if (!card) return;
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
-  var selected = selections[catId] || [];
-  var totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
-  var badge = card.querySelector('.counter-badge');
+  let selected = selections[catId] || [];
+  let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  let badge = card.querySelector('.counter-badge');
   if (badge) {
-    var min = cat.weekly_min, max = cat.weekly_max;
-    var target = min === max ? '' + min : min + '-' + max;
+    let min = cat.weekly_min, max = cat.weekly_max;
+    let target = min === max ? '' + min : min + '-' + max;
     badge.textContent = totalCount + ' / ' + target + ' ' + (cat.daily ? 'jour.' : 'sem.');
-    var rangeClass = '';
+    let rangeClass = '';
     if (totalCount > 0 && totalCount < min) rangeClass = 'under';
     else if (totalCount > max) rangeClass = 'over';
     else if (totalCount > 0) rangeClass = 'in-range';
     badge.className = 'counter-badge ' + rangeClass;;
   }
-  var chipsContainer = card.querySelector('#chips-' + catId);
+  let chipsContainer = card.querySelector('#chips-' + catId);
   if (chipsContainer) chipsContainer.innerHTML = renderChips(catId, selected);
 }
 
 function updateTabDots() {
   DATA.sections.forEach(function(sec, idx) {
-    var dotClass = getSectionDotClass(sec.id);
-    var tabs = document.querySelectorAll('.tab');
-    if (tabs[idx]) { var dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
+    let dotClass = getSectionDotClass(sec.id);
+    let tabs = document.querySelectorAll('.tab');
+    if (tabs[idx]) { let dot = tabs[idx].querySelector('.tab-dot'); if (dot) dot.className = 'tab-dot ' + dotClass; }
   });
   if (currentMode === 'tracking') renderTrackingNutrition();
 }
 
 function updateSaveBar() {
-  var bar = $('save-bar');
-  var btn = $('save-btn');
-  var info = $('save-info');
-  var total = Object.values(selections).reduce(function(sum, arr) { return sum + arr.reduce(function(s, i) { return s + i.qty; }, 0); }, 0);
+  let bar = $('save-bar');
+  let btn = $('save-btn');
+  let info = $('save-info');
+  let total = Object.values(selections).reduce(function(sum, arr) { return sum + arr.reduce(function(s, i) { return s + i.qty; }, 0); }, 0);
 
   // Rewire save button
   btn.onclick = saveSelections;
@@ -197,21 +197,21 @@ function updateSaveBar() {
 }
 
 function setDirty(dirty) {
-  var btn = $('save-btn');
+  let btn = $('save-btn');
   if (!btn) return;
   if (dirty) { btn.classList.add('dirty'); btn.disabled = false; }
   else { btn.classList.remove('dirty'); btn.disabled = true; }
 }
 
 function computeNutritionTotals(sel) {
-  var totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
+  let totals = { protein: 0, fiber: 0, iron: 0, vit_c: 0, calcium: 0, omega3: 0, calories: 0 };
   Object.keys(sel).forEach(function(catId) {
     sel[catId].forEach(function(item) {
-      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      let cat = DATA.categories.find(function(c) { return c.id === catId; });
       if (cat) {
-        var food = cat.foods.find(function(f) { return f.name === item.name; });
+        let food = cat.foods.find(function(f) { return f.name === item.name; });
         if (food && food.nutrition) {
-          var qty = item.qty || 1;
+          let qty = item.qty || 1;
           totals.protein += (food.nutrition.protein || 0) * qty;
           totals.fiber += (food.nutrition.fiber || 0) * qty;
           totals.iron += (food.nutrition.iron || 0) * qty;
@@ -228,9 +228,9 @@ function computeNutritionTotals(sel) {
 
 function addItem(catId, item) {
   if (!selections[catId]) selections[catId] = [];
-  var existing = selections[catId].find(function(s) { return s.name === item.name; });
+  let existing = selections[catId].find(function(s) { return s.name === item.name; });
   if (existing) existing.qty = (existing.qty || 1) + 1;
-  else selections[catId].push(Object.assign({}, item, { qty: 1 }));
+  else selections[catId].push({ ...item, qty: 1 });
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
   if (currentMode === 'tracking') renderTrackingNutrition();
   if (currentUser) loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); });
@@ -241,7 +241,7 @@ function removeItem(catId, name) {
   selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
   if (selections[catId].length === 0) delete selections[catId];
   // Uncheck checkbox if visible
-  var cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
+  let cb = document.querySelector('[data-cat="' + catId + '"][type="checkbox"]');
   if (cb) cb.checked = false;
   refreshCard(catId); updateTabDots(); updateSaveBar(); scheduleAutoSave();
   if (currentMode === 'tracking') renderTrackingNutrition();
@@ -250,7 +250,7 @@ function removeItem(catId, name) {
 
 function changeQty(catId, name, delta) {
   if (!selections[catId]) return;
-  var item = selections[catId].find(function(s) { return s.name === name; });
+  let item = selections[catId].find(function(s) { return s.name === name; });
   if (!item) return;
   item.qty = (item.qty || 1) + delta;
   if (item.qty <= 0) removeItem(catId, name);
@@ -258,7 +258,7 @@ function changeQty(catId, name, delta) {
 }
 
 function addFromSelect(catId, sel) {
-  var opt = sel.selectedOptions[0];
+  let opt = sel.selectedOptions[0];
   if (!opt || !opt.value) return;
   addItem(catId, { name: opt.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
   sel.value = '';
@@ -282,13 +282,12 @@ async function saveSelections() {
   if (currentMode === 'tracking') { loadScript('js/tracking.js', function() { saveTracking(); }); return; }
   // Cancel pending auto-save timer since we're saving now
   clearTimeout(autoSaveTimer);
-  var btn = $('save-btn');
-  var origText = btn.textContent;
+  let btn = $('save-btn');
   btn.disabled = true; btn.textContent = '⏳ Sauvegarde…';
-  var token = getToken();
+  let token = getToken();
   if (token) {
     try {
-      var res = await fetchWithTimeout(API + '/selections', {
+      let res = await fetchWithTimeout(API + '/selections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ selections: selections })
@@ -309,12 +308,12 @@ async function saveSelections() {
 }
 
 async function loadSelectionsFromServer() {
-  var token = getToken();
+  let token = getToken();
   if (!token) return;
   try {
-    var res = await fetchWithTimeout(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
+    let res = await fetchWithTimeout(API + '/selections', { headers: { 'Authorization': 'Bearer ' + token } }, 10000);
     if (res.status === 401) { console.warn('[NutriFood] Token expired'); clearAuth(); return; }
-    var data = await res.json();
+    let data = await res.json();
     selections = data.selections || {};
     Object.values(selections).forEach(function(arr) { arr.forEach(function(item) { if (!item.qty) item.qty = 1; }); });
     savedSnapshot = JSON.stringify(selections);
@@ -323,16 +322,16 @@ async function loadSelectionsFromServer() {
 
 // ─── Admin food editing ───
 function adminAddFood(catId) {
-  var nameEl = $('add-name-' + catId);
-  var densityEl = $('add-density-' + catId);
-  var nutrientsEl = $('add-nutrients-' + catId);
+  let nameEl = $('add-name-' + catId);
+  let densityEl = $('add-density-' + catId);
+  let nutrientsEl = $('add-nutrients-' + catId);
   if (!nameEl || !nameEl.value.trim()) return;
-  var name = nameEl.value.trim();
-  var density = Number.parseInt(densityEl.value || '50');
-  var nutrients = nutrientsEl.value.trim() || 'Non spécifié';
+  let name = nameEl.value.trim();
+  let density = Number.parseInt(densityEl.value || '50');
+  let nutrients = nutrientsEl.value.trim() || 'Non spécifié';
   
   // Add to DATA
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
   if (cat.foods.some(function(f) { return f.name === name; })) { showToast('Cet aliment existe d\u00e9j\u00e0', 'warning'); return; }
   cat.foods.push({ name: name, density: density, nutrients: nutrients });
@@ -346,7 +345,7 @@ function adminAddFood(catId) {
 }
 
 function adminRemoveFood(catId, name) {
-  var cat = DATA.categories.find(function(c) { return c.id === catId; });
+  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   if (!cat) return;
   cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
   // Also remove from selections if present
@@ -364,17 +363,17 @@ async function saveFoodsToServer() {
 }
 
 async function hideFood(catId, name) {
-  var token = getToken();
+  let token = getToken();
   if (!token) { showToast('Non connecté', 'error'); return; }
   try {
-    var res = await fetchWithTimeout(API + '/admin/food/hide', {
+    let res = await fetchWithTimeout(API + '/admin/food/hide', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ name: name })
     }, 10000);
     if (res.ok) {
       // Remove from DATA locally
-      var cat = DATA.categories.find(function(c) { return c.id === catId; });
+      let cat = DATA.categories.find(function(c) { return c.id === catId; });
       if (cat) cat.foods = cat.foods.filter(function(f) { return f.name !== name; });
       // Remove from selections
       if (selections[catId]) {
@@ -424,11 +423,11 @@ function renderWelcome() {
 // ─── Unified event delegation ───
 document.addEventListener('click', function(e) {
   // 1. Action buttons (qty +, qty -, remove, admin) — highest priority
-  var btn = e.target.closest('[data-action]');
+  let btn = e.target.closest('[data-action]');
   if (btn) {
-    var catId = btn.dataset.cat;
-    var name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
-    var action = btn.dataset.action;
+    let catId = btn.dataset.cat;
+    let name = btn.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let action = btn.dataset.action;
     if (action === 'inc') changeQty(catId, name, 1);
     else if (action === 'dec') changeQty(catId, name, -1);
     else if (action === 'remove') removeItem(catId, name);
@@ -439,21 +438,21 @@ document.addEventListener('click', function(e) {
     return;
   }
   // 1b. Hide product from manage tab
-  var hideItem = e.target.closest('[data-hide-cat]');
+  let hideItem = e.target.closest('[data-hide-cat]');
   if (hideItem) {
-    var hideCat = hideItem.dataset.hideCat;
-    var hideName = hideItem.dataset.hideName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let hideCat = hideItem.dataset.hideCat;
+    let hideName = hideItem.dataset.hideName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     hideFood(hideCat, hideName);
     return;
   }
   // 1c. Toggle category accordion in remove tab
-  var catHeader = e.target.closest('[data-remove-cat]');
+  let catHeader = e.target.closest('[data-remove-cat]');
   if (catHeader) {
-    var catId = catHeader.dataset.removeCat;
-    var items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
-    var arrow = catHeader.querySelector('.remove-cat-arrow');
+    let catId = catHeader.dataset.removeCat;
+    let items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
+    let arrow = catHeader.querySelector('.remove-cat-arrow');
     if (items) {
-      var shown = items.style.display !== 'none';
+      let shown = items.style.display !== 'none';
       // Close all others
       document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
       document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
@@ -466,25 +465,25 @@ document.addEventListener('click', function(e) {
     return;
   }
   // 2. Deals toggle in modal
-  var toggle = e.target.closest('#deals-toggle');
+  let toggle = e.target.closest('#deals-toggle');
   if (toggle) {
-    var content = document.getElementById('deals-content');
-    var arrow = document.getElementById('deals-arrow');
+    let content = document.getElementById('deals-content');
+    let arrow = document.getElementById('deals-arrow');
     if (content) {
-      var shown = content.style.display !== 'none';
+      let shown = content.style.display !== 'none';
       content.style.display = shown ? 'none' : 'block';
       if (arrow) arrow.textContent = shown ? '\u2193' : '\u2191';
     }
     return;
   }
   // 3. Deal badges inside chips -> open food modal
-  var dealBadges = e.target.closest('[data-deal-food]');
+  let dealBadges = e.target.closest('[data-deal-food]');
   if (dealBadges) {
     e.preventDefault();
-    var dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let dealName = dealBadges.dataset.dealFood.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     loadScript('js/food-modal.js', function() {
-      for (var i = 0; i < DATA.categories.length; i++) {
-        var cat = DATA.categories[i];
+      for (let i = 0; i < DATA.categories.length; i++) {
+        let cat = DATA.categories[i];
         if (cat.foods.some(function(f) { return f.name === dealName; })) {
           openFoodModal(cat.id, dealName);
           return;
@@ -494,10 +493,10 @@ document.addEventListener('click', function(e) {
     return;
   }
   // 4. Chip click -> open food modal
-  var chip = e.target.closest('[data-detail-cat]');
+  let chip = e.target.closest('[data-detail-cat]');
   if (chip) {
     e.preventDefault();
-    var chipName = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let chipName = chip.dataset.detailName.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     loadScript('js/food-modal.js', function() {
       openFoodModal(chip.dataset.detailCat, chipName);
     });
@@ -509,14 +508,14 @@ document.addEventListener('change', function(e) {
   // Select changes
   if (e.target.tagName === 'SELECT' && e.target.dataset.cat) {
     if (e.target.value) {
-      var opt = e.target.selectedOptions[0];
+      let opt = e.target.selectedOptions[0];
       addItem(e.target.dataset.cat, { name: e.target.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
       e.target.value = '';
     }
   }
   // Checkbox changes
   if (e.target.type === 'checkbox' && e.target.dataset.cat) {
-    var name = e.target.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
+    let name = e.target.dataset.name.replace(/&#39;/g, "'").replace(/&quot;/g, '"');
     if (e.target.checked) addItem(e.target.dataset.cat, { name: name, density: Number.parseInt(e.target.dataset.density || 0), nutrients: e.target.dataset.nutrients || '' });
     else removeItem(e.target.dataset.cat, name);
   }
@@ -524,6 +523,6 @@ document.addEventListener('change', function(e) {
 
 // Mouse hover: highlight chips
 document.addEventListener('mouseover', function(e) {
-  var chip = e.target.closest('[data-detail-cat]');
+  let chip = e.target.closest('[data-detail-cat]');
   if (chip) chip.style.cursor = 'pointer';
 });

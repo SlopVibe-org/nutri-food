@@ -12,40 +12,40 @@ let savedSnapshot = '{}';
 let activeTab = null;
 let currentUser = null;
 let authMode = 'login';
-var autoSaveTimer = null;
-var searchActiveIndex = -1;
+let autoSaveTimer = null;
+let searchActiveIndex = -1;
 
 // ─── Mode Suivi (tracking) state ───
-var currentMode = localStorage.getItem('nf-mode') || 'tracking';
-var planningSelections = {};
-var trackingDate = null;
-var trackingSelections = {};
-var trackingSnapshot = '{}';
-var trackingWeek = {};
-var mobileSelectedDay = 0;
+let currentMode = localStorage.getItem('nf-mode') || 'tracking';
+let planningSelections = {};
+let trackingDate = null;
+let trackingSelections = {};
+let trackingSnapshot = '{}';
+let trackingWeek = {};
+let mobileSelectedDay = 0;
 
 // ─── Deals data (epiceries.ca) ───
-var DEALS = {};
-var STORE_META = {};
+let DEALS = {};
+let STORE_META = {};
 
 // ─── Deal badges stub (overridden when deals.js loads) ───
 function buildDealBadges(foodName) { return ''; }
 
 // ─── Dynamic script loader (fixed: queue callbacks until truly loaded) ───
-var _loadedScripts = {};
-var _pendingCallbacks = {};
+let _loadedScripts = {};
+let _pendingCallbacks = {};
 function loadScript(url, callback) {
-  if (_loadedScripts[url]) { if (callback) callback(); return; }
+  if (_loadedScripts[url]) { if (callback) { callback(); } return; }
   if (_pendingCallbacks[url]) {
-    if (callback) _pendingCallbacks[url].push(callback);
+    if (callback) { _pendingCallbacks[url].push(callback); }
     return;
   }
   _pendingCallbacks[url] = callback ? [callback] : [];
-  var s = document.createElement('script');
+  let s = document.createElement('script');
   s.src = url;
   s.onload = function() {
     _loadedScripts[url] = true;
-    var cbs = _pendingCallbacks[url] || [];
+    let cbs = _pendingCallbacks[url] || [];
     delete _pendingCallbacks[url];
     cbs.forEach(function(cb) { try { cb(); } catch(e) { console.error('[NutriFood] Script callback error for ' + url + ':', e); } });
   };
@@ -65,26 +65,25 @@ function esc(s) { return String(s == null ? '' : s).replace(/'/g, '&#39;').repla
 // ─── Date helpers (tracking mode) ───
 function getTodayISO() { return new Date().toISOString().slice(0,10); }
 function formatDayLabel(dateStr) {
-  var today = getTodayISO();
-  var d0 = new Date(); d0.setDate(d0.getDate()+1);
-  var tomorrowStr = d0.toISOString().slice(0,10);
-  var d1 = new Date(); d1.setDate(d1.getDate()-1);
-  var yesterdayStr = d1.toISOString().slice(0,10);
+  let today = getTodayISO();
+  let d0 = new Date(); d0.setDate(d0.getDate()+1);
+  let tomorrowStr = d0.toISOString().slice(0,10);
+  let d1 = new Date(); d1.setDate(d1.getDate()-1);
+  let yesterdayStr = d1.toISOString().slice(0,10);
   if (dateStr === today) return "Aujourd'hui";
   if (dateStr === tomorrowStr) return "Demain";
   if (dateStr === yesterdayStr) return "Hier";
-  var d = new Date(dateStr + 'T12:00:00');
-  var days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
-  var months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+  let d = new Date(dateStr + 'T12:00:00');
+  let days = ['Dim','Lun','Mar','Mer','Jeu','Ven','Sam'];
+  let months = ['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
   return days[d.getDay()] + ' ' + d.getDate() + ' ' + months[d.getMonth()];
 }
 
 // ─── Toast system ───
-function showToast(message, type) {
-  type = type || 'info';
-  var container = $('toast-container');
+function showToast(message, type = 'info') {
+  let container = $('toast-container');
   if (!container) return;
-  var toast = document.createElement('div');
+  let toast = document.createElement('div');
   toast.className = 'toast ' + type;
   toast.textContent = message;
   container.appendChild(toast);
@@ -122,9 +121,9 @@ function clearAuth() {
   currentUser = null;
   selections = {};
   savedSnapshot = '{}';
-  var fab = $('suggestions-fab');
+  let fab = $('suggestions-fab');
   if (fab) fab.classList.remove('visible', 'pulsing');
-  var banner = $('seasonal-banner');
+  let banner = $('seasonal-banner');
   if (banner) banner.classList.add('hidden');
   renderUserArea();
   render();

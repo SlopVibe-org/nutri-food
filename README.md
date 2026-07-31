@@ -30,10 +30,29 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 ## Architecture
 
 ### Stack
-- **Frontend:** HTML/CSS/JS vanilla (14 modules modulaires avec lazy loading)
+- **Frontend:** HTML/CSS/JS vanilla (14 modules avec lazy loading)
 - **Backend:** Python Flask (API REST, ~1675 lignes)
 - **DB:** SQLite (nutrifood.db)
 - **Déploiement:** Docker Compose
+
+### Modules frontend
+
+| Module | Rôle |
+|--------|------|
+| `core.js` | Config API, état global, helpers DOM, loader de scripts (lazy loading) |
+| `app.js` | Point d'entrée, init, restauration de session, orchestration |
+| `auth.js` | Connexion, inscription, JWT, menu utilisateur, mot de passe oublié |
+| `render.js` | Rendu des sections, catégories, chips, filtres, event delegation |
+| `nutrition.js` | Totaux nutritionnels, objectifs, dashboard suivi, reset confirmation |
+| `tracking.js` | Mode Suivi : switch onglets, chargement/sauvegarde par jour |
+| `search.js` | Recherche normalisée (accents, ligatures) avec résultats en direct |
+| `deals.js` | Spéciaux d'épicerie (epiceries.ca), badges, modal comparatif |
+| `suggestions.js` | Suggestions automatiques basées sur carences nutritionnelles |
+| `grocery.js` | Génération, partage et impression de la liste d'épicerie |
+| `food-modal.js` | Fiche détaillée d'un aliment (tooltips, info-bulles) |
+| `history.js` | Historique des snapshots hebdomadaires |
+| `share.js` | Vue partagée en lecture seule (lien public) |
+| `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
 
 ### Docker
 ```

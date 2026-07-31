@@ -39,7 +39,7 @@ async function loadUserGoals() {
     } else {
       userGoals = { ...defaultGoals };
     }
-  } catch(e) { userGoals = { ...defaultGoals }; }
+  } catch(e) { console.error('[NutriFood] Goals load failed:', e); userGoals = { ...defaultGoals }; }
     console.error("[NutriFood] Error:", e);
 }
 

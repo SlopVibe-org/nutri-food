@@ -133,7 +133,6 @@ function renderCard(cat) {
 }
 
 function renderChips(catId, selected) {
-  let cat = DATA.categories.find(function(c) { return c.id === catId; });
   return selected.slice().sort(function(a, b) { return b.density - a.density; }).map(function(item) {
     // Check if food exists in another category
     let alsoIn = [];
@@ -276,7 +275,7 @@ function changeQty(catId, name, delta) {
 }
 
 function addFromSelect(catId, sel) {
-  let opt = sel.selectedOptions[0];
+  let opt = sel.selectedOptions?.[0];
   if (!opt || !opt.value) { return; }
   addItem(catId, { name: opt.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
   sel.value = '';

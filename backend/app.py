@@ -60,6 +60,13 @@ SMTP_PASS = os.environ.get('SMTP_PASS', '')
 MAIL_FROM = os.environ.get('MAIL_FROM', 'ai@slopvibe.org')
 APP_URL = os.environ.get('APP_URL', 'https://slopvibe.org/nutri-food/')
 
+# ─── Error / SQL constants (SonarQube S1192) ───
+ERR_UNAUTHORIZED = 'Non autorisé'
+ERR_FORBIDDEN = 'Accès refusé'
+ERR_RATE_LIMIT = 'Trop de tentatives, réessayez plus tard'
+SQL_TOKEN_VERSION = 'SELECT token_version FROM users WHERE id = ?'
+SQL_SELECTIONS = 'SELECT data FROM selections WHERE user_id = ?'
+
 # ─── Helpers ───
 
 def get_week_key(d=None):
@@ -269,7 +276,7 @@ def verify_token(token):
             return None
         # Check token_version against DB to invalidate old tokens after password change
         db = get_db()
-        user = db.execute('SELECT token_version FROM users WHERE id = ?', (payload.get('uid'),)).fetchone()
+        user = db.execute(SQL_TOKEN_VERSION, (payload.get('uid'),)).fetchone()
         if not user or payload.get('tv', 0) != user['token_version']:
             return None
         return payload
@@ -297,7 +304,7 @@ def health():
 @app.route('/api/register', methods=['POST'])
 def register():
     if not check_rate_limit(request.remote_addr + ':register'):
-        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
+        return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     email = (data.get('email') or '').strip().lower()
     name = (data.get('name') or '').strip()
@@ -338,7 +345,7 @@ def register():
 @app.route('/api/login', methods=['POST'])
 def login():
     if not check_rate_limit(request.remote_addr + ':login'):
-        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
+        return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
     password = data.get('password') or ''
@@ -377,6 +384,217 @@ def get_nf_db():
     db.row_factory = sqlite3.Row
     return db
 
+def _build_section_dict(s):
+    """Build a section dict from a DB row (S3776 helper)."""
+    return {'id': s['id'], 'name': s['name'], 'icon': s['icon']}
+
+
+def _build_food_dict(f, db):
+    """Build a single food dict from a DB row (S3776 helper)."""
+    fd = {'name': f['name_fr'] or f['name_en'], 'density': f['density'] or 50,
+          'nutrients': f['highlights'] or ''}
+    aliases = db.execute('SELECT alias FROM nf_foods_aliases WHERE nf_food_id = ?', (f['id'],)).fetchall()
+    if aliases:
+        fd['aliases'] = [a['alias'] for a in aliases]
+    nutr_vals = db.execute('SELECT nutrient_code, amount FROM nf_foods_nutrients WHERE nf_food_id = ?', (f['id'],)).fetchall()
+    nutrition = {}
+    for nv in nutr_vals:
+        field = NUTRIENT_MAP.get(nv['nutrient_code'])
+        if field:
+            nutrition[field] = round(nv['amount'], 2)
+    omega3_codes = [629, 621, 631, 851]
+    o3_vals = [nv for nv in nutr_vals if nv['nutrient_code'] in omega3_codes]
+    if o3_vals:
+        nutrition['omega3'] = round(sum(nv['amount'] for nv in o3_vals), 2)
+    if nutrition:
+        fd['nutrition'] = nutrition
+    if f['season']:
+        try: fd['season'] = json.loads(f['season'])
+        except Exception: pass
+    if f['import_season']:
+        try: fd['import_season'] = json.loads(f['import_season'])
+        except Exception: pass
+    ft = {}
+    if f['absorption_tip']: ft['absorption'] = f['absorption_tip']
+    if f['warning_tip']: ft['warnings'] = f['warning_tip']
+    if ft: fd['tips'] = ft
+    return fd
+
+
+def _build_category_dict(cat, db):
+    """Build a category dict with its foods list (S3776 helper)."""
+    foods = db.execute('''
+        SELECT f.id, f.name_fr, f.name_en, f.density, f.highlights,
+               f.absorption_tip, f.warning_tip, f.season, f.import_season
+        FROM nf_foods f WHERE f.nf_category = ? AND f.visible = 1 ORDER BY f.id
+    ''', (cat['id'],)).fetchall()
+    cat_data = {
+        'id': cat['id'], 'name': cat['name'], 'icon': cat['icon'],
+        'section': cat['section'], 'type': cat['type'] or 'select',
+        'weekly_min': cat['weekly_min'] or 0, 'weekly_max': cat['weekly_max'] or 0,
+    }
+    if cat['daily']:
+        cat_data['daily'] = True
+    cat_tips = {}
+    if cat['absorption_tip']:
+        cat_tips['absorption'] = cat['absorption_tip']
+    if cat['warning_tip']:
+        cat_tips['warnings'] = cat['warning_tip']
+    if cat_tips:
+        cat_data['tips'] = cat_tips
+    cat_data['foods'] = [_build_food_dict(f, db) for f in foods]
+    return cat_data
+
+
+def _validate_share_link(db, token):
+    """Validate a share link token. Returns (user_id, error_response).
+    On success: (user_id, None). On failure: (None, (error_json, status)).
+    (S3776 helper)
+    """
+    row = db.execute('SELECT user_id, expires_at FROM share_links WHERE token = ?', (token,)).fetchone()
+    if not row:
+        return None, (jsonify({'error': 'Lien invalide'}), 404)
+    try:
+        if datetime.fromisoformat(row['expires_at']) < datetime.now(timezone.utc):
+            db.execute('DELETE FROM share_links WHERE token = ?', (token,))
+            db.commit()
+            return None, (jsonify({'error': 'Lien expiré'}), 404)
+    except Exception:
+        pass
+    return row['user_id'], None
+
+
+def _compute_nutrient_gaps(totals, targets):
+    """Find nutrients below 80% of target. Returns sorted list of (key, pct).
+    (S3776 helper)
+    """
+    deficient = []
+    for key in DEFAULT_TARGETS:
+        t = targets.get(key, DEFAULT_TARGETS[key])
+        if t > 0:
+            pct = (totals.get(key, 0) / t) * 100
+            if pct < 80:
+                deficient.append((key, pct))
+    return sorted(deficient, key=lambda x: x[1])
+
+
+def _find_suggestion_foods(deficient, foods_data, selected_names):
+    """Find suggestion foods for deficient nutrients. Returns list of dicts.
+    (S3776 helper)
+    """
+    all_suggestions = []
+    categories = foods_data.get('categories', [])
+    nutrient_key_map = {'vitamin_c': 'vit_c'}
+
+    for nutrient_key, pct in deficient:
+        json_key = nutrient_key_map.get(nutrient_key, nutrient_key)
+        candidates = []
+        for cat in categories:
+            if cat.get('section') == 'habitudes' and cat.get('id') in ('habitudes-herbes-epices', 'habitudes-boissons'):
+                continue
+            for food in cat.get('foods', []):
+                if food['name'] in selected_names:
+                    continue
+                if food.get('processing_level', 1) > 1:
+                    continue
+                n = food.get('nutrition', {})
+                val = n.get(json_key, 0)
+                if val > 0:
+                    candidates.append({
+                        'food': food['name'],
+                        'category': cat.get('name', ''),
+                        'nutrient': nutrient_key,
+                        'nutrient_value': val,
+                        'current_pct': round(pct),
+                        'reason': f"Manque de {NUTRIENT_LABELS.get(nutrient_key, nutrient_key)} ({round(pct)}% de l'objectif)"
+                    })
+        candidates.sort(key=lambda x: x['nutrient_value'], reverse=True)
+        all_suggestions.extend(candidates[:3])
+        if len(all_suggestions) >= 8:
+            break
+    return all_suggestions[:8]
+
+
+def _extract_food_keywords(food_name):
+    """Extract and filter keywords from a food name.
+    Returns (keywords_list, is_strict). (S3776 helper)
+    """
+    keywords = [w.strip().lower().rstrip('s') for w in food_name.replace(',', ' ').split() if len(w.strip()) >= 3]
+    keywords = [w for w in keywords if w not in GENERIC_WORDS]
+    is_strict = any(kw in STRICT_MATCH_KEYWORDS for kw in keywords)
+    return keywords, is_strict
+
+
+def _match_food_deals(food_name, raw_deals, food_keywords, is_strict):
+    """Match deals for a single food. Returns filtered list. (S3776 helper)"""
+    if food_name not in raw_deals:
+        return []
+    filtered = []
+    for r in raw_deals[food_name]:
+        r_name = (r.get('name') or '').lower()
+        if not any(_re_deals.search(r'\b' + _re_deals.escape(kw) + r's?\b', r_name) for kw in food_keywords):
+            continue
+        if any(ind in r_name for ind in PET_INDICATORS):
+            continue
+        if any(tw in r_name for tw in TRANSFORM_WORDS):
+            continue
+        if is_strict:
+            if not any(r_name.startswith(kw) or r_name.startswith('moulu ' + kw) or r_name.startswith(kw + ' moulu') or r_name.startswith('beurre ' + kw) or r_name.startswith('huile ' + kw) for kw in food_keywords):
+                continue
+        filtered.append(r)
+    return filtered
+
+
+def _fetch_deals_for_food(food):
+    """Fetch deals for a single food item from epiceries.ca.
+    Returns list of raw deal items. (S3776 helper)
+    """
+    food_name = food.get('name', '')
+    if not food_name:
+        return []
+    query = food.get('epiceries_query') or food_name
+    try:
+        params = urllib.parse.urlencode({
+            'endpoint': 'search',
+            'q': query,
+            'discounted': 'true',
+            'limit': '10',
+            'sort': 'price_asc',
+        })
+        url = f'https://epiceries.ca/api?{params}'
+        req = urllib.request.Request(url, headers={'User-Agent': 'NutriFood/1.0'})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            body = resp.read().decode('utf-8')
+        data = json.loads(body)
+        if data.get('ok') and data.get('data'):
+            results = data['data'].get('results', [])
+            raw_items = []
+            for r in results:
+                raw_items.append({
+                    'name': r.get('name', ''),
+                    'store': r.get('store', ''),
+                    'price': r.get('price'),
+                    'unit_price': r.get('unitPrice', ''),
+                    'size': r.get('size', ''),
+                    'link': r.get('link', ''),
+                    'image': r.get('image', ''),
+                })
+            return raw_items
+    except Exception as e:
+        print(f'[NutriFood] Raw fetch error for "{food_name}": {e}')
+    return []
+
+
+def _compute_journal_avg(avg_totals, days_with_entries, days):
+    """Compute average nutrition totals over days with entries.
+    Modifies avg_totals in place. (S3776 helper)
+    """
+    divisor = days_with_entries if days_with_entries > 0 else days
+    for k in avg_totals:
+        avg_totals[k] = round(avg_totals[k] / divisor, 2)
+    return avg_totals
+
+
 def load_foods():
     """Return foods dict from SQLite, same format as old foods.json."""
     db = get_nf_db()
@@ -388,61 +606,9 @@ def load_foods():
     ''').fetchall()
     
     result = {
-        'sections': [{'id': s['id'], 'name': s['name'], 'icon': s['icon']} for s in sections],
-        'categories': []
+        'sections': [_build_section_dict(s) for s in sections],
+        'categories': [_build_category_dict(cat, db) for cat in categories]
     }
-    for cat in categories:
-        foods = db.execute('''
-            SELECT f.id, f.name_fr, f.name_en, f.density, f.highlights,
-                   f.absorption_tip, f.warning_tip, f.season, f.import_season
-            FROM nf_foods f WHERE f.nf_category = ? AND f.visible = 1 ORDER BY f.id
-        ''', (cat['id'],)).fetchall()
-        cat_data = {
-            'id': cat['id'], 'name': cat['name'], 'icon': cat['icon'],
-            'section': cat['section'], 'type': cat['type'] or 'select',
-            'weekly_min': cat['weekly_min'] or 0, 'weekly_max': cat['weekly_max'] or 0,
-        }
-        if cat['daily']:
-            cat_data['daily'] = True
-        cat_tips = {}
-        if cat['absorption_tip']:
-            cat_tips['absorption'] = cat['absorption_tip']
-        if cat['warning_tip']:
-            cat_tips['warnings'] = cat['warning_tip']
-        if cat_tips:
-            cat_data['tips'] = cat_tips
-        food_list = []
-        for f in foods:
-            fd = {'name': f['name_fr'] or f['name_en'], 'density': f['density'] or 50,
-                  'nutrients': f['highlights'] or ''}
-            aliases = db.execute('SELECT alias FROM nf_foods_aliases WHERE nf_food_id = ?', (f['id'],)).fetchall()
-            if aliases:
-                fd['aliases'] = [a['alias'] for a in aliases]
-            nutr_vals = db.execute('SELECT nutrient_code, amount FROM nf_foods_nutrients WHERE nf_food_id = ?', (f['id'],)).fetchall()
-            nutrition = {}
-            for nv in nutr_vals:
-                field = NUTRIENT_MAP.get(nv['nutrient_code'])
-                if field:
-                    nutrition[field] = round(nv['amount'], 2)
-            omega3_codes = [629, 621, 631, 851]
-            o3_vals = [nv for nv in nutr_vals if nv['nutrient_code'] in omega3_codes]
-            if o3_vals:
-                nutrition['omega3'] = round(sum(nv['amount'] for nv in o3_vals), 2)
-            if nutrition:
-                fd['nutrition'] = nutrition
-            if f['season']:
-                try: fd['season'] = json.loads(f['season'])
-                except Exception: pass
-            if f['import_season']:
-                try: fd['import_season'] = json.loads(f['import_season'])
-                except Exception: pass
-            ft = {}
-            if f['absorption_tip']: ft['absorption'] = f['absorption_tip']
-            if f['warning_tip']: ft['warnings'] = f['warning_tip']
-            if ft: fd['tips'] = ft
-            food_list.append(fd)
-        cat_data['foods'] = food_list
-        result['categories'].append(cat_data)
     db.close()
     return result
 
@@ -454,7 +620,7 @@ def get_foods():
 def admin_show_food():
     user = get_auth_user()
     if not user or not user['is_admin']:
-        return jsonify({'error': 'Accès refusé'}), 403
+        return jsonify({'error': ERR_FORBIDDEN}), 403
     data = request.get_json() or {}
     source_id = data.get('source_id')
     source_type = data.get('source_type', 1)
@@ -497,7 +663,7 @@ def admin_show_food():
 def admin_hide_food():
     user = get_auth_user()
     if not user or not user['is_admin']:
-        return jsonify({'error': 'Accès refusé'}), 403
+        return jsonify({'error': ERR_FORBIDDEN}), 403
     data = request.get_json() or {}
     food_id = data.get('id')
     if not food_id:
@@ -552,7 +718,7 @@ def cnf_product(food_id):
 @app.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
     if not check_rate_limit(request.remote_addr + ':forgot-password'):
-        return jsonify({'error': 'Trop de tentatives, réessayez plus tard'}), 429
+        return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
 
@@ -620,7 +786,7 @@ def reset_password():
     db.commit()
 
     # Issue new login token with updated version
-    new_version = db.execute('SELECT token_version FROM users WHERE id = ?', (user['id'],)).fetchone()['token_version']
+    new_version = db.execute(SQL_TOKEN_VERSION, (user['id'],)).fetchone()['token_version']
     token = make_token(user['id'], user['email'], new_version)
     return jsonify({
         'status': 'ok',
@@ -634,7 +800,7 @@ def reset_password():
 def change_password():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     data = request.get_json() or {}
     current_password = data.get('current_password') or ''
@@ -663,7 +829,7 @@ def change_password():
     db.commit()
 
     # Issue new token with updated version
-    new_version = db.execute('SELECT token_version FROM users WHERE id = ?', (user['id'],)).fetchone()['token_version']
+    new_version = db.execute(SQL_TOKEN_VERSION, (user['id'],)).fetchone()['token_version']
     token = make_token(user['id'], user['email'], new_version)
     return jsonify({'status': 'ok', 'token': token})
 
@@ -673,7 +839,7 @@ def change_password():
 def get_selections():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     db = get_db()
     row = db.execute('SELECT data, updated_at FROM selections WHERE user_id = ?', (user['id'],)).fetchone()
@@ -688,7 +854,7 @@ def get_selections():
 def save_selections():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     data = request.get_json() or {}
     selections_data = data.get('selections', {})
@@ -723,7 +889,7 @@ def save_selections():
 def get_meal_plan():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     week = request.args.get('week')
     if not week:
@@ -742,7 +908,7 @@ def get_meal_plan():
 def save_meal_plan():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     body = request.get_json() or {}
     week = body.get('week')
@@ -770,7 +936,7 @@ def save_meal_plan():
 def get_history():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     db = get_db()
     rows = db.execute(
@@ -807,7 +973,7 @@ def get_history():
 def get_history_detail(week_key):
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     db = get_db()
     row = db.execute(
@@ -830,7 +996,7 @@ def get_history_detail(week_key):
 def create_share():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     share_token = secrets.token_urlsafe(16)
     expires_at = (datetime.now(timezone.utc) + timedelta(days=30)).isoformat()
@@ -843,20 +1009,12 @@ def create_share():
 @app.route('/api/shared/<token>', methods=['GET'])
 def get_shared(token):
     db = get_db()
-    row = db.execute('SELECT user_id, expires_at FROM share_links WHERE token = ?', (token,)).fetchone()
-    if not row:
-        return jsonify({'error': 'Lien invalide'}), 404
-    # Check expiry
-    try:
-        if datetime.fromisoformat(row['expires_at']) < datetime.now(timezone.utc):
-            db.execute('DELETE FROM share_links WHERE token = ?', (token,))
-            db.commit()
-            return jsonify({'error': 'Lien expiré'}), 404
-    except Exception:
-        pass
+    user_id, err = _validate_share_link(db, token)
+    if err:
+        return err
 
-    sel = db.execute('SELECT data FROM selections WHERE user_id = ?', (row['user_id'],)).fetchone()
-    user = db.execute('SELECT name FROM users WHERE id = ?', (row['user_id'],)).fetchone()
+    sel = db.execute(SQL_SELECTIONS, (user_id,)).fetchone()
+    user = db.execute('SELECT name FROM users WHERE id = ?', (user_id,)).fetchone()
 
     selections_data = json.loads(sel['data']) if sel else {}
 
@@ -911,7 +1069,7 @@ def get_shared(token):
 def me():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     return jsonify({
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
@@ -921,7 +1079,7 @@ def me():
 def compute_nutrition_totals(user_id, foods_data):
     """Compute weekly nutrition totals from user's selections."""
     db = get_db()
-    row = db.execute('SELECT data FROM selections WHERE user_id = ?', (user_id,)).fetchone()
+    row = db.execute(SQL_SELECTIONS, (user_id,)).fetchone()
     if not row:
         return {'protein': 0, 'fiber': 0, 'iron': 0, 'vitamin_c': 0, 'calcium': 0, 'omega3': 0}
 
@@ -973,7 +1131,7 @@ def get_user_targets(user_id):
 def nutrition_summary():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     foods_data = load_foods()
     totals = compute_nutrition_totals(user['id'], foods_data)
@@ -1008,27 +1166,20 @@ NUTRIENT_LABELS = {
 def suggestions():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     foods_data = load_foods()
     totals = compute_nutrition_totals(user['id'], foods_data)
     targets = get_user_targets(user['id'])
 
-    # Find nutrients below 80% of target
-    deficient = []
-    for key in DEFAULT_TARGETS:
-        t = targets.get(key, DEFAULT_TARGETS[key])
-        if t > 0:
-            pct = (totals.get(key, 0) / t) * 100
-            if pct < 80:
-                deficient.append((key, pct))
+    deficient = _compute_nutrient_gaps(totals, targets)
 
     if not deficient:
         return jsonify({'suggestions': []})
 
     # Get user's currently selected food names
     db = get_db()
-    row = db.execute('SELECT data FROM selections WHERE user_id = ?', (user['id'],)).fetchone()
+    row = db.execute(SQL_SELECTIONS, (user['id'],)).fetchone()
     selected_names = set()
     if row and row['data']:
         selections_data = json.loads(row['data'])
@@ -1036,43 +1187,8 @@ def suggestions():
             for item in items:
                 selected_names.add(item.get('name', ''))
 
-    # Build suggestion list
-    all_suggestions = []
-    categories = foods_data.get('categories', [])
-
-    # Map nutrient keys to foods.json nutrition keys
-    nutrient_key_map = {'vitamin_c': 'vit_c'}
-
-    for nutrient_key, pct in sorted(deficient, key=lambda x: x[1]):
-        json_key = nutrient_key_map.get(nutrient_key, nutrient_key)
-        candidates = []
-        for cat in categories:
-            # Skip herbs/spices and beverages — too concentrated per 100g, not realistic suggestions
-            if cat.get('section') == 'habitudes' and cat.get('id') in ('habitudes-herbes-epices', 'habitudes-boissons'):
-                continue
-            for food in cat.get('foods', []):
-                if food['name'] in selected_names:
-                    continue
-                if food.get('processing_level', 1) > 1:
-                    continue  # Only recommend NOVA 1 (non-transformé)
-                n = food.get('nutrition', {})
-                val = n.get(json_key, 0)
-                if val > 0:
-                    candidates.append({
-                        'food': food['name'],
-                        'category': cat.get('name', ''),
-                        'nutrient': nutrient_key,
-                        'nutrient_value': val,
-                        'current_pct': round(pct),
-                        'reason': f"Manque de {NUTRIENT_LABELS.get(nutrient_key, nutrient_key)} ({round(pct)}% de l'objectif)"
-                    })
-        # Sort by nutrient density descending, take top 3
-        candidates.sort(key=lambda x: x['nutrient_value'], reverse=True)
-        all_suggestions.extend(candidates[:3])
-        if len(all_suggestions) >= 8:
-            break
-
-    return jsonify({'suggestions': all_suggestions[:8]})
+    all_suggestions = _find_suggestion_foods(deficient, foods_data, selected_names)
+    return jsonify({'suggestions': all_suggestions})
 
 # ─── Seasonal ───
 
@@ -1096,7 +1212,7 @@ def seasonal():
 def get_tracking(date):
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     db = get_db()
     row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user["id"], date)).fetchone()
     data = json.loads(row['data']) if row and row['data'] else {}
@@ -1106,7 +1222,7 @@ def get_tracking(date):
 def save_tracking(date):
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     data = request.get_json() or {}
     selections_data = data.get('selections', {})
     db = get_db()
@@ -1121,7 +1237,7 @@ def get_tracking_week():
     """Get all tracking entries for current week (Mon-Sun)."""
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     today = date.today()
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
@@ -1139,7 +1255,7 @@ def tracking_nutrition(date):
     from datetime import date as _date
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     foods_data = load_foods()
     categories = foods_data.get('categories', [])
     
@@ -1197,7 +1313,7 @@ def compute_totals_from_selections(selections_data, categories):
 def delete_tracking(date):
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     db = get_db()
     db.execute('DELETE FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date))
     db.commit()
@@ -1208,7 +1324,7 @@ def delete_tracking_week():
     """Delete all tracking entries for current week (Mon-Sun)."""
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     today = date.today()
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
@@ -1222,7 +1338,7 @@ def delete_tracking_week():
 def get_goals():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
     targets = get_user_targets(user['id'])
     return jsonify({'goals': targets})
 
@@ -1230,7 +1346,7 @@ def get_goals():
 def update_goals():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     data = request.get_json() or {}
     goals = data.get('goals', {})
@@ -1328,24 +1444,10 @@ def filter_deals(raw_deals, foods_data):
     for cat in foods_data.get('categories', []):
         for food in cat.get('foods', []):
             food_name = food.get('name', '')
-            if not food_name or food_name not in raw_deals:
+            if not food_name:
                 continue
-            food_keywords = [w.strip().lower().rstrip('s') for w in food_name.replace(',', ' ').split() if len(w.strip()) >= 3]
-            food_keywords = [w for w in food_keywords if w not in GENERIC_WORDS]
-            is_strict = any(kw in STRICT_MATCH_KEYWORDS for kw in food_keywords)
-            filtered = []
-            for r in raw_deals[food_name]:
-                r_name = (r.get('name') or '').lower()
-                if not any(_re_deals.search(r'\b' + _re_deals.escape(kw) + r's?\b', r_name) for kw in food_keywords):
-                    continue
-                if any(ind in r_name for ind in PET_INDICATORS):
-                    continue
-                if any(tw in r_name for tw in TRANSFORM_WORDS):
-                    continue
-                if is_strict:
-                    if not any(r_name.startswith(kw) or r_name.startswith('moulu ' + kw) or r_name.startswith(kw + ' moulu') or r_name.startswith('beurre ' + kw) or r_name.startswith('huile ' + kw) for kw in food_keywords):
-                        continue
-                filtered.append(r)
+            food_keywords, is_strict = _extract_food_keywords(food_name)
+            filtered = _match_food_deals(food_name, raw_deals, food_keywords, is_strict)
             if filtered:
                 result[food_name] = filtered
     return result
@@ -1362,38 +1464,10 @@ def fetch_all_deals_raw():
             food_name = food.get('name', '')
             if not food_name:
                 continue
-            query = food.get('epiceries_query') or food_name
-            try:
-                params = urllib.parse.urlencode({
-                    'endpoint': 'search',
-                    'q': query,
-                    'discounted': 'true',
-                    'limit': '10',
-                    'sort': 'price_asc',
-                })
-                url = f'https://epiceries.ca/api?{params}'
-                req = urllib.request.Request(url, headers={'User-Agent': 'NutriFood/1.0'})
-                with urllib.request.urlopen(req, timeout=8) as resp:
-                    body = resp.read().decode('utf-8')
-                data = json.loads(body)
-                if data.get('ok') and data.get('data'):
-                    results = data['data'].get('results', [])
-                    raw_items = []
-                    for r in results:
-                        raw_items.append({
-                            'name': r.get('name', ''),
-                            'store': r.get('store', ''),
-                            'price': r.get('price'),
-                            'unit_price': r.get('unitPrice', ''),
-                            'size': r.get('size', ''),
-                            'link': r.get('link', ''),
-                            'image': r.get('image', ''),
-                        })
-                    if raw_items:
-                        all_raw[food_name] = raw_items
-                        total += len(raw_items)
-            except Exception as e:
-                print(f'[NutriFood] Raw fetch error for "{food_name}": {e}')
+            raw_items = _fetch_deals_for_food(food)
+            if raw_items:
+                all_raw[food_name] = raw_items
+                total += len(raw_items)
             time.sleep(0.3)
     cache_data = {
         'raw': all_raw,
@@ -1492,7 +1566,7 @@ def get_deals():
 def force_refresh_deals():
     user = get_auth_user()
     if not user or not user['is_admin']:
-        return jsonify({'error': 'Accès refusé'}), 403
+        return jsonify({'error': ERR_FORBIDDEN}), 403
     started = trigger_raw_refresh_async()
     raw, updated = load_raw_deals()
     count = sum(len(v) for v in raw.values()) if raw else 0
@@ -1510,7 +1584,7 @@ def force_refresh_deals():
 def get_journal():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     journal_date = request.args.get('date')
     if not journal_date:
@@ -1541,7 +1615,7 @@ def get_journal():
 def save_journal_entry():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     data = request.get_json() or {}
     journal_date = (data.get('date') or '').strip()
@@ -1604,7 +1678,7 @@ def save_journal_entry():
 def delete_journal_entry():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     data = request.get_json() or {}
     journal_date = (data.get('date') or '').strip()
@@ -1627,7 +1701,7 @@ def delete_journal_entry():
 def journal_summary():
     user = get_auth_user()
     if not user:
-        return jsonify({'error': 'Non autorisé'}), 401
+        return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     try:
         days = int(request.args.get('days', 7))
@@ -1684,11 +1758,7 @@ def journal_summary():
             for k in avg_totals:
                 avg_totals[k] += day_totals[k]
 
-    # Average over days with entries (or all days if none)
-    divisor = days_with_entries if days_with_entries > 0 else days
-    for k in avg_totals:
-        avg_totals[k] = round(avg_totals[k] / divisor, 2)
-
+    avg_totals = _compute_journal_avg(avg_totals, days_with_entries, days)
     return jsonify({'days': result_days, 'avg_totals': avg_totals})
 
 

@@ -60,7 +60,8 @@ function loadScript(url, callback) {
 function $(id) { return document.getElementById(id); }
 
 // ─── Escape HTML ───
-function esc(s) { return String(s == null ? '' : s).replaceAll(/'/g, '&#39;').replaceAll(/"/g, '&quot;'); }
+const ENTITY_MAP = { '\u0026': '\u0026amp;', "'": '&#39;', '"': '&quot;', '<': '&lt;', '>': '&gt;' };
+function esc(s) { return String(s == null ? '' : s).replace(/[&'"<>]/g, function(c) { return ENTITY_MAP[c]; }); }
 
 // ─── HTML entity decode helper ───
 function decodeEntities(str) {
@@ -109,7 +110,7 @@ function fetchWithTimeout(url, options, timeoutMs = 10000) {
 }
 
 // ─── Token helpers ───
-function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ return null; } }
+function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { console.error('[NutriFood] localStorage access denied:', e); return null; } }
 
 function setAuth(token, user) {
   try {

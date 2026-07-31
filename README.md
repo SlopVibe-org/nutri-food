@@ -151,10 +151,16 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 - Password hashing (PBKDF2)
 - Token invalidation on password change
 
-### Résultats QA (Lighthouse / SonarQube / OWASP ZAP)
-- **Lighthouse:** Performance 99, Accessibility 100, SEO 100
-- **SonarQube:** 0 bugs, Reliability A, Maintainability A
-- **OWASP ZAP:** 0 FAIL, 53 PASS — aucune vulnérabilité exploitable
+### Résultats QA (31 juillet 2025)
+
+📋 [Rapport QA complet](docs/QA_REPORT.md)
+
+| Outil | Résultat |
+|-------|----------|
+| **Lighthouse** | Performance 99 · Accessibility 100 · Best Practices 100 · SEO 100 |
+| **OWASP ZAP** | 0 FAIL · 56 PASS · 11 WARN (tous hors NutriFood ou faux positifs) |
+| **SonarQube** | 0 bugs · 0 hotspots · 18 code smells · 0.4% duplications |
+| **Sécurité** | 8/8 security headers · JWT auth · rate limiting |
 
 ## Installation
 

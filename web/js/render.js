@@ -2,6 +2,7 @@
 
 /* global activeTab, autoSaveTimer, savedSnapshot, selections */
 function render() {
+  if (typeof viewMode !== 'undefined' && viewMode === 'simple') { renderSimple(); return; }
   let app = $('app');
 
   let totals = computeNutritionTotals(selections);
@@ -157,6 +158,7 @@ function renderChips(catId, selected) {
 }
 
 function refreshCard(catId) {
+  if (typeof viewMode !== 'undefined' && viewMode === 'simple') { renderSimple(); return; }
   let card = document.querySelector('[data-cat="' + catId + '"]');
   if (!card) { return; }
   let cat = DATA.categories.find(function(c) { return c.id === catId; });
@@ -547,4 +549,126 @@ document.addEventListener('change', function(e) {
 document.addEventListener('mouseover', function(e) {
   let chip = e.target.closest('[data-detail-cat]');
   if (chip) { chip.style.cursor = 'pointer'; }
+  let sbox = e.target.closest('[data-simple-food]');
+  if (sbox) { sbox.style.cursor = 'pointer'; }
 });
+
+// ─── Simplified tracking view ───
+function renderSimple() {
+  let app = $('app');
+  let html = '';
+  html += '<div class="simple-view">';
+  // Nutrition summary (reuse existing)
+  let totals = computeNutritionTotals(selections);
+  if (currentMode === 'tracking') {
+    html += '<div id="tracking-nutrition"><p class="loading">Chargement nutrition…</p></div>';
+  } else {
+    html += renderDailyNutrition(totals);
+  }
+  html += '</div>';
+
+  DATA.sections.forEach(function(sec) {
+    let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
+    if (cats.length === 0) { return; }
+    html += '<div class="simple-section">';
+    html += '<h3 class="simple-section-title">' + sec.icon + ' ' + sec.name + '</h3>';
+    cats.forEach(function(cat) {
+      html += renderSimpleCategory(cat);
+    });
+    html += '</div>';
+  });
+  app.innerHTML = html;
+
+  // Wire up + buttons to open the dropdown
+  app.querySelectorAll('[data-simple-add]').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      let catId = btn.dataset.simpleAdd;
+      let sel = document.querySelector('[data-simple-sel="' + catId + '"]');
+      if (sel) {
+        let isVisible = sel.classList.contains('visible');
+        // Hide all other visible selects
+        document.querySelectorAll('.simple-select.visible').forEach(function(s) { s.classList.remove('visible'); });
+        if (!isVisible) { sel.classList.add('visible'); sel.focus(); }
+      }
+    });
+  });
+  // Wire up selects
+  app.querySelectorAll('[data-simple-sel]').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      if (sel.value) {
+        let opt = sel.selectedOptions[0];
+        addItem(sel.dataset.simpleSel, { name: sel.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
+        sel.value = '';
+        sel.classList.remove('visible');
+      }
+    });
+  });
+  // Click outside closes dropdowns
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.simple-select') && !e.target.closest('[data-simple-add]')) {
+      document.querySelectorAll('.simple-select.visible').forEach(function(s) { s.classList.remove('visible'); });
+    }
+  }, true);
+  // Tracking nutrition
+  if (currentMode === 'tracking' && currentUser) {
+    renderTrackingNutrition();
+  }
+}
+
+function renderSimpleCategory(cat) {
+  let selected = selections[cat.id] || [];
+  let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  let max = cat.weekly_max || 7;
+  let min = cat.weekly_min || 0;
+  let suffix = cat.daily ? '/j' : '/s';
+  let cls = totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range');
+
+  let html = '<div class="simple-cat" data-cat="' + cat.id + '">';
+  // Row: name + count + boxes + add btn
+  html += '<div class="simple-cat-row">';
+  html += '<span class="simple-cat-name"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
+  html += '<span class="simple-cat-count ' + cls + '">' + totalCount + '/' + max + suffix + '</span>';
+
+  // Build the checkboxes
+  let slots = [];
+  selected.forEach(function(item) {
+    for (let q = 0; q < item.qty; q++) { slots.push(item); }
+  });
+  for (let i = slots.length; i < max; i++) { slots.push(null); }
+
+  html += '<span class="simple-boxes">';
+  let groupSize = max > 7 ? 7 : max;
+  for (let i = 0; i < slots.length; i += groupSize) {
+    let group = slots.slice(i, i + groupSize);
+    if (i > 0) { html += '<span class="simple-group-gap"></span>'; }
+    html += '<span class="simple-row">';
+    group.forEach(function(slot) {
+      if (slot) {
+        let foodName = esc(slot.name);
+        html += '<span class="sbox filled" data-simple-food="' + foodName + '" data-detail-cat="' + cat.id + '" data-detail-name="' + foodName + '" title="' + foodName + '"></span>';
+      } else {
+        html += '<span class="sbox empty"></span>';
+      }
+    });
+    html += '</span>';
+  }
+  html += '</span>';
+
+  // Add button
+  html += '<button class="simple-add-btn" data-simple-add="' + cat.id + '" title="Ajouter une portion">+</button>';
+  html += '</div>'; // end row
+
+  // Hidden dropdown (appears below when + clicked)
+  html += '<select class="simple-select" data-simple-sel="' + cat.id + '">';
+  html += '<option value="">+ Ajouter…</option>';
+  let sorted = cat.foods.slice().sort(function(a, b) { return b.density - a.density; });
+  sorted.forEach(function(f) {
+    let seasonPrefix = getSeasonPrefix(f);
+    html += '<option value="' + esc(f.name) + '" data-density="' + f.density + '" data-nutrients="' + esc(f.nutrients) + '">' + seasonPrefix + f.name + ' — ' + f.density + '%</option>';
+  });
+  html += '</select>';
+
+  html += '</div>';
+  return html;
+}

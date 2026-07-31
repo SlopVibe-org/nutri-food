@@ -42,6 +42,21 @@ async function init() {
       document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'planning'); });
     }
 
+    // Apply saved view mode (advanced/simple)
+    document.querySelectorAll('.view-toggle-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.view === viewMode);
+    });
+    document.querySelectorAll('.view-toggle-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        viewMode = btn.dataset.view;
+        try { localStorage.setItem('nf-view-mode', viewMode); } catch(e) { console.error('[NutriFood] localStorage error:', e); }
+        document.querySelectorAll('.view-toggle-btn').forEach(function(b) {
+          b.classList.toggle('active', b.dataset.view === viewMode);
+        });
+        render();
+      });
+    });
+
     if (currentUser) {
       // Show search bar + app
       $('search-bar-container').style.display = 'block';

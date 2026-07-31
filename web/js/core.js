@@ -17,6 +17,8 @@ let searchActiveIndex = -1;
 
 // ─── Mode Suivi (tracking) state ───
 let currentMode = localStorage.getItem('nf-mode') || 'tracking';
+let viewMode = 'advanced';
+try { viewMode = localStorage.getItem('nf-view-mode') || 'advanced'; } catch(e) { console.error('[NutriFood] localStorage error:', e); }
 let planningSelections = {};
 let trackingDate = null;
 let trackingSelections = {};

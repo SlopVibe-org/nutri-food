@@ -166,6 +166,37 @@
   .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
   .mode-tab:hover:not(.active) { color:var(--text); }
 
+  /* View toggle (Avancé / Simplifié) */
+  .view-toggle { display:flex; gap:0; margin-bottom:12px; }
+  .view-toggle-btn { padding:6px 14px; background:none; border:1px solid var(--border); color:var(--text-dim); font-size:0.82rem; font-weight:600; cursor:pointer; transition: all 0.2s; }
+  .view-toggle-btn:first-child { border-radius:8px 0 0 8px; }
+  .view-toggle-btn:last-child { border-radius:0 8px 8px 0; border-left:none; }
+  .view-toggle-btn.active { background:var(--accent-dim); color:#0f1117; border-color:var(--accent-dim); }
+
+  /* Simplified tracking view */
+  .simple-view { display:flex; flex-direction:column; gap:16px; }
+  .simple-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .simple-section-title { font-size:0.95rem; color:var(--accent); margin-bottom:12px; font-weight:700; }
+  .simple-cat { padding:8px 0; border-bottom:1px solid rgba(42,45,58,0.5); }
+  .simple-cat:last-child { border-bottom:none; }
+  .simple-cat-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .simple-cat-name { font-size:0.82rem; color:var(--text); font-weight:600; min-width:120px; flex:0 0 120px; }
+  .simple-cat-count { font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px; border:1px solid var(--border); color:var(--text-dim); white-space:nowrap; flex:0 0 auto; }
+  .simple-cat-count.under { color:var(--accent-red); border-color:rgba(248,113,113,0.4); }
+  .simple-cat-count.in-range { color:var(--accent); border-color:rgba(74,222,128,0.4); }
+  .simple-cat-count.over { color:var(--accent-amber); border-color:rgba(251,191,36,0.4); }
+  .simple-boxes { display:flex; align-items:center; flex-wrap:wrap; gap:4px; flex:1; }
+  .simple-row { display:inline-flex; gap:4px; }
+  .simple-group-gap { width:8px; display:inline-block; }
+  .sbox { width:20px; height:20px; border-radius:4px; border:1.5px solid var(--border); display:inline-block; transition: all 0.15s; }
+  .sbox.empty { background:transparent; }
+  .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
+  .sbox.filled:hover { background:var(--accent); transform:scale(1.15); }
+  .simple-select { display:none; padding:6px 10px; background:#12141c; color:var(--text); border:1px solid var(--accent-dim); border-radius:8px; font-size:0.85rem; width:100%; margin-top:4px; }
+  .simple-select.visible { display:block; }
+  .simple-add-btn { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#12141c; color:var(--text-dim); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 24px; transition: all 0.15s; }
+  .simple-add-btn:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
+
   /* Tracking day navigation bar */
   .tracking-bar { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px; }
   .tracking-nav-btn { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 12px; font-size:1.2rem; cursor:pointer; transition: background 0.15s; }
@@ -647,6 +678,10 @@
 <div class="mode-tabs" id="mode-tabs">
   <button class="mode-tab" data-mode="tracking">📊 Suivi</button>
   <button class="mode-tab" data-mode="planning">📋 Planification</button>
+  <div class="view-toggle" style="margin-left:auto;">
+    <button class="view-toggle-btn" id="view-advanced" data-view="advanced">Avancé</button>
+    <button class="view-toggle-btn" id="view-simple" data-view="simple">Simplifié</button>
+  </div>
 </div>
 <div class="tracking-bar" id="tracking-bar" style="display:none;">
   <button id="tracking-prev" class="tracking-nav-btn">‹</button>

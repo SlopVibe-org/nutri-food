@@ -22,7 +22,6 @@ async function init() {
             renderUserArea();
             await loadSelectionsFromServer();
             planningSelections = structuredClone(selections);
-            loadScript('js/deals.js', function() { loadDeals(); });
           } else {
             console.warn('[NutriFood] Token invalid, clearing');
             clearAuth();
@@ -53,7 +52,7 @@ async function init() {
         render();
         updateSaveBar();
       }
-      // Load deals
+      // Load deals (single call — loadScript handles dedup + callback queueing)
       loadScript('js/deals.js', function() {
         loadDeals().then(function() { render(); });
       });

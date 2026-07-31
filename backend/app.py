@@ -1194,6 +1194,31 @@ def compute_totals_from_selections(selections_data, categories):
             totals['calories'] += n.get('calories', 0) * qty
     return totals
 
+@app.route('/api/tracking/<date>', methods=['DELETE'])
+def delete_tracking(date):
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    db = get_db()
+    db.execute('DELETE FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date))
+    db.commit()
+    return jsonify({'ok': True})
+
+@app.route('/api/tracking/week', methods=['DELETE'])
+def delete_tracking_week():
+    """Delete all tracking entries for current week (Mon-Sun)."""
+    user = get_auth_user()
+    if not user:
+        return jsonify({'error': 'Non autorisé'}), 401
+    today = date.today()
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+    db = get_db()
+    db.execute('DELETE FROM tracking WHERE user_id = ? AND date >= ? AND date <= ?',
+               (user['id'], monday.isoformat(), sunday.isoformat()))
+    db.commit()
+    return jsonify({'ok': True, 'week_start': monday.isoformat(), 'week_end': sunday.isoformat()})
+
 @app.route('/api/goals', methods=['GET'])
 def get_goals():
     user = get_auth_user()

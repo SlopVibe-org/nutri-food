@@ -31,14 +31,28 @@ var STORE_META = {};
 // ─── Deal badges stub (overridden when deals.js loads) ───
 function buildDealBadges(foodName) { return ''; }
 
-// ─── Dynamic script loader ───
+// ─── Dynamic script loader (fixed: queue callbacks until truly loaded) ───
 var _loadedScripts = {};
+var _pendingCallbacks = {};
 function loadScript(url, callback) {
   if (_loadedScripts[url]) { if (callback) callback(); return; }
-  _loadedScripts[url] = true;
+  if (_pendingCallbacks[url]) {
+    if (callback) _pendingCallbacks[url].push(callback);
+    return;
+  }
+  _pendingCallbacks[url] = callback ? [callback] : [];
   var s = document.createElement('script');
   s.src = url;
-  s.onload = function() { if (callback) callback(); };
+  s.onload = function() {
+    _loadedScripts[url] = true;
+    var cbs = _pendingCallbacks[url] || [];
+    delete _pendingCallbacks[url];
+    cbs.forEach(function(cb) { try { cb(); } catch(e) { console.error('[NutriFood] Script callback error for ' + url + ':', e); } });
+  };
+  s.onerror = function() {
+    console.error('[NutriFood] Failed to load script: ' + url);
+    delete _pendingCallbacks[url];
+  };
   document.head.appendChild(s);
 }
 

@@ -30,7 +30,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 ## Architecture
 
 ### Stack
-- **Frontend:** HTML/CSS/JS vanilla (single file, ~3300 lignes)
+- **Frontend:** HTML/CSS/JS vanilla (14 modules modulaires avec lazy loading)
 - **Backend:** Python Flask (API REST, ~1675 lignes)
 - **DB:** SQLite (nutrifood.db)
 - **Déploiement:** Docker Compose
@@ -98,7 +98,9 @@ nutrifood-web   (Nginx, port 5011 → proxy vers API)
 ### Suivi (tracking)
 - `GET /api/tracking/<date>` — sélections du jour
 - `POST /api/tracking/<date>` — sauvegarder le jour
+- `DELETE /api/tracking/<date>` — effacer les données du jour
 - `GET /api/tracking/week` — toutes les entrées de la semaine
+- `DELETE /api/tracking/week` — effacer toute la semaine (lundi→dimanche)
 - `GET /api/tracking/nutrition/<date>` — totaux nutritionnels (jour + semaine cumulée)
 
 ### Objectifs

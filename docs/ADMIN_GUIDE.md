@@ -386,6 +386,15 @@ EOF
 | `calcium` | REAL | 700 |
 | `omega3` | REAL | 3.5 |
 
+#### `tracking`
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `id` | INTEGER PK | — |
+| `user_id` | INTEGER FK → users | — |
+| `date` | TEXT | Date (YYYY-MM-DD) |
+| `data` | TEXT (JSON) | Sélections du jour |
+| `updated_at` | TEXT | — |
+
 #### `journal_entries`
 | Colonne | Type | Description |
 |---------|------|-------------|

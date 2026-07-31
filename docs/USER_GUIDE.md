@@ -79,19 +79,6 @@ L'objectif est de garder le plus de compteurs possible en **vert**.
 
 ---
 
-## ⭕ Anneau de progression
-
-L'anneau en haut de page affiche votre **score nutritionnel global** basé sur :
-
-- Protéines
-- Fibres
-- Fer
-- Vitamine C
-- Calcium
-- Ω-3
-
-Il compare vos **nutriments réels** (calculés à partir de vos sélections) à vos **objectifs personnalisés**. Plus l'anneau se remplit, meilleur est votre profil nutritionnel pour la semaine.
-
 ---
 
 ## 🔍 Barre de recherche
@@ -175,48 +162,6 @@ L'anneau de progression et les barres du journal utiliseront ces nouvelles valeu
 
 ---
 
-## 📝 Journal nutritionnel quotidien
-
-Le journal est un **log indépendant** de votre planification. Il sert à enregistrer ce que vous avez *réellement* mangé.
-
-### Accéder
-
-**Menu** → **📝 Journal**
-
-### Logger un aliment
-
-1. Sélectionnez la **date** (7 jours en arrière max)
-2. Cliquez sur **+ Ajouter**
-3. Choisissez un aliment et la quantité
-4. Sauvegardez
-
-### Voir les carences
-
-Le journal affiche :
-- **Totaux du jour** vs objectifs journaliers
-- **Barres de progression** par nutriment
-- **Suggestions automatiques** pour combler les carences détectées
-
----
-
-## 🍽️ Planificateur de repas
-
-Planifiez vos repas de la semaine jour par jour.
-
-### Accéder
-
-**Menu** → **🍽️ Planificateur**
-
-### Utilisation
-
-1. Sélectionnez la **semaine** (navigation ← →)
-2. Pour chaque jour, remplissez les 4 cases :
-   - 🌅 **Matin**
-   - ☀️ **Midi**
-   - 🌙 **Soir**
-   - 🍎 **Collation**
-3. Tapez librement vos repas — le texte est sauvegardé automatiquement
-
 ---
 
 ## 🛒 Liste d'épicerie
@@ -276,10 +221,29 @@ Les suggestions apparaissent dans le journal et en bas des catégories incomplè
 
 ---
 
+## 🔄 Réinitialiser les données
+
+### Mode Planification
+
+Cliquez sur le badge **🔄 Reset dans Xj** dans le tableau de bord nutritionnel pour vider toutes vos sélections de la semaine.
+
+- Un modal de confirmation s'ouvre avant l'effacement
+- Les données sont immédiatement effacées du serveur
+
+### Mode Suivi
+
+Cliquez sur le badge **🔄 Reset** dans le tableau de bord pour choisir :
+
+- **📅 Journée** — efface seulement les données du jour affiché
+- **📋 Semaine complète** — efface toutes les entrées de la semaine (lundi→dimanche)
+- **Annuler** — ferme sans rien effacer
+
+---
+
 ## 💡 Astuces
 
-- **Pas besoin de tout remplir** — commencez par les catégories avec le plus d'impact (poissons, légumes verts, légumineuses)
-- **Le journal est séparé de la planification** — planifier ne modifie pas le journal et vice versa
+- **Deux modes indépendants** — Planification (semaine) et Suivi (par jour) ont chacun leurs données, préservées quand vous changez d'onglet
 - **Tout est sauvegardé automatiquement** — pas de bouton « sauvegarder »
 - **Fonctionne hors ligne** — vos données sont en cache navigateur (localStorage), synchronisées au retour de la connexion
 - **Recherche rapide** — tapez quelques lettres, pas besoin de mot complet
+- **Reset rapide** — cliquez le badge 🔄 pour repartir à zéro (jour ou semaine)

@@ -91,6 +91,79 @@ async function submitGoals() {
   $('goals-submit').textContent = '💾 Sauvegarder';
 }
 
+// ─── Reset confirmation ───
+function openResetConfirm() {
+  var body = $('reset-confirm-body');
+  if (currentMode === 'tracking') {
+    body.innerHTML =
+      '<p style="margin-bottom:16px;color:var(--text-dim);">Que voulez-vous réinitialiser?</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      '<button class="submit-btn" id="reset-day-btn" style="background:var(--accent-amber);">📅 Journée (' + formatDayLabel(trackingDate) + ')</button>' +
+      '<button class="submit-btn" id="reset-week-btn" style="background:var(--accent-red);">📋 Semaine complète</button>' +
+      '<a class="cancel-link" id="reset-cancel-btn">Annuler</a>' +
+      '</div>';
+    $('reset-day-btn').addEventListener('click', function() { performTrackingReset('day'); });
+    $('reset-week-btn').addEventListener('click', function() { performTrackingReset('week'); });
+    $('reset-cancel-btn').addEventListener('click', closeResetConfirm);
+  } else {
+    body.innerHTML =
+      '<p style="margin-bottom:16px;color:var(--text-dim);">Vider toutes les sélections de la semaine?</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;">' +
+      '<button class="submit-btn" id="reset-confirm-btn" style="background:var(--accent-red);">✅ Confirmer le reset</button>' +
+      '<a class="cancel-link" id="reset-cancel-btn">Annuler</a>' +
+      '</div>';
+    $('reset-confirm-btn').addEventListener('click', performPlanningReset);
+    $('reset-cancel-btn').addEventListener('click', closeResetConfirm);
+  }
+  $('reset-confirm-modal').classList.remove('hidden');
+}
+
+function closeResetConfirm() {
+  $('reset-confirm-modal').classList.add('hidden');
+}
+
+async function performPlanningReset() {
+  closeResetConfirm();
+  selections = {};
+  planningSelections = {};
+  savedSnapshot = '{}';
+  render();
+  updateSaveBar();
+  var token = getToken();
+  if (token) {
+    try {
+      await fetchWithTimeout(API + '/selections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ selections: {} })
+      }, 10000);
+      showToast('Sélections réinitialisées', 'success');
+    } catch(e) { showToast('Erreur lors du reset', 'error'); }
+  }
+}
+
+async function performTrackingReset(scope) {
+  closeResetConfirm();
+  var token = getToken();
+  if (!token) return;
+  try {
+    if (scope === 'day') {
+      await fetchWithTimeout(API + '/tracking/' + trackingDate, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }, 10000);
+      showToast('Journée réinitialisée', 'success');
+    } else {
+      await fetchWithTimeout(API + '/tracking/week', {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      }, 10000);
+      showToast('Semaine réinitialisée', 'success');
+    }
+    loadTrackingDay(trackingDate);
+  } catch(e) { showToast('Erreur lors du reset', 'error'); }
+}
+
 // ─── Tracking nutrition dashboard (dual: day + week) ───
 async function renderTrackingNutrition() {
   var container = $('tracking-nutrition');
@@ -144,7 +217,7 @@ async function renderTrackingNutrition() {
   }
   // Render day section immediately
   var html = '';
-  html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📊 <strong>' + formatDayLabel(trackingDate) + '</strong></span></div>';
+  html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📊 <strong>' + formatDayLabel(trackingDate) + '</strong></span><span class="reset-badge" style="cursor:pointer;" onclick="openResetConfirm()">🔄 Reset</span></div>';
   html += '<div class="nutri-stats-row">';
   nutrients.forEach(function(n) {
     html += nutrientRow(n, dt[n.key] || 0, targets[n.goalKey || n.key], true);
@@ -191,7 +264,7 @@ function renderDailyNutrition(totals) {
 
   var html = '<div class="nutri-summary-header">';
   html += '<span class="nutri-summary-title">\uD83D\uDCCA Nutrition — <strong>Semaine ' + weekNum + '</strong></span>';
-  html += '<span class="reset-badge">\uD83D\uDD04 Reset dans ' + resetDays + 'j</span>';
+  html += '<span class="reset-badge" style="cursor:pointer;" onclick="openResetConfirm()">\uD83D\uDD04 Reset dans ' + resetDays + 'j</span>';
   html += '</div>';
 
   html += '<div class="nutri-stats-row">';

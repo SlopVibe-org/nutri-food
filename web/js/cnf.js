@@ -101,7 +101,7 @@ function loadRemoveProductList() {
       (cat.foods ?? []).forEach(function(food) {
         html += '<div class="remove-product-item" data-hide-cat="' + cat.id + '" data-hide-name="' + esc(food.name) + '" style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border:1px solid var(--border);border-radius:6px;margin-bottom:4px;cursor:pointer;transition:background 0.15s;">';
         html += '<span style="font-size:0.85rem;">' + esc(food.name) + '</span>';
-        html += '<span style="font-size:0.75rem;color:var(--accent-red);">Masquer</span>';
+        html += '<span style="font-size:0.75rem;color:var(--accent-red);">Retirer</span>';
         html += '</div>';
       });
       html += '</div>';

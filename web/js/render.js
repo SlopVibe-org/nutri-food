@@ -629,29 +629,48 @@ function renderSimpleCategory(cat) {
   html += '<span class="simple-cat-name"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
   html += '<span class="simple-cat-count ' + cls + '">' + totalCount + '/' + max + suffix + '</span>';
 
-  // Build the checkboxes
+  // Build day groups: distribute portions across 7 days
   let slots = [];
   selected.forEach(function(item) {
     for (let q = 0; q < item.qty; q++) { slots.push(item); }
   });
-  for (let i = slots.length; i < max; i++) { slots.push(null); }
+  while (slots.length < max) { slots.push(null); }
 
   html += '<span class="simple-boxes">';
-  let groupSize = max > 7 ? 7 : max;
-  for (let i = 0; i < slots.length; i += groupSize) {
-    let group = slots.slice(i, i + groupSize);
-    if (i > 0) { html += '<span class="simple-day-sep"></span>'; }
+  if (max <= 7) {
+    // Single row, no day grouping
     html += '<span class="simple-row">';
-    group.forEach(function(slot, idx) {
-      let dayNum = max > 7 ? '<span class="sbox-day">' + (idx + i + 1) + '</span>' : '';
+    for (let i = 0; i < max; i++) {
+      let slot = slots[i];
       if (slot) {
-        let foodName = esc(slot.name);
-        html += '<span class="sbox filled" data-simple-food="' + foodName + '" data-detail-cat="' + cat.id + '" data-detail-name="' + foodName + '" title="' + foodName + '">' + dayNum + '</span>';
+        let fn = esc(slot.name);
+        html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '"></span>';
       } else {
-        html += '<span class="sbox empty" data-simple-add="' + cat.id + '">' + dayNum + '</span>';
+        html += '<span class="sbox empty" data-simple-add="' + cat.id + '"></span>';
       }
-    });
+    }
     html += '</span>';
+  } else {
+    // Distribute across 7 days
+    let perDay = Math.floor(max / 7);
+    let extra = max % 7; // first `extra` days get +1
+    let dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+    let slotIdx = 0;
+    for (let d = 0; d < 7; d++) {
+      let count = perDay + (d < extra ? 1 : 0);
+      if (d > 0) { html += '<span class="simple-day-sep"></span>'; }
+      html += '<span class="simple-day-group"><span class="simple-day-label">' + dayLabels[d] + '</span><span class="simple-row">';
+      for (let s = 0; s < count; s++) {
+        let slot = slots[slotIdx++];
+        if (slot) {
+          let fn = esc(slot.name);
+          html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '"></span>';
+        } else {
+          html += '<span class="sbox empty" data-simple-add="' + cat.id + '"></span>';
+        }
+      }
+      html += '</span></span>';
+    }
   }
   html += '</span>';
 

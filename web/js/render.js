@@ -285,7 +285,7 @@ function changeQty(catId, name, delta) {
 
 function addFromSelect(catId, sel) {
   let opt = sel.selectedOptions?.[0];
-  if (!opt || !opt.value) { return; }
+  if (!opt?.value) { return; }
   addItem(catId, { name: opt.value, density: Number.parseInt(opt.dataset.density || 0), nutrients: opt.dataset.nutrients || '' });
   sel.value = '';
 }
@@ -351,7 +351,7 @@ function adminAddFood(catId) {
   let nameEl = $('add-name-' + catId);
   let densityEl = $('add-density-' + catId);
   let nutrientsEl = $('add-nutrients-' + catId);
-  if (!nameEl || !nameEl.value.trim()) { return; }
+  if (!nameEl?.value?.trim()) { return; }
   let name = nameEl.value.trim();
   let density = Number.parseInt(densityEl.value || '50');
   let nutrients = nutrientsEl.value.trim() || 'Non spécifié';
@@ -447,31 +447,33 @@ function renderWelcome() {
 }
 
 // ─── Unified event delegation ───
+function _handleActionButtons(e, btn) {
+  let catId = btn.dataset.cat;
+  let name = decodeEntities(btn.dataset.name);
+  let action = btn.dataset.action;
+  if (action === 'inc') { changeQty(catId, name, 1); }
+  else if (action === 'dec') { changeQty(catId, name, -1); }
+  else if (action === 'remove') { removeItem(catId, name); }
+  else if (action === 'add-food') { adminAddFood(catId); }
+  else if (action === 'remove-food') { adminRemoveFood(catId, name); }
+  e.stopPropagation();
+  e.preventDefault();
+}
+
+function _handleChipClick(e) {
+  let chip = e.target.closest('[data-detail-cat]');
+  if (!chip) { return false; }
+  e.preventDefault();
+  let chipName = decodeEntities(chip.dataset.detailName);
+  loadScript('js/food-modal.js', function() { openFoodModal(chip.dataset.detailCat, chipName); });
+  return true;
+}
+
 document.addEventListener('click', function(e) {
-  // 1. Action buttons (qty +, qty -, remove, admin) — highest priority
   let btn = e.target.closest('[data-action]');
-  if (btn) {
-    let catId = btn.dataset.cat;
-    let name = decodeEntities(btn.dataset.name);
-    let action = btn.dataset.action;
-    if (action === 'inc') { changeQty(catId, name, 1); }
-    else if (action === 'dec') { changeQty(catId, name, -1); }
-    else if (action === 'remove') { removeItem(catId, name); }
-    else if (action === 'add-food') { adminAddFood(catId); }
-    else if (action === 'remove-food') { adminRemoveFood(catId, name); }
-    e.stopPropagation();
-    e.preventDefault();
-    return;
-  }
-  // 1b. Hide product from manage tab
+  if (btn) { _handleActionButtons(e, btn); return; }
   let hideItem = e.target.closest('[data-hide-cat]');
-  if (hideItem) {
-    let hideCat = hideItem.dataset.hideCat;
-    let hideName = decodeEntities(hideItem.dataset.hideName);
-    hideFood(hideCat, hideName);
-    return;
-  }
-  // 1c. Toggle category accordion in remove tab
+  if (hideItem) { hideFood(hideItem.dataset.hideCat, decodeEntities(hideItem.dataset.hideName)); return; }
   let catHeader = e.target.closest('[data-remove-cat]');
   if (catHeader) {
     let catId = catHeader.dataset.removeCat;
@@ -479,18 +481,12 @@ document.addEventListener('click', function(e) {
     let arrow = catHeader.querySelector('.remove-cat-arrow');
     if (items) {
       let shown = items.style.display !== 'none';
-      // Close all others
       document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
       document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
-      // Toggle this one
-      if (!shown) {
-        items.style.display = 'block';
-        if (arrow) { arrow.textContent = '\u25B2'; }
-      }
+      if (!shown) { items.style.display = 'block'; if (arrow) { arrow.textContent = '\u25B2'; } }
     }
     return;
   }
-  // 2. Deals toggle in modal
   let toggle = e.target.closest('#deals-toggle');
   if (toggle) {
     let content = document.getElementById('deals-content');
@@ -502,30 +498,18 @@ document.addEventListener('click', function(e) {
     }
     return;
   }
-  // 3. Deal badges inside chips -> open food modal
   let dealBadges = e.target.closest('[data-deal-food]');
   if (dealBadges) {
     e.preventDefault();
     let dealName = decodeEntities(dealBadges.dataset.dealFood);
     loadScript('js/food-modal.js', function() {
       for (let cat of DATA.categories) {
-        if (cat.foods.some(function(f) { return f.name === dealName; })) {
-          openFoodModal(cat.id, dealName);
-          return;
-        }
+        if (cat.foods.some(function(f) { return f.name === dealName; })) { openFoodModal(cat.id, dealName); return; }
       }
     });
     return;
   }
-  // 4. Chip click -> open food modal
-  let chip = e.target.closest('[data-detail-cat]');
-  if (chip) {
-    e.preventDefault();
-    let chipName = decodeEntities(chip.dataset.detailName);
-    loadScript('js/food-modal.js', function() {
-      openFoodModal(chip.dataset.detailCat, chipName);
-    });
-  }
+  _handleChipClick(e);
 });
 
 document.addEventListener('change', function(e) {
@@ -605,7 +589,7 @@ function renderSimple() {
       let items = search.parentElement.querySelectorAll('.simple-dd-item');
       items.forEach(function(it) {
         let name = normalizeForSearch(it.dataset.simplePick);
-        it.style.display = name.indexOf(q) !== -1 ? '' : 'none';
+        it.style.display = name.includes(q) ? '' : 'none';
       });
     });
     search.addEventListener('click', function(e) { e.stopPropagation(); });
@@ -631,43 +615,21 @@ function renderSimple() {
   }
 }
 
-function renderSimpleCategory(cat) {
-  let selected = selections[cat.id] || [];
-  let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
-  let max = cat.weekly_max || 7;
-  let min = cat.weekly_min || 0;
-  let suffix = cat.daily ? '/j' : '/s';
-  let cls = totalCount < min ? 'under' : (totalCount > max ? 'over' : 'in-range');
+function _renderSbox(slot, cat, dayTag) {
+  if (slot) {
+    let fn = esc(slot.name);
+    return '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '">' + dayTag + '</span>';
+  }
+  return '<span class="sbox empty" data-simple-add="' + cat.id + '">' + dayTag + '</span>';
+}
 
-  let html = '<div class="simple-cat" data-cat="' + cat.id + '">';
-  // Row: name + count + boxes + add btn
-  html += '<div class="simple-cat-row">';
-  html += '<span class="simple-cat-name"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
-  html += '<span class="simple-cat-count ' + cls + '">' + totalCount + '/' + max + suffix + '</span>';
-
-  // Build day groups: distribute portions across 7 days
-  let slots = [];
-  selected.forEach(function(item) {
-    for (let q = 0; q < item.qty; q++) { slots.push(item); }
-  });
-  while (slots.length < max) { slots.push(null); }
-
-  html += '<span class="simple-boxes">';
+function _renderSimpleBoxes(max, slots, cat) {
+  let html = '<span class="simple-boxes">';
   if (max <= 7) {
-    // Single row, no day grouping
     html += '<span class="simple-row">';
-    for (let i = 0; i < max; i++) {
-      let slot = slots[i];
-      if (slot) {
-        let fn = esc(slot.name);
-        html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '"></span>';
-      } else {
-        html += '<span class="sbox empty" data-simple-add="' + cat.id + '"></span>';
-      }
-    }
+    for (let i = 0; i < max; i++) { html += _renderSbox(slots[i], cat, ''); }
     html += '</span>';
   } else {
-    // Distribute across 7 days
     let perDay = Math.floor(max / 7);
     let extra = max % 7;
     let dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -677,23 +639,39 @@ function renderSimpleCategory(cat) {
       if (d > 0) { html += '<span class="simple-day-sep"></span>'; }
       html += '<span class="simple-row">';
       for (let s = 0; s < count; s++) {
-        let slot = slots[slotIdx++];
         let dayTag = '<span class="sbox-day">' + dayLabels[d] + '</span>';
-        if (slot) {
-          let fn = esc(slot.name);
-          html += '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '">' + dayTag + '</span>';
-        } else {
-          html += '<span class="sbox empty" data-simple-add="' + cat.id + '">' + dayTag + '</span>';
-        }
+        html += _renderSbox(slots[slotIdx++], cat, dayTag);
       }
       html += '</span>';
     }
   }
   html += '</span>';
+  return html;
+}
 
-  html += '</div>'; // end row
+function renderSimpleCategory(cat) {
+  let selected = selections[cat.id] || [];
+  let totalCount = selected.reduce(function(s, i) { return s + i.qty; }, 0);
+  let max = cat.weekly_max || 7;
+  let min = cat.weekly_min || 0;
+  let suffix = cat.daily ? '/j' : '/s';
+  let cls;
+  if (totalCount < min) { cls = 'under'; }
+  else if (totalCount > max) { cls = 'over'; }
+  else { cls = 'in-range'; }
 
-  // Inline dropdown (appears below when empty square clicked)
+  let html = '<div class="simple-cat" data-cat="' + cat.id + '">';
+  html += '<div class="simple-cat-row">';
+  html += '<span class="simple-cat-name"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
+  html += '<span class="simple-cat-count ' + cls + '">' + totalCount + '/' + max + suffix + '</span>';
+
+  let slots = [];
+  selected.forEach(function(item) { for (let q = 0; q < item.qty; q++) { slots.push(item); } });
+  while (slots.length < max) { slots.push(null); }
+
+  html += _renderSimpleBoxes(max, slots, cat);
+  html += '</div>';
+
   html += '<div class="simple-dropdown" data-simple-dd="' + cat.id + '">';
   html += '<input type="text" class="simple-search" placeholder="Rechercher…" data-simple-search="' + cat.id + '" autocomplete="off">';
   html += '<div class="simple-dd-items" data-simple-items="' + cat.id + '">';
@@ -704,7 +682,6 @@ function renderSimpleCategory(cat) {
   });
   html += '</div>';
   html += '</div>';
-
   html += '</div>';
   return html;
 }

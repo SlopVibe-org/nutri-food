@@ -140,7 +140,7 @@ async function performPlanningReset() {
         body: JSON.stringify({ selections: {} })
       }, 10000);
       showToast('Sélections réinitialisées', 'success');
-    } catch(e) { showToast('Erreur lors du reset', 'error'); }
+    } catch(e) { console.error('[NutriFood] Reset failed:', e); showToast('Erreur lors du reset', 'error'); }
   }
 }
 
@@ -163,7 +163,7 @@ async function performTrackingReset(scope) {
       showToast('Semaine réinitialisée', 'success');
     }
     loadTrackingDay(trackingDate);
-  } catch(e) { showToast('Erreur lors du reset', 'error'); }
+  } catch(e) { console.error('[NutriFood] Tracking reset failed:', e); showToast('Erreur lors du reset', 'error'); }
 }
 
 // ─── Tracking nutrition dashboard (dual: day + week) ───

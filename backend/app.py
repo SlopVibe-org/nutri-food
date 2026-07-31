@@ -389,8 +389,18 @@ def _build_section_dict(s):
     return {'id': s['id'], 'name': s['name'], 'icon': s['icon']}
 
 
+def _safe_json(raw):
+    """Safely parse JSON field, return None on failure."""
+    if not raw:
+        return None
+    try:
+        return json.loads(raw)
+    except Exception:
+        return None
+
+
 def _build_food_dict(f, db):
-    """Build a single food dict from a DB row (S3776 helper)."""
+    """Build a single food dict from a DB row."""
     fd = {'name': f['name_fr'] or f['name_en'], 'density': f['density'] or 50,
           'nutrients': f['highlights'] or ''}
     aliases = db.execute('SELECT alias FROM nf_foods_aliases WHERE nf_food_id = ?', (f['id'],)).fetchall()
@@ -408,16 +418,19 @@ def _build_food_dict(f, db):
         nutrition['omega3'] = round(sum(nv['amount'] for nv in o3_vals), 2)
     if nutrition:
         fd['nutrition'] = nutrition
-    if f['season']:
-        try: fd['season'] = json.loads(f['season'])
-        except Exception: pass
-    if f['import_season']:
-        try: fd['import_season'] = json.loads(f['import_season'])
-        except Exception: pass
+    season = _safe_json(f['season'])
+    if season:
+        fd['season'] = season
+    import_season = _safe_json(f['import_season'])
+    if import_season:
+        fd['import_season'] = import_season
     ft = {}
-    if f['absorption_tip']: ft['absorption'] = f['absorption_tip']
-    if f['warning_tip']: ft['warnings'] = f['warning_tip']
-    if ft: fd['tips'] = ft
+    if f['absorption_tip']:
+        ft['absorption'] = f['absorption_tip']
+    if f['warning_tip']:
+        ft['warnings'] = f['warning_tip']
+    if ft:
+        fd['tips'] = ft
     return fd
 
 
@@ -478,36 +491,46 @@ def _compute_nutrient_gaps(totals, targets):
     return sorted(deficient, key=lambda x: x[1])
 
 
+def _is_candidate_food(food, selected_names, json_key):
+    """Check if a food is a valid candidate for a nutrient. (S3776 helper)"""
+    if food['name'] in selected_names:
+        return None
+    if food.get('processing_level', 1) > 1:
+        return None
+    n = food.get('nutrition', {})
+    val = n.get(json_key, 0)
+    return val if val > 0 else None
+
+
+def _build_candidates_for_nutrient(cat, selected_names, json_key, nutrient_key, pct):
+    """Build candidate foods for a specific nutrient. (S3776 helper)"""
+    candidates = []
+    for food in cat.get('foods', []):
+        val = _is_candidate_food(food, selected_names, json_key)
+        if val:
+            candidates.append({
+                'food': food['name'], 'category': cat.get('name', ''),
+                'nutrient': nutrient_key, 'nutrient_value': val,
+                'current_pct': round(pct),
+                'reason': f"Manque de {NUTRIENT_LABELS.get(nutrient_key, nutrient_key)} ({round(pct)}% de l'objectif)"
+            })
+    return candidates
+
+
 def _find_suggestion_foods(deficient, foods_data, selected_names):
-    """Find suggestion foods for deficient nutrients. Returns list of dicts.
-    (S3776 helper)
-    """
+    """Find suggestion foods for deficient nutrients. Returns list of dicts."""
     all_suggestions = []
     categories = foods_data.get('categories', [])
     nutrient_key_map = {'vitamin_c': 'vit_c'}
+    skip_cats = {'habitudes-herbes-epices', 'habitudes-boissons'}
 
     for nutrient_key, pct in deficient:
         json_key = nutrient_key_map.get(nutrient_key, nutrient_key)
         candidates = []
         for cat in categories:
-            if cat.get('section') == 'habitudes' and cat.get('id') in ('habitudes-herbes-epices', 'habitudes-boissons'):
+            if cat.get('section') == 'habitudes' and cat.get('id') in skip_cats:
                 continue
-            for food in cat.get('foods', []):
-                if food['name'] in selected_names:
-                    continue
-                if food.get('processing_level', 1) > 1:
-                    continue
-                n = food.get('nutrition', {})
-                val = n.get(json_key, 0)
-                if val > 0:
-                    candidates.append({
-                        'food': food['name'],
-                        'category': cat.get('name', ''),
-                        'nutrient': nutrient_key,
-                        'nutrient_value': val,
-                        'current_pct': round(pct),
-                        'reason': f"Manque de {NUTRIENT_LABELS.get(nutrient_key, nutrient_key)} ({round(pct)}% de l'objectif)"
-                    })
+            candidates.extend(_build_candidates_for_nutrient(cat, selected_names, json_key, nutrient_key, pct))
         candidates.sort(key=lambda x: x['nutrient_value'], reverse=True)
         all_suggestions.extend(candidates[:3])
         if len(all_suggestions) >= 8:
@@ -616,6 +639,34 @@ def load_foods():
 def get_foods():
     return jsonify(load_foods())
 
+def _insert_food_nutrients_and_aliases(cur, new_id, cnf_nutrients, aliases, name):
+    """Insert nutrients and aliases for a new food. (S3776 helper)"""
+    for nv in cnf_nutrients:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_nutrients (nf_food_id, nutrient_code, amount) VALUES (?,?,?)',
+                    (new_id, nv['nutrient_code'], nv['amount']))
+    for a in aliases:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, a))
+    if name:
+        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, name))
+
+
+def _save_season_and_deals(new_id, name):
+    """Save season data and fetch deals for a new food. (S3776 helper)"""
+    season_info = lookup_quebec_season(name or '')
+    if season_info:
+        db2 = get_nf_db()
+        db2.execute('UPDATE nf_foods SET season = ?, import_season = ? WHERE id = ?',
+                    (json.dumps(season_info['season']), json.dumps(season_info['import']), new_id))
+        db2.commit()
+        db2.close()
+    try:
+        deals = _fetch_deals_for_food({'name': name, 'epiceries_query': name})
+        if deals:
+            add_to_raw_deals(name, deals)
+    except Exception as e:
+        print(f'[NutriFood] Deal fetch error on add: {e}')
+
+
 @app.route('/api/admin/food/show', methods=['POST'])
 def admin_show_food():
     user = get_auth_user()
@@ -626,7 +677,7 @@ def admin_show_food():
     source_type = data.get('source_type', 1)
     nf_category = data.get('nf_category')
     name = data.get('name')
-    density = data.get('density')  # may be overridden by auto-calc
+    density = data.get('density')
     highlights = data.get('highlights', '')
     aliases = data.get('aliases', [])
     if not nf_category:
@@ -643,11 +694,8 @@ def admin_show_food():
             name = name or cnf['name_fr'] or cnf['name_en']
             cnf_nutrients = db.execute('SELECT nutrient_code, amount FROM nutrient_amount WHERE food_id = ?', (source_id,)).fetchall()
     cur = db.cursor()
-    # Auto-calculate density from real nutrient data if available
     if density is None:
-        nutrient_map = {}
-        if cnf_nutrients:
-            nutrient_map = {nv['nutrient_code']: nv['amount'] for nv in cnf_nutrients}
+        nutrient_map = {nv['nutrient_code']: nv['amount'] for nv in cnf_nutrients} if cnf_nutrients else {}
         density = calculate_density(nutrient_map, nf_category)
     elif density == 0:
         density = 50
@@ -656,30 +704,10 @@ def admin_show_food():
         VALUES (?,?,?,?,?,?,?,?)''',
         (source_type, source_id, 1, nf_category, density, highlights, name, name))
     new_id = cur.lastrowid
-    for nv in cnf_nutrients:
-        cur.execute('INSERT OR IGNORE INTO nf_foods_nutrients (nf_food_id, nutrient_code, amount) VALUES (?,?,?)',
-                    (new_id, nv['nutrient_code'], nv['amount']))
-    for a in aliases:
-        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, a))
-    if name:
-        cur.execute('INSERT OR IGNORE INTO nf_foods_aliases (nf_food_id, alias) VALUES (?, ?)', (new_id, name))
+    _insert_food_nutrients_and_aliases(cur, new_id, cnf_nutrients, aliases, name)
     db.commit()
     db.close()
-    # Save season data if available
-    season_info = lookup_quebec_season(name or '')
-    if season_info:
-        db2 = get_nf_db()
-        db2.execute('UPDATE nf_foods SET season = ?, import_season = ? WHERE id = ?',
-                    (json.dumps(season_info['season']), json.dumps(season_info['import']), new_id))
-        db2.commit()
-        db2.close()
-    # Fetch deals and add to raw file
-    try:
-        deals = _fetch_deals_for_food({'name': name, 'epiceries_query': name})
-        if deals:
-            add_to_raw_deals(name, deals)
-    except Exception as e:
-        print(f'[NutriFood] Deal fetch error on add: {e}')
+    _save_season_and_deals(new_id, name)
     return jsonify({'status': 'ok', 'id': new_id})
 
 @app.route('/api/admin/food/hide', methods=['POST'])
@@ -1099,6 +1127,43 @@ def create_share():
 
     return jsonify({'share_url': f'{APP_URL}#share={share_token}', 'token': share_token, 'expires_at': expires_at})
 
+def _build_season_icon(food_data, current_month):
+    """Build season icon for a food item. (S3776 helper)"""
+    if not food_data:
+        return ''
+    season = food_data.get('season', [])
+    import_season = food_data.get('import_season', [])
+    if season and len(season) < 12 and current_month in season:
+        return '🌱'
+    if import_season and len(import_season) < 12:
+        if current_month in import_season:
+            return '✈️'
+    if import_season and current_month in import_season:
+        return '✈️'
+    return ''
+
+
+def _build_grocery_from_selections(selections_data, foods_data):
+    """Build grocery list from selections data. (S3776 helper)"""
+    current_month = date.today().month
+    grocery = []
+    for cat_id, items in selections_data.items():
+        cat_icon = ''
+        cat_foods = []
+        for cat in foods_data.get('categories', []):
+            if cat['id'] == cat_id:
+                cat_icon = cat.get('icon', '')
+                cat_foods = cat.get('foods', [])
+                break
+        for item in items:
+            food_data = next((f for f in cat_foods if f['name'] == item.get('name', '')), None)
+            season_icon = _build_season_icon(food_data, current_month)
+            icon = (season_icon + ' ' if season_icon else '') + cat_icon
+            grocery.append({'name': item.get('name', ''), 'qty': item.get('qty', 1), 'icon': icon})
+    grocery.sort(key=lambda x: x['name'])
+    return grocery
+
+
 @app.route('/api/shared/<token>', methods=['GET'])
 def get_shared(token):
     db = get_db()
@@ -1110,48 +1175,8 @@ def get_shared(token):
     user = db.execute('SELECT name FROM users WHERE id = ?', (user_id,)).fetchone()
 
     selections_data = json.loads(sel['data']) if sel else {}
-
-    # Build grocery list from selections
-    grocery = []
     foods_data = load_foods()
-
-    current_month = date.today().month
-
-    for cat_id, items in selections_data.items():
-        cat_icon = ''
-        for cat in foods_data.get('categories', []):
-            if cat['id'] == cat_id:
-                cat_name = cat['name']
-                cat_icon = cat.get('icon', '')
-                break
-        for item in items:
-            # Find food to check season
-            food_data = None
-            for cat in foods_data.get('categories', []):
-                if cat['id'] == cat_id:
-                    food_data = next((f for f in cat['foods'] if f['name'] == item.get('name', '')), None)
-                    break
-
-            season_icon = ''
-            if food_data:
-                season = food_data.get('season', [])
-                import_season = food_data.get('import_season', [])
-                if season and len(season) < 12:
-                    if current_month in season:
-                        season_icon = '🌱'
-                    elif import_season and current_month in import_season:
-                        season_icon = '✈️'
-                elif import_season and len(import_season) < 12:
-                    if current_month in import_season:
-                        season_icon = '✈️'
-
-            icon = (season_icon + ' ' if season_icon else '') + cat_icon
-            grocery.append({
-                'name': item.get('name', ''),
-                'qty': item.get('qty', 1),
-                'icon': icon
-            })
-    grocery.sort(key=lambda x: x['name'])
+    grocery = _build_grocery_from_selections(selections_data, foods_data)
 
     return jsonify({
         'grocery': grocery,
@@ -1704,9 +1729,7 @@ def load_raw_deals():
 def add_to_raw_deals(food_name, deals):
     """Add or update deals for a food in the raw file."""
     try:
-        raw, updated = load_raw_deals()
-        if raw is None:
-            raw = {}
+        raw, _updated = load_raw_deals()
         if deals:
             raw[food_name] = deals
         elif food_name in raw:
@@ -1724,9 +1747,7 @@ def add_to_raw_deals(food_name, deals):
 def remove_from_raw_deals(food_name):
     """Remove a food from the raw deals file."""
     try:
-        raw, updated = load_raw_deals()
-        if raw is None:
-            return
+        raw, _updated = load_raw_deals()
         if food_name in raw:
             del raw[food_name]
         cache_data = {

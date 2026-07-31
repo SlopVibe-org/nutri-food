@@ -237,7 +237,7 @@ async function cnfSelectProduct(foodId) {
     try {
       let cr = await fetchWithTimeout(API + '/cnf/check?name=' + encodeURIComponent(foodName), {}, 8000);
       if (cr.ok) checkRes = await cr.json();
-    } catch(e) { /* non-critical */ }
+    } catch(e) { console.warn('[NutriFood] CNF check failed:', e); }
 
     let html = '<div style="background:#12141c;border:1px solid var(--accent-dim);border-radius:10px;padding:14px;margin-bottom:12px;">';
     html += '<div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:4px;">' + esc(food.name_fr || food.name_en) + '</div>';
@@ -450,7 +450,7 @@ function cnfConfirmAdd(food, nutrients, group) {
 
   function renderForm() {
     let catId = $('cnf-add-cat')?.value || guessedCat;
-    let portionG = parseInt($('cnf-portion')?.value) || PORTION_GRAMS[catId] || 100;
+    let portionG = Number.parseInt($('cnf-portion')?.value, 10) || PORTION_GRAMS[catId] || 100;
     // Build options with current selection preserved
     let allCats = catList.map(function(c) { return '<option value="' + c.id + '"' + (c.id === catId ? ' selected' : '') + '>' + c.name + '</option>'; }).join('');
     let grid = cnfRenderNutriGrid(N, portionG);

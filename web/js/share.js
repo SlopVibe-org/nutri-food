@@ -35,6 +35,5 @@ async function loadSharedView(shareToken) {
     });
 
     $('save-bar').classList.remove('visible');
-  } catch(e) { renderWelcome(); }
-    console.error("[NutriFood] Share load error:", e);
+  } catch(e) { console.error('[NutriFood] Share load error:', e); renderWelcome(); }
 }

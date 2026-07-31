@@ -142,9 +142,9 @@ function normalizeForSearch(str) {
   return (str || '').toLowerCase()
     .normalize('NFD')
     .replaceAll(/[\u0300-\u036f]/g, '')
-    .replaceAll(/œ/g, 'oe')
-    .replaceAll(/æ/g, 'ae')
-    .replaceAll(/Œ/g, 'oe')
-    .replaceAll(/Æ/g, 'ae')
+    .replaceAll('œ', 'oe')
+    .replaceAll('æ', 'ae')
+    .replaceAll('Œ', 'oe')
+    .replaceAll('Æ', 'ae')
     .replaceAll(/[^a-z0-9\s]/g, ' ');
 }

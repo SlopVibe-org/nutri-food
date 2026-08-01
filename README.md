@@ -92,8 +92,9 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 ### Stack
 
 - **Frontend:** HTML/CSS/JS vanilla (15 modules avec lazy loading)
-- **Backend:** Python Flask (API REST, ~1770 lignes)
+- **Backend:** Python Flask (API REST, ~2000 lignes)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
+- **Aliments:** 160 aliments du Guide alimentaire canadien (CNF + custom)
 - **Déploiement:** Docker Compose (2 conteneurs)
 
 > 📖 Voir : [Guide de déploiement](docs/DEPLOYMENT.md)

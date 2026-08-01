@@ -43,9 +43,26 @@ db.close()
 
 Les administrateurs ont accès au menu **📦 Gérer les produits** qui permet de :
 - **Ajouter** des aliments depuis la base CNF (recherche par nom)
-- **Masquer** des aliments des listes NutriFood
+- **Retirer** des aliments des listes NutriFood
 
 Les modifications affectent les tables `nf_foods` et `nf_categories` dans SQLite.
+
+### Aliments disponibles
+
+NutriFood contient **160 aliments** répartis dans 26 catégories :
+
+- **Protéines :** Poissons gras/blancs, fruits de mer, poulet, viande rouge, œufs, légumineuses, noix/graines, produits laitiers
+- **Légumes :** Verts foncés (14), jaune/orange (8), rouges (5), blancs (8), mauves (7)
+- **Fruits :** Petits fruits (7), protecteurs Vit C (11), autres fruits (11)
+- **Féculents :** Très bons choix (10), bons choix (7), tubercules (3)
+- **Habitudes :** Bons gras (8), fermentés (8), herbes/épices (13), boissons (2)
+
+### Ajouter un aliment via l'interface
+
+1. Menu **📦 Gérer** → onglet **Ajouter**
+2. Recherche dans la base CNF (5993 aliments de Santé Canada)
+3. Sélectionner la catégorie NutriFood
+4. L'aliment est ajouté avec : densité auto-calculée, profil nutritionnel complet, aliases, saisonnalité
 
 ### Masquer un aliment via l'API
 

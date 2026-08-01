@@ -45,6 +45,19 @@ NutriFood a deux modes indépendants, accessibles via les onglets en haut de pag
 
 Le mode actif est mémorisé dans votre navigateur (localStorage).
 
+### Vue Simplifiée
+
+Le bouton **Simplifié** (à côté d'Avancé) bascule vers une vue compacte :
+
+- Une ligne par catégorie avec des cases □□□□□□□
+- Les portions sont distribuées par **jour de semaine** (L M M J V S D)
+- Cases pleines = aliments suivis (hover = nom, click = détails)
+- Cases vides = cliquez pour ajouter un aliment (recherche)
+- Bouton **🔄 Reset** en haut à droite
+- Idéal sur mobile — plus rapide à consulter
+
+La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. Les deux vues partagent les mêmes données en temps réel.
+
 ---
 
 ## 🧭 Navigation — Les 5 sections

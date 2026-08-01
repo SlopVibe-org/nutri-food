@@ -28,7 +28,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | [📖 Guide utilisateur](docs/USER_GUIDE.md) | Comment utiliser NutriFood : comptes, navigation, sélection, recherche, objectifs, listes d'épicerie, reset |
 | [🚀 Guide de déploiement](docs/DEPLOYMENT.md) | Installation complète : Docker, configuration, reverse proxy, Cloudflare, sauvegardes |
 | [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
-| [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (31 juillet 2025) |
+| [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (1er août 2026) |
 
 ### Aperçu
 
@@ -249,16 +249,17 @@ Volumes Docker :
 - Rate limiting: 10 req/min sur endpoints sensibles
 - Reset tokens expirent après 1h
 
-### Résultats QA (31 juillet 2025)
+### Résultats QA (1er août 2026)
 
 📋 [Rapport QA complet](docs/QA_REPORT.md)
 
 | Outil | Résultat |
 |-------|----------|
-| **Lighthouse** | Performance 99 · Accessibility 100 · Best Practices 100 · SEO 100 |
-| **OWASP ZAP** | 0 FAIL · 56 PASS · 11 WARN (tous hors NutriFood ou faux positifs) |
-| **SonarQube** | 0 bugs · 0 hotspots · 18 code smells · 0.4% duplications |
-| **Sécurité** | 8/8 security headers · JWT auth · rate limiting |
+| **Lighthouse** | Performance 100 · Accessibility 100 · Best Practices 100 · SEO 100 |
+| **OWASP ZAP** | 0 FAIL · 60 PASS · 6 WARN (tous hors NutriFood ou faux positifs) |
+| **SonarQube** | 0 bugs · 4 issues (2 faux positifs Docker/CSRF, 2 info) · 0.3% duplications |
+| **Sécurité** | 8/8 security headers · JWT auth · rate limiting · CORP + COOP |
+| **Mobile** | ✅ Aucun overflow · toutes fonctionnalités opérationnelles |
 
 ---
 

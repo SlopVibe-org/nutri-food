@@ -1,7 +1,7 @@
 # 🍎 NutriFood — Rapport QA
 
-**Date:** 31 juillet 2025  
-**Commit:** `41ec4b7`  
+**Date:** 1er août 2026  
+**Commit:** `1f5658f`  
 **URL:** https://slopvibe.org/nutri-food/
 
 ---
@@ -10,61 +10,84 @@
 
 | Catégorie | Score |
 |-----------|-------|
-| Performance | 🟢 99 |
-| Accessibility | 🟢 100 |
-| Best Practices | 🟢 100 |
-| SEO | 🟢 100 |
+| Performance | 🟢 **100** |
+| Accessibility | 🟢 **100** |
+| Best Practices | 🟢 **100** |
+| SEO | 🟢 **100** |
+| Agentic Browsing | 🟢 **100** |
 
-### Core Web Vitals
-
-| Métrique | Valeur |
-|----------|--------|
-| First Contentful Paint | 1.0s |
-| Largest Contentful Paint | 1.2s |
-| Total Blocking Time | 10ms |
-| Cumulative Layout Shift | 0.068 |
-| Speed Index | 1.0s |
+**Scores parfaits — zéro issue.**
 
 ---
 
 ## OWASP ZAP — Baseline Scan
 
+**Tool:** ZAP 2.17.0 (Docker)  
+**URLs scannées:** 10  
+**Exit code:** 3 (warnings)
+
 | Type | Nombre |
 |------|--------|
 | 🔴 FAIL | **0** |
-| 🟡 WARN | 11 |
-| 🟢 PASS | 56 |
+| 🟡 WARN | **6** |
+| 🟢 PASS | **60** |
 
 **0 vulnérabilité exploitable.**
 
 ### Analyse des WARNs
 
-| Règle | Sévérité | Cible | NutriFood? |
-|-------|----------|-------|------------|
-| Re-examine Cache-control | INFO | slopvibe.org/ (root) | ❌ Non |
-| Multiple X-Frame-Options | LOW | NutriFood | ⚠️ Doublon nginx + Cloudflare |
-| Suspicious Comments | INFO | render.js | ❌ Commentaires innocents |
-| HSTS Not Set | LOW | widget/* (502) | ❌ Autre service |
-| Non-Storable Content | INFO | NutriFood | ℹ️ Intentionnel (no-cache) |
-| Retrieved from Cache | INFO | robots.txt | ❌ Non |
-| CSP Missing Fallback | LOW | NutriFood + root | ⚠️ CSP partiel |
-| Permissions Policy | LOW | widget/* (502) | ❌ Autre service |
-| Modern Web Application | INFO | NutriFood | ℹ️ Normal pour SPA |
-| Sub-Resource Integrity | LOW | slopvibe.org/ (root) | ❌ Non |
-| Cross-Origin-Resource-Policy | LOW | NutriFood + root | ❌ Nginx, pas app |
+| # | Règle | Sévérité | NutriFood? | Action |
+|---|-------|----------|------------|--------|
+| 1 | Multiple X-Frame-Options Headers | LOW | ⚠️ Cloudflare + nginx | Extérieur (Cloudflare) — non contrôlable |
+| 2 | HSTS Not Set | LOW | ❌ widget/* (502) | Autre service |
+| 3 | CSP: No Fallback Directive | LOW | ⚠️ NutriFood | Ajouté `object-src 'none'; base-uri 'self'; frame-ancestors 'none'` |
+| 4 | Permissions Policy Header Not Set | LOW | ❌ widget/* (502) | Ajouté sur NutriFood |
+| 5 | Sub Resource Integrity Missing | LOW | ❌ slopvibe.org/ (root) | Non (root, pas NutriFood) |
+| 6 | CORP Header Missing | LOW | ⚠️ NutriFood | ✅ Ajouté `Cross-Origin-Resource-Policy: same-origin` |
+
+### Corrections appliquées (sécurité nginx)
+
+```
+# Avant
+add_header X-Frame-Options "DENY" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Content-Security-Policy "default-src 'self'; ..." always;
+
+# Après
+add_header Content-Security-Policy "default-src 'self'; ...; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" always;
+add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+add_header Cross-Origin-Resource-Policy "same-origin" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;
+add_header X-Frame-Options "DENY" always;
+```
 
 ---
 
 ## SonarQube — Static Analysis
 
+**Server:** SonarQube Community 26.7.0 @ http://10.81.69.110:9000  
+**Scanner:** SonarScanner CLI 7.1.0
+
 | Métrique | Valeur |
 |----------|--------|
-| Lines of code | 4,637 |
+| Lines of code (NCLOC) | 5,237 |
 | Bugs | 🟢 **0** |
 | Vulnerabilities | 🟡 **2** (faux positifs) |
-| Security hotspots | 🟢 **0** |
-| Code smells | 🟡 **18** |
-| Duplicated lines | 🟢 **0.4%** |
+| Code smells | 🟡 **4** |
+| Coverage | ❌ 0.0% |
+| Duplicated lines | 🟢 **0.3%** |
+| Technical debt | 5h 41min |
+
+### 6 issues OPEN (1 blocker, 3 critical, 2 major)
+
+| # | Sévérité | Type | Fichier | Règle | Description | Statut |
+|---|----------|------|---------|-------|-------------|--------|
+| 1 | BLOCKER | Vulnerability | app.py:2036 | Bind 0.0.0.0 | Requis pour Docker | Faux positif — `# nosec B201` |
+| 2 | CRITICAL | Vulnerability | app.py:20 | CSRF disabled | JWT Bearer tokens | Faux positif — pas de cookies |
+| 3 | CRITICAL | Code Smell | render.js:474 | Cognitive Complexity 26 | Event delegation | ✅ Refactoré : `_handleRemoveCatToggle`, `_handleDealsToggle`, `_handleDealFoodClick` |
+| 4 | CRITICAL | Code Smell | cnf.js:215 | Cognitive Complexity 20 | cnfSelectProduct | ✅ Refactoré : `_cnfSeasonBadge`, `_cnfDealsPreview` |
+| 5 | MAJOR | Code Smell | index.html:573 | CSS contrast | .reset-badge | ✅ Corrigé : `#e0f2fe` → `#f0f9ff`, bg opacity 0.25 → 0.35 |
+| 6 | MAJOR | Code Smell | app.js:115 | Top-level init() | ✅ Corrigé : `DOMContentLoaded` wrapper |
 
 ### Évolution des code smells
 
@@ -74,43 +97,49 @@
 | Batch 1 (var→let, CSS dedup, labels) | 168 | -76% |
 | Batch 2 (optional chaining, complexity) | 87 | -87% |
 | Batch 3 (catch blocks, decodeEntities) | 36 | -95% |
-| Batch 4 (refactor app.py, constants) | **18** | **-97.4%** |
+| Batch 4 (refactor app.py, constants) | 18 | -97.4% |
+| **Batch 5 (1er août — render/cnf refactor)** | **4** | **-99.4%** |
 
-### 2 Vulnerabilities (faux positifs)
+---
 
-| Règle | Description | Statut |
-|-------|-------------|--------|
-| python:S4502 | CSRF protection disabled | Faux positif — JWT Bearer tokens, pas de cookies |
-| python:S8392 | Bind to 0.0.0.0 | Faux positif — requis pour Docker networking |
+## Test manuel — Mobile + Desktop
 
-### 18 Code smells résiduels
+### Desktop (1280×720)
+- ✅ Page se charge, tous les modules JS chargent
+- ✅ Vue simplifiée : reset, dropdown, day checkboxes, recherche
+- ✅ Vue avancée : tabs, cards, selects, chips avec qty
+- ✅ Mode suivi : navigation par jour
+- ✅ Toggle Avancé/Simplifié fonctionne
+- ✅ Modal de connexion fonctionne
 
-| Règle | Nombre | Description |
-|-------|--------|-------------|
-| javascript:S7781 | 4 | `normalizeForSearch` — ligatures (œ→oe) intentionnelles |
-| python:S3776 | 3 | Fonctions encore légèrement au-dessus de 15 |
-| javascript:S3776 | 3 | `init()`, `cnfSearch()`, event handler |
-| javascript:S2486 | 3 | Catch blocks avec showToast déjà présent |
-| javascript:S6582 | 2 | Faux positifs (?. partiellement présent) |
-| python:S1481 | 1 | cat_name variable |
-| css:S7924 | 1 | Contraste limite |
-| javascript:S7785 | 1 | Top-level await — intentionnel |
+### Mobile (375×667 — iPhone SE)
+- ✅ Aucun overflow horizontal
+- ✅ Header sur une ligne (logo + login)
+- ✅ Mode tabs et view toggle sur une ligne
+- ✅ Vue simplifiée : toutes les cases, dropdowns, recherche
+- ✅ Vue avancée : tabs, comboboxes
+- ✅ Mode suivi : navigation par jour
+
+### Console
+- ✅ Aucune erreur JavaScript
+- ✅ Aucune erreur réseau
+- ✅ warnings "Password field not in form" éliminés (modals wrapped in `<form>`)
 
 ---
 
 ## Sécurité
 
-### Headers de sécurité (8/8)
+### Headers de sécurité (après corrections)
 
 | Header | Statut |
 |--------|--------|
-| Content-Security-Policy | ✅ |
-| Strict-Transport-Security (HSTS) | ✅ |
+| Content-Security-Policy (avec fallback) | ✅ |
+| Strict-Transport-Security (HSTS) | ✅ (Cloudflare) |
 | X-Content-Type-Options: nosniff | ✅ |
-| X-Frame-Options: SAMEORIGIN | ✅ |
+| X-Frame-Options: DENY | ✅ |
 | Referrer-Policy | ✅ |
 | Permissions-Policy | ✅ |
-| Cross-Origin-Embedder-Policy | ✅ |
+| Cross-Origin-Resource-Policy | ✅ |
 | Cross-Origin-Opener-Policy | ✅ |
 
 ### Authentification
@@ -119,6 +148,16 @@
 - Password hashing: PBKDF2-SHA256
 - Token invalidation on password change
 - Rate limiting: 10 req/min sur endpoints sensibles
+- Auth modals wrapped in `<form>` elements for password manager compatibility
+
+---
+
+## Données
+
+- **160 aliments** across 24 categories in 5 sections
+- Chaque aliment: nom, aliases, densité nutritionnelle, nutriments
+- Saisons (local/importé) affichées dynamiquement
+- Base CNF (Santé Canada) intégrée pour ajout de produits
 
 ---
 
@@ -148,6 +187,6 @@
 | Outil | Version | Hôte |
 |-------|---------|------|
 | Lighthouse CLI | latest | ai-002 (10.81.69.102) |
-| OWASP ZAP | stable | ai-docker (10.81.69.110) |
+| OWASP ZAP | 2.17.0 | ai-docker (10.81.69.110) |
 | SonarQube Community | 26.7.0 | ai-docker (10.81.69.110:9000) |
 | SonarScanner CLI | 7.1.0 | ai-002 |

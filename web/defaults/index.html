@@ -25,12 +25,19 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
-  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 16px; flex-wrap: wrap; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .header-row > div { display: flex; align-items: center; }
   .header-row .header-left { flex: 0 0 auto; flex-direction: column; align-items: flex-start; }
-  .header-row .header-search { flex: 1 1 300px; min-width: 200px; }
+  .header-row .header-search { flex: 1 1 100%; min-width: 150px; }
   .header-row .header-right { flex: 0 0 auto; }
   .header-row .search-bar { width: 100%; margin: 0; }
+  @media (max-width: 600px) {
+    .header-row .header-left .subtitle { display: none; }
+    .header-row .header-search { flex: 1 1 0; min-width: 100px; }
+    .header-row .header-left h1 { font-size: 1.1rem; }
+    .search-bar input { font-size: 0.8rem; padding: 6px 8px 6px 28px; }
+    .search-icon { font-size: 0.75rem; }
+  }
   .user-area { display: flex; align-items: center; gap: 10px; }
   .user-name { font-size: 0.9rem; color: var(--text-dim); }
   .auth-btn {
@@ -166,6 +173,50 @@
   .mode-tab.active { color:var(--accent); border-bottom-color:var(--accent); }
   .mode-tab:hover:not(.active) { color:var(--text); }
 
+  /* View toggle (Avancé / Simplifié) */
+  .view-toggle { display:flex; gap:0; margin-bottom:12px; }
+  .view-toggle-btn { padding:6px 14px; background:none; border:1px solid var(--border); color:var(--text-dim); font-size:0.82rem; font-weight:600; cursor:pointer; transition: all 0.2s; }
+  .view-toggle-btn:first-child { border-radius:8px 0 0 8px; }
+  .view-toggle-btn:last-child { border-radius:0 8px 8px 0; border-left:none; }
+  .view-toggle-btn.active { background:var(--accent-dim); color:#0f1117; border-color:var(--accent-dim); }
+
+  /* Simplified tracking view */
+  .simple-view { display:flex; flex-direction:column; gap:16px; }
+  .simple-header { display:flex; justify-content:flex-end; padding:8px 0 0; }
+  .simple-reset-btn { background:rgba(248,113,113,0.1); color:var(--accent-red); border:1px solid rgba(248,113,113,0.25); border-radius:8px; padding:6px 14px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.15s; display:inline-flex; align-items:center; gap:6px; }
+  .simple-reset-btn:hover { background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.4); }
+  .simple-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
+  .simple-section-title { font-size:0.95rem; color:var(--accent); margin-bottom:12px; font-weight:700; }
+  .simple-cat { padding:8px 0; border-bottom:1px solid rgba(42,45,58,0.5); }
+  .simple-cat:last-child { border-bottom:none; }
+  .simple-cat-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .simple-cat-name { font-size:0.82rem; color:var(--text); font-weight:600; min-width:120px; flex:0 0 120px; }
+  .simple-cat-count { font-size:0.72rem; font-weight:700; padding:2px 8px; border-radius:12px; border:1px solid var(--border); color:var(--text-dim); white-space:nowrap; flex:0 0 auto; }
+  .simple-cat-count.under { color:var(--accent-red); border-color:rgba(248,113,113,0.4); }
+  .simple-cat-count.in-range { color:var(--accent); border-color:rgba(74,222,128,0.4); }
+  .simple-cat-count.over { color:var(--accent-amber); border-color:rgba(251,191,36,0.4); }
+  .simple-boxes { display:flex; align-items:center; flex-wrap:wrap; gap:5px; flex:1; }
+  .simple-row { display:inline-flex; gap:5px; }
+  .simple-day-sep { width:8px; display:inline-block; }
+  .simple-day-group { display:inline-flex; flex-direction:column; align-items:center; gap:2px; }
+  .simple-day-label { font-size:0.55rem; color:var(--text-dim); font-weight:700; text-transform:uppercase; }
+  .sbox { width:32px; height:32px; border-radius:6px; border:2px solid var(--border); display:inline-flex; align-items:center; justify-content:center; transition: all 0.15s; position:relative; flex-shrink:0; }
+  .sbox.empty { background:transparent; cursor:pointer; }
+  .sbox.empty:hover { border-color:var(--accent-dim); background:rgba(74,222,128,0.08); }
+  .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
+  .sbox.filled:hover { background:var(--accent); transform:scale(1.1); }
+  .sbox-day { font-size:0.6rem; color:rgba(15,17,23,0.6); font-weight:700; pointer-events:none; }
+  .simple-dropdown { display:none; position:absolute; background:var(--card); border:1px solid var(--accent-dim); border-radius:8px; padding:8px; width:100%; max-width:320px; z-index:50; margin-top:4px; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+  .simple-dropdown.visible { display:block; }
+  .simple-search { width:100%; padding:8px 10px; background:#12141c; color:var(--text); border:1px solid var(--border); border-radius:6px; font-size:0.85rem; margin-bottom:6px; }
+  .simple-search:focus { outline:none; border-color:var(--accent); }
+  .simple-dd-items { max-height:240px; overflow-y:auto; }
+  .simple-dd-item { padding:8px 10px; border-radius:6px; font-size:0.85rem; color:var(--text); cursor:pointer; transition:background 0.1s; display:flex; justify-content:space-between; align-items:center; }
+  .simple-dd-item:hover { background:rgba(74,222,128,0.12); }
+  .simple-dd-dens { font-size:0.72rem; color:var(--text-dim); font-weight:700; flex-shrink:0; margin-left:8px; }
+  .simple-add-btn { width:24px; height:24px; border-radius:6px; border:1px solid var(--border); background:#12141c; color:var(--text-dim); font-size:1rem; cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 24px; transition: all 0.15s; }
+  .simple-add-btn:hover { background:var(--accent-dim); color:#0f1117; border-color:var(--accent); }
+
   /* Tracking day navigation bar */
   .tracking-bar { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:12px; }
   .tracking-nav-btn { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:4px 12px; font-size:1.2rem; cursor:pointer; transition: background 0.15s; }
@@ -247,6 +298,24 @@
   .search-result .sr-meta { font-size: 0.78rem; color: var(--text-dim); }
   .search-result .sr-cat { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
   .search-result .sr-density { font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+
+  /* CNF search results (add product) */
+  .cnf-result {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: background 0.1s; background: var(--card);
+  }
+  .cnf-result:last-child { border-bottom: none; }
+  .cnf-result:hover { background: rgba(74,222,128,0.08); }
+  .cnf-result.selected { border-left: 3px solid var(--accent); background: rgba(74,222,128,0.12); }
+  .cnf-result .cnf-name { font-size: 0.92rem; color: var(--text); flex: 1; }
+  .cnf-result .cnf-group { font-size: 0.75rem; color: var(--text-dim); }
+  .cnf-result .cnf-check { font-size: 0.9rem; color: var(--accent); opacity: 0; transition: opacity 0.15s; }
+  .cnf-result.selected .cnf-check { opacity: 1; }
+  .cnf-nutrients { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; margin-bottom: 12px; }
+  .cnf-nutri-item { display: flex; justify-content: space-between; padding: 4px 8px; background: #0f1117; border: 1px solid var(--border); border-radius: 4px; }
+  .cnf-nutri-name { font-size: 0.75rem; color: var(--text-dim); }
+  .cnf-nutri-val { font-size: 0.78rem; font-weight: 600; color: var(--accent); }
 
   /* Grocery list */
   .grocery-overlay {
@@ -501,8 +570,8 @@
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
     border-radius: 20px; white-space: nowrap;
-    background: rgba(56,189,248,0.15); color: #5dbef7;
-    border: 1px solid rgba(56,189,248,0.3);
+    background: rgba(56,189,248,0.4); color: #ffffff;
+    border: 1px solid rgba(56,189,248,0.5);
   }
   .nutri-stats-row {
     display: flex; gap: 12px; flex-wrap: wrap;
@@ -556,7 +625,7 @@
 </div>
 
 <div class="modal-overlay hidden" id="auth-modal">
-  <div class="modal">
+  <form class="modal" id="auth-form" onsubmit="return false">
     <h2 id="auth-title">Connexion</h2>
     <div class="error-msg" id="auth-error"></div>
     <div class="field" id="name-field" style="display:none;">
@@ -571,7 +640,7 @@
       <label for="auth-password">Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" aria-label="auth password">
     </div>
-    <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
+    <button type="submit" class="submit-btn" id="auth-submit">Connexion</button>
     <div class="switch-link">
       <span id="auth-switch-text">Pas de compte? </span>
       <a id="auth-switch-link">S'inscrire</a>
@@ -579,12 +648,12 @@
     <div id="forgot-link" style="text-align:center;margin-top:8px;">
       <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;text-decoration:none;" id="forgot-password-link">Mot de passe oublié?</a>
     </div>
-  </div>
+  </form>
 </div>
 
 <!-- Change password modal -->
 <div class="modal-overlay hidden" id="pw-modal">
-  <div class="modal">
+  <form class="modal" id="pw-form" onsubmit="return false">
     <h2>🔑 Changer le mot de passe</h2>
     <div class="error-msg" id="pw-error"></div>
     <div class="field">
@@ -599,16 +668,16 @@
       <label for="pw-confirm">Confirmer</label>
       <input type="password" id="pw-confirm" autocomplete="new-password" aria-label="pw confirm">
     </div>
-    <button type="button" class="submit-btn" id="pw-submit">Changer</button>
+    <button type="submit" class="submit-btn" id="pw-submit">Changer</button>
     <div class="switch-link" style="text-align:center;margin-top:8px;">
       <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;" id="pw-cancel">Annuler</a>
     </div>
-  </div>
+  </form>
 </div>
 
 <!-- Reset password screen (magic link) -->
 <div class="modal-overlay hidden" id="reset-modal">
-  <div class="modal">
+  <form class="modal" id="reset-form" onsubmit="return false">
     <h2>🔑 Nouveau mot de passe</h2>
     <div class="error-msg" id="reset-error"></div>
     <div class="field">
@@ -619,8 +688,8 @@
       <label for="reset-confirm">Confirmer</label>
       <input type="password" id="reset-confirm" autocomplete="new-password" aria-label="reset confirm">
     </div>
-    <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
-  </div>
+    <button type="submit" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
+  </form>
 </div>
 
 <!-- Hidden print area for grocery list -->
@@ -629,6 +698,10 @@
 <div class="mode-tabs" id="mode-tabs">
   <button class="mode-tab" data-mode="tracking">📊 Suivi</button>
   <button class="mode-tab" data-mode="planning">📋 Planification</button>
+  <div class="view-toggle" style="margin-left:auto;">
+    <button class="view-toggle-btn" id="view-advanced" data-view="advanced">Avancé</button>
+    <button class="view-toggle-btn" id="view-simple" data-view="simple">Simplifié</button>
+  </div>
 </div>
 <div class="tracking-bar" id="tracking-bar" style="display:none;">
   <button id="tracking-prev" class="tracking-nav-btn">‹</button>

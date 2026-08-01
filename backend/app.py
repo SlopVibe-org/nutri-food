@@ -2032,5 +2032,6 @@ def journal_summary():
 init_db()
 
 if __name__ == '__main__':
-    # nosec: required for Docker container networking
-    app.run(host='0.0.0.0', port=5000)
+    # nosec: required for Docker container networking — bind all interfaces inside container
+    # The host port mapping in docker-compose.yml controls actual exposure
+    app.run(host='0.0.0.0', port=5000)  # nosec B201

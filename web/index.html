@@ -570,8 +570,8 @@
     display: inline-flex; align-items: center; gap: 4px;
     font-size: 0.75rem; font-weight: 700; padding: 3px 10px;
     border-radius: 20px; white-space: nowrap;
-    background: rgba(56,189,248,0.25); color: #e0f2fe;
-    border: 1px solid rgba(56,189,248,0.3);
+    background: rgba(56,189,248,0.4); color: #ffffff;
+    border: 1px solid rgba(56,189,248,0.5);
   }
   .nutri-stats-row {
     display: flex; gap: 12px; flex-wrap: wrap;
@@ -625,7 +625,7 @@
 </div>
 
 <div class="modal-overlay hidden" id="auth-modal">
-  <div class="modal">
+  <form class="modal" id="auth-form" onsubmit="return false">
     <h2 id="auth-title">Connexion</h2>
     <div class="error-msg" id="auth-error"></div>
     <div class="field" id="name-field" style="display:none;">
@@ -640,7 +640,7 @@
       <label for="auth-password">Mot de passe</label>
       <input type="password" id="auth-password" autocomplete="current-password" aria-label="auth password">
     </div>
-    <button type="button" class="submit-btn" id="auth-submit">Connexion</button>
+    <button type="submit" class="submit-btn" id="auth-submit">Connexion</button>
     <div class="switch-link">
       <span id="auth-switch-text">Pas de compte? </span>
       <a id="auth-switch-link">S'inscrire</a>
@@ -648,12 +648,12 @@
     <div id="forgot-link" style="text-align:center;margin-top:8px;">
       <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;text-decoration:none;" id="forgot-password-link">Mot de passe oublié?</a>
     </div>
-  </div>
+  </form>
 </div>
 
 <!-- Change password modal -->
 <div class="modal-overlay hidden" id="pw-modal">
-  <div class="modal">
+  <form class="modal" id="pw-form" onsubmit="return false">
     <h2>🔑 Changer le mot de passe</h2>
     <div class="error-msg" id="pw-error"></div>
     <div class="field">
@@ -668,16 +668,16 @@
       <label for="pw-confirm">Confirmer</label>
       <input type="password" id="pw-confirm" autocomplete="new-password" aria-label="pw confirm">
     </div>
-    <button type="button" class="submit-btn" id="pw-submit">Changer</button>
+    <button type="submit" class="submit-btn" id="pw-submit">Changer</button>
     <div class="switch-link" style="text-align:center;margin-top:8px;">
       <a style="color:var(--text-dim);font-size:0.8rem;cursor:pointer;" id="pw-cancel">Annuler</a>
     </div>
-  </div>
+  </form>
 </div>
 
 <!-- Reset password screen (magic link) -->
 <div class="modal-overlay hidden" id="reset-modal">
-  <div class="modal">
+  <form class="modal" id="reset-form" onsubmit="return false">
     <h2>🔑 Nouveau mot de passe</h2>
     <div class="error-msg" id="reset-error"></div>
     <div class="field">
@@ -688,8 +688,8 @@
       <label for="reset-confirm">Confirmer</label>
       <input type="password" id="reset-confirm" autocomplete="new-password" aria-label="reset confirm">
     </div>
-    <button type="button" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
-  </div>
+    <button type="submit" class="submit-btn" id="reset-submit">Changer le mot de passe</button>
+  </form>
 </div>
 
 <!-- Hidden print area for grocery list -->

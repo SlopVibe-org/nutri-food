@@ -212,6 +212,37 @@ async function cnfCnfSearch(q) {
   } catch(e) { $('cnf-results').innerHTML = '<p style="color:var(--accent-red);">Erreur: ' + esc(e.message) + '</p>'; }
 }
 
+function _cnfSeasonBadge(status) {
+  let badges = {
+    local: '🌱 En saison (local)',
+    imported: '✈️ Importé',
+    off: '❄️ Hors saison'
+  };
+  let colors = {
+    local: 'rgba(74,222,128,0.15);color:var(--accent)',
+    imported: 'rgba(251,191,36,0.15);color:#fbbf24',
+    off: 'rgba(248,113,113,0.15);color:var(--accent-red)'
+  };
+  let label = badges[status];
+  if (!label) { return ''; }
+  return '<div style="margin-bottom:10px;"><span style="background:' + colors[status] + ';padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">' + label + '</span></div>';
+}
+
+function _cnfDealsPreview(checkRes) {
+  let plural = checkRes.deals_count > 1;
+  let html = '<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px;margin-bottom:12px;">';
+  html += '<div style="font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:6px;">🏷️ ' + checkRes.deals_count + ' spécial' + (plural ? 'aux' : '') + ' trouvé' + (plural ? 's' : '') + '</div>';
+  checkRes.deals.forEach(function(d) {
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.78rem;border-bottom:1px solid var(--border);">';
+    html += '<span style="flex:1;color:var(--text);">' + esc(d.name || '') + '</span>';
+    html += '<span style="color:var(--text-dim);font-size:0.72rem;margin:0 8px;">' + esc(d.store || '') + '</span>';
+    html += '<span style="font-weight:600;color:var(--accent);">$' + (d.price || '?') + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
 async function cnfSelectProduct(foodId) {
   if (cnfSelectedId === foodId) {
     cnfSelectedId = null;
@@ -245,26 +276,12 @@ async function cnfSelectProduct(foodId) {
 
     // Season badge
     if (checkRes && checkRes.season_status !== 'unknown') {
-      let s = checkRes.season_status;
-      let badge = '';
-      if (s === 'local') badge = '<span style="background:rgba(74,222,128,0.15);color:var(--accent);padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">🌱 En saison (local)</span>';
-      else if (s === 'imported') badge = '<span style="background:rgba(251,191,36,0.15);color:#fbbf24;padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">✈️ Importé</span>';
-      else if (s === 'off') badge = '<span style="background:rgba(248,113,113,0.15);color:var(--accent-red);padding:3px 10px;border-radius:12px;font-size:0.72rem;font-weight:600;">❄️ Hors saison</span>';
-      if (badge) html += '<div style="margin-bottom:10px;">' + badge + '</div>';
+      html += _cnfSeasonBadge(checkRes.season_status);
     }
 
     // Deals preview
     if (checkRes && checkRes.deals_count > 0) {
-      html += '<div style="background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px;margin-bottom:12px;">';
-      html += '<div style="font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:6px;">🏷️ ' + checkRes.deals_count + ' spécial' + (checkRes.deals_count > 1 ? 'aux' : '') + ' trouvé' + (checkRes.deals_count > 1 ? 's' : '') + '</div>';
-      checkRes.deals.forEach(function(d) {
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:0.78rem;border-bottom:1px solid var(--border);">';
-        html += '<span style="flex:1;color:var(--text);">' + esc(d.name || '') + '</span>';
-        html += '<span style="color:var(--text-dim);font-size:0.72rem;margin:0 8px;">' + esc(d.store || '') + '</span>';
-        html += '<span style="font-weight:600;color:var(--accent);">$' + (d.price || '?') + '</span>';
-        html += '</div>';
-      });
-      html += '</div>';
+      html += _cnfDealsPreview(checkRes);
     }
 
     html += '<div class="cnf-nutrients">';

@@ -471,46 +471,46 @@ function _handleChipClick(e) {
   return true;
 }
 
+function _handleRemoveCatToggle(catHeader) {
+  let catId = catHeader.dataset.removeCat;
+  let items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
+  let arrow = catHeader.querySelector('.remove-cat-arrow');
+  if (!items) { return; }
+  let shown = items.style.display !== 'none';
+  document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
+  document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
+  if (!shown) { items.style.display = 'block'; if (arrow) { arrow.textContent = '\u25B2'; } }
+}
+
+function _handleDealsToggle() {
+  let content = document.getElementById('deals-content');
+  let arrow = document.getElementById('deals-arrow');
+  if (!content) { return; }
+  let shown = content.style.display !== 'none';
+  content.style.display = shown ? 'none' : 'block';
+  if (arrow) { arrow.textContent = shown ? '\u2193' : '\u2191'; }
+}
+
+function _handleDealFoodClick(dealBadges) {
+  let dealName = decodeEntities(dealBadges.dataset.dealFood);
+  loadScript('js/food-modal.js', function() {
+    for (let cat of DATA.categories) {
+      if (cat.foods.some(function(f) { return f.name === dealName; })) { openFoodModal(cat.id, dealName); return; }
+    }
+  });
+}
+
 document.addEventListener('click', function(e) {
   let btn = e.target.closest('[data-action]');
   if (btn) { _handleActionButtons(e, btn); return; }
   let hideItem = e.target.closest('[data-hide-cat]');
   if (hideItem) { hideFood(hideItem.dataset.hideCat, decodeEntities(hideItem.dataset.hideName)); return; }
   let catHeader = e.target.closest('[data-remove-cat]');
-  if (catHeader) {
-    let catId = catHeader.dataset.removeCat;
-    let items = document.querySelector('[data-remove-cat-items="' + catId + '"]');
-    let arrow = catHeader.querySelector('.remove-cat-arrow');
-    if (items) {
-      let shown = items.style.display !== 'none';
-      document.querySelectorAll('[data-remove-cat-items]').forEach(function(el) { el.style.display = 'none'; });
-      document.querySelectorAll('.remove-cat-arrow').forEach(function(el) { el.textContent = '\u25BC'; });
-      if (!shown) { items.style.display = 'block'; if (arrow) { arrow.textContent = '\u25B2'; } }
-    }
-    return;
-  }
+  if (catHeader) { _handleRemoveCatToggle(catHeader); return; }
   let toggle = e.target.closest('#deals-toggle');
-  if (toggle) {
-    let content = document.getElementById('deals-content');
-    let arrow = document.getElementById('deals-arrow');
-    if (content) {
-      let shown = content.style.display !== 'none';
-      content.style.display = shown ? 'none' : 'block';
-      if (arrow) { arrow.textContent = shown ? '\u2193' : '\u2191'; }
-    }
-    return;
-  }
+  if (toggle) { _handleDealsToggle(); return; }
   let dealBadges = e.target.closest('[data-deal-food]');
-  if (dealBadges) {
-    e.preventDefault();
-    let dealName = decodeEntities(dealBadges.dataset.dealFood);
-    loadScript('js/food-modal.js', function() {
-      for (let cat of DATA.categories) {
-        if (cat.foods.some(function(f) { return f.name === dealName; })) { openFoodModal(cat.id, dealName); return; }
-      }
-    });
-    return;
-  }
+  if (dealBadges) { e.preventDefault(); _handleDealFoodClick(dealBadges); return; }
   _handleChipClick(e);
 });
 

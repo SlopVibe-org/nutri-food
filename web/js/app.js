@@ -99,8 +99,10 @@ async function init() {
 if (window.location.hash) {
   if (window.location.hash.includes('reset=')) {
     document.addEventListener('DOMContentLoaded', function() {
-      $('reset-modal').classList.remove('hidden');
-      $('reset-password').focus();
+      let rm = $('reset-modal');
+      if (rm) { rm.classList.remove('hidden'); }
+      let rp = $('reset-password');
+      if (rp) { rp.focus(); }
     });
   } else if (window.location.hash.includes('share=')) {
     let shareMatch = /share=([^&]+)/.exec(window.location.hash);
@@ -112,4 +114,8 @@ if (window.location.hash) {
   }
 }
 
-init();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

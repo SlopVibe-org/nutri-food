@@ -614,12 +614,11 @@ function renderSimple() {
   }, true);
 }
 
-function _renderSbox(slot, cat, dayTag, idx, min) {
+function _renderSbox(slot, cat, dayTag, optional) {
   if (slot) {
     let fn = esc(slot.name);
     return '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '">' + dayTag + '</span>';
   }
-  let optional = (typeof idx === 'number' && typeof min === 'number' && idx >= min);
   let cls = optional ? 'sbox empty optional' : 'sbox empty';
   return '<span class="' + cls + '" data-simple-add="' + cat.id + '">' + dayTag + '</span>';
 }
@@ -629,20 +628,23 @@ function _renderSimpleBoxes(max, slots, cat) {
   let html = '<span class="simple-boxes">';
   if (max <= 7) {
     html += '<span class="simple-row">';
-    for (let i = 0; i < max; i++) { html += _renderSbox(slots[i], cat, '', i, min); }
+    for (let i = 0; i < max; i++) { html += _renderSbox(slots[i], cat, '', i >= min); }
     html += '</span>';
   } else {
     let perDay = Math.floor(max / 7);
     let extra = max % 7;
+    let reqPerDay = Math.floor(min / 7);
+    let reqExtra = min % 7;
     let dayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
     let slotIdx = 0;
     for (let d = 0; d < 7; d++) {
       let count = perDay + (d < extra ? 1 : 0);
+      let reqCount = reqPerDay + (d < reqExtra ? 1 : 0);
       if (d > 0) { html += '<span class="simple-day-sep"></span>'; }
       html += '<span class="simple-row">';
       for (let s = 0; s < count; s++) {
         let dayTag = '<span class="sbox-day">' + dayLabels[d] + '</span>';
-        html += _renderSbox(slots[slotIdx], cat, dayTag, slotIdx, min);
+        html += _renderSbox(slots[slotIdx], cat, dayTag, s >= reqCount);
         slotIdx++;
       }
       html += '</span>';

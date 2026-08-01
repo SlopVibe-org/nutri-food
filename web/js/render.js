@@ -548,7 +548,7 @@ function renderSimple() {
   let tbar = $('tracking-bar');
   if (tbar) { tbar.style.display = 'none'; }
   // Reset button
-  html += '<div class="simple-header"><span class="reset-badge" style="cursor:pointer;" id="simple-reset-btn">🔄 Reset</span></div>';
+  html += '<div class="simple-header"><button class="simple-reset-btn" id="simple-reset-btn">🔄 Reset</button></div>';
 
   DATA.sections.forEach(function(sec) {
     let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });

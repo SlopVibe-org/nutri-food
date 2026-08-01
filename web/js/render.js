@@ -3,6 +3,8 @@
 /* global activeTab, autoSaveTimer, savedSnapshot, selections */
 function render() {
   if (typeof viewMode !== 'undefined' && viewMode === 'simple') { renderSimple(); return; }
+  // Restore tracking bar if in tracking mode (was hidden in simple view)
+  if (currentMode === 'tracking') { let tbar = $('tracking-bar'); if (tbar) { tbar.style.display = 'flex'; } }
   let app = $('app');
 
   let totals = computeNutritionTotals(selections);
@@ -542,14 +544,9 @@ function renderSimple() {
   let app = $('app');
   let html = '';
   html += '<div class="simple-view">';
-  // Nutrition summary (reuse existing)
-  let totals = computeNutritionTotals(selections);
-  if (currentMode === 'tracking') {
-    html += '<div id="tracking-nutrition"><p class="loading">Chargement nutrition…</p></div>';
-  } else {
-    html += renderDailyNutrition(totals);
-  }
-  html += '</div>';
+  // Hide tracking day selector in simple view
+  let tbar = $('tracking-bar');
+  if (tbar) { tbar.style.display = 'none'; }
 
   DATA.sections.forEach(function(sec) {
     let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
@@ -609,10 +606,6 @@ function renderSimple() {
       document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
     }
   }, true);
-  // Tracking nutrition
-  if (currentMode === 'tracking' && currentUser) {
-    renderTrackingNutrition();
-  }
 }
 
 function _renderSbox(slot, cat, dayTag) {

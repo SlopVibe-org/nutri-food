@@ -547,6 +547,8 @@ function renderSimple() {
   // Hide tracking day selector in simple view
   let tbar = $('tracking-bar');
   if (tbar) { tbar.style.display = 'none'; }
+  // Reset button
+  html += '<div class="simple-header"><span class="reset-badge" style="cursor:pointer;" id="simple-reset-btn">🔄 Reset</span></div>';
 
   DATA.sections.forEach(function(sec) {
     let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
@@ -559,6 +561,10 @@ function renderSimple() {
     html += '</div>';
   });
   app.innerHTML = html;
+
+  // Wire reset button
+  let resetBtn = $('simple-reset-btn');
+  if (resetBtn) { resetBtn.addEventListener('click', openResetConfirm); }
 
   // Wire up empty square clicks to open the dropdown
   app.querySelectorAll('[data-simple-add]').forEach(function(box) {

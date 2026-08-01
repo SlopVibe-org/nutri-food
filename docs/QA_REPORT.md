@@ -1,7 +1,7 @@
 # 🍎 NutriFood — Rapport QA
 
 **Date:** 1er août 2026  
-**Commit:** `1f5658f`  
+**Commit:** `787e39d`  
 **URL:** https://slopvibe.org/nutri-food/
 
 ---
@@ -22,28 +22,29 @@
 
 ## OWASP ZAP — Baseline Scan
 
-**Tool:** ZAP 2.17.0 (Docker)  
-**URLs scannées:** 10  
+**Tool:** ZAP 2.16.1 (Docker)
+**URLs scannées:** 8  
 **Exit code:** 3 (warnings)
 
 | Type | Nombre |
 |------|--------|
 | 🔴 FAIL | **0** |
-| 🟡 WARN | **6** |
-| 🟢 PASS | **60** |
+| 🟡 WARN | **5** |
+| 🟢 INFO | **1** |
 
 **0 vulnérabilité exploitable.**
 
 ### Analyse des WARNs
 
-| # | Règle | Sévérité | NutriFood? | Action |
-|---|-------|----------|------------|--------|
-| 1 | Multiple X-Frame-Options Headers | LOW | ⚠️ Cloudflare + nginx | Extérieur (Cloudflare) — non contrôlable |
-| 2 | HSTS Not Set | LOW | ❌ widget/* (502) | Autre service |
-| 3 | CSP: No Fallback Directive | LOW | ⚠️ NutriFood | Ajouté `object-src 'none'; base-uri 'self'; frame-ancestors 'none'` |
-| 4 | Permissions Policy Header Not Set | LOW | ❌ widget/* (502) | Ajouté sur NutriFood |
-| 5 | Sub Resource Integrity Missing | LOW | ❌ slopvibe.org/ (root) | Non (root, pas NutriFood) |
-| 6 | CORP Header Missing | LOW | ⚠️ NutriFood | ✅ Ajouté `Cross-Origin-Resource-Policy: same-origin` |
+Tous liés au CSP (hardening) :
+
+| # | Règle | Description |
+|---|-------|-------------|
+| 1 | Duplicate X-Frame-Options | Cloudflare + nginx double header |
+| 2 | CSP: No fallback directive | Manque de fallback pour certaines directives |
+| 3 | CSP: Wildcard directive | Utilisation de `*` dans CSP |
+| 4 | CSP: script-src unsafe-inline | Scripts inline允许 |
+| 5 | CSP: style-src unsafe-inline | Styles inline允许 |
 
 ### Corrections appliquées (sécurité nginx)
 
@@ -98,7 +99,8 @@ add_header X-Frame-Options "DENY" always;
 | Batch 2 (optional chaining, complexity) | 87 | -87% |
 | Batch 3 (catch blocks, decodeEntities) | 36 | -95% |
 | Batch 4 (refactor app.py, constants) | 18 | -97.4% |
-| **Batch 5 (1er août — render/cnf refactor)** | **4** | **-99.4%** |
+| **Batch 5 (31 juil — render/cnf refactor, simple view)** | **4** | **-99.4%** |
+| **Batch 6 (1er août — init refactor, DB fixes)** | **4** | **-99.4%** |
 
 ---
 

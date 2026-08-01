@@ -30,6 +30,14 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
 | [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (1er août 2026) |
 
+### Mode Simplifié
+
+- Vue compacte avec cases à cocher par catégorie
+- Portions distribuées par jour de semaine (L M M J V S D)
+- Clic sur case vide → recherche d'aliment
+- Bouton reset stylé
+- Idéal sur mobile
+
 ### Aperçu
 
 | | | |
@@ -83,7 +91,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 
 ### Stack
 
-- **Frontend:** HTML/CSS/JS vanilla (14 modules avec lazy loading)
+- **Frontend:** HTML/CSS/JS vanilla (15 modules avec lazy loading)
 - **Backend:** Python Flask (API REST, ~1770 lignes)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
 - **Déploiement:** Docker Compose (2 conteneurs)
@@ -256,8 +264,8 @@ Volumes Docker :
 | Outil | Résultat |
 |-------|----------|
 | **Lighthouse** | Performance 100 · Accessibility 100 · Best Practices 100 · SEO 100 |
-| **OWASP ZAP** | 0 FAIL · 60 PASS · 6 WARN (tous hors NutriFood ou faux positifs) |
-| **SonarQube** | 0 bugs · 4 issues (2 faux positifs Docker/CSRF, 2 info) · 0.3% duplications |
+| **OWASP ZAP** | 0 FAIL · 5 WARN (CSP hardening) · 1 INFO |
+| **SonarQube** | 0 bugs · 4 code smells · 2 vuln (architecture) · 0.3% duplications |
 | **Sécurité** | 8/8 security headers · JWT auth · rate limiting · CORP + COOP |
 | **Mobile** | ✅ Aucun overflow · toutes fonctionnalités opérationnelles |
 

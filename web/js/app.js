@@ -112,4 +112,4 @@ if (window.location.hash) {
   }
 }
 
-await init();
+init();

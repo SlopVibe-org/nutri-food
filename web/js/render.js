@@ -202,9 +202,11 @@ function updateSaveBar() {
 
   if (isDirty()) {
     bar.classList.add('visible'); btn.classList.add('dirty'); btn.disabled = false;
+    btn.textContent = '💾 Sauvegarder';
     info.textContent = total + ' aliment(s) — modifications non sauvegardées';
   } else {
     btn.classList.remove('dirty'); btn.disabled = true;
+    btn.textContent = '✓ Sauvegardé';
     if (total > 0) { bar.classList.add('visible'); info.textContent = total + ' aliment(s) sélectionné(s) — sauvegardé ✓'; }
     else { bar.classList.remove('visible'); }
   }
@@ -588,11 +590,26 @@ function renderSimple() {
       let dd = document.querySelector('[data-simple-dd="' + catId + '"]');
       if (dd) {
         let isVisible = dd.classList.contains('visible');
-        document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
+        document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible', 'drop-up'); });
         if (!isVisible) {
+          // Position dropdown relative to the clicked box
+          let boxRect = box.getBoundingClientRect();
+          let ddParent = dd.parentElement;
+          let parentRect = ddParent.getBoundingClientRect();
+          let spaceBelow = window.innerHeight - boxRect.bottom;
+          dd.style.left = (boxRect.left - parentRect.left) + 'px';
+          if (spaceBelow < 250) {
+            // Open upward: bottom edge of dropdown sits just above the box
+            dd.style.top = '';
+            dd.style.bottom = (parentRect.bottom - boxRect.top + 4) + 'px';
+          } else {
+            // Open downward: top edge of dropdown sits just below the box
+            dd.style.bottom = '';
+            dd.style.top = (boxRect.bottom - parentRect.top + 4) + 'px';
+          }
           dd.classList.add('visible');
           let search = dd.querySelector('.simple-search');
-          if (search) { search.value = ''; search.focus(); }
+          if (search) { search.value = ''; search.focus({ preventScroll: true }); }
           // Show all items
           dd.querySelectorAll('.simple-dd-item').forEach(function(it) { it.style.display = ''; });
         }

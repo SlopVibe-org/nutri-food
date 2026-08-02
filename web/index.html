@@ -151,11 +151,8 @@
   .remove-product-item:hover { background: rgba(255,100,100,0.08); border-color: var(--accent-red) !important; }
 
   #save-bar {
-    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
-    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100;
-    transform: translateY(100%); transition: transform 0.3s ease;
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
   }
-  #save-bar.visible { transform: translateY(0); }
   #save-bar .save-info { font-size: 0.85rem; color: var(--text-dim); }
   #save-btn {
     padding: 10px 24px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 8px;
@@ -187,7 +184,7 @@
   .simple-reset-btn:hover { background:rgba(248,113,113,0.2); border-color:rgba(248,113,113,0.4); }
   .simple-section { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; }
   .simple-section-title { font-size:0.95rem; color:var(--accent); margin-bottom:12px; font-weight:700; }
-  .simple-cat { padding:8px 0; border-bottom:1px solid rgba(42,45,58,0.5); }
+  .simple-cat { padding:8px 0; border-bottom:1px solid rgba(42,45,58,0.5); position: relative; }
   .simple-cat:last-child { border-bottom:none; }
   .simple-cat-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
   .simple-cat-name { font-size:0.82rem; color:var(--text); font-weight:600; min-width:120px; flex:0 0 120px; }
@@ -208,7 +205,7 @@
   .sbox.filled { background:var(--accent-dim); border-color:var(--accent); cursor:pointer; }
   .sbox.filled:hover { background:var(--accent); transform:scale(1.1); }
   .sbox-day { font-size:0.6rem; color:rgba(15,17,23,0.6); font-weight:700; pointer-events:none; }
-  .simple-dropdown { display:none; position:absolute; background:var(--card); border:1px solid var(--accent-dim); border-radius:8px; padding:8px; width:100%; max-width:320px; z-index:50; margin-top:4px; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
+  .simple-dropdown { display:none; position:absolute; background:var(--card); border:1px solid var(--accent-dim); border-radius:8px; padding:8px; width:100%; max-width:320px; z-index:50; box-shadow:0 4px 16px rgba(0,0,0,0.4); }
   .simple-dropdown.visible { display:block; }
   .simple-search { width:100%; padding:8px 10px; background:#12141c; color:var(--text); border:1px solid var(--border); border-radius:6px; font-size:0.85rem; margin-bottom:6px; }
   .simple-search:focus { outline:none; border-color:var(--accent); }

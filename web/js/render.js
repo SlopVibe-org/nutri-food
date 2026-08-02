@@ -735,7 +735,7 @@ function _buildWeekSlotsForCat(catId, max) {
     let foodDays = {}; // foodName -> [{date, qty}]
     let weekDates = Object.keys(trackingWeek).sort(function(a, b) { return a.localeCompare(b); });
     weekDates.forEach(function(d) {
-      let dayCat = (trackingWeek[d] || {})[catId] || [];
+      let dayCat = (trackingWeek?.[d] || {})[catId] || [];
       dayCat.forEach(function(item) {
         if (!foodDays[item.name]) { foodDays[item.name] = []; }
         foodDays[item.name].push({ date: d, qty: item.qty || 1 });
@@ -795,7 +795,7 @@ function _buildWeekSlotsForCat(catId, max) {
         let dayIdx = (dateObj.getDay() + 6) % 7; // 0=Monday
         let dayStart = dayOffsets[dayIdx];
         let dayCount = perDay + (dayIdx < extra ? 1 : 0);
-        let daySel = trackingWeek[d] || {};
+        let daySel = trackingWeek?.[d] || {};
         let items = daySel[catId] || [];
         let localIdx = 0;
         items.forEach(function(item) {

@@ -125,7 +125,7 @@ async function saveTrackingSimple() {
     let otherQty = {};
     Object.keys(trackingWeek || {}).forEach(function(d) {
       if (d === targetDate) { return; }
-      let dayCat = (trackingWeek[d] || {})[catId] || [];
+      let dayCat = (trackingWeek?.[d] || {})[catId] || [];
       dayCat.forEach(function(item) {
         otherQty[item.name] = (otherQty[item.name] || 0) + (item.qty || 1);
       });

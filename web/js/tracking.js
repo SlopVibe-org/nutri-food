@@ -123,7 +123,7 @@ async function saveTrackingSimple() {
     let items = selections[catId] || [];
     // Count what other days have for each food in this category
     let otherQty = {};
-    Object.keys(trackingWeek || {}).forEach(function(d) {
+    Object.keys(trackingWeek ?? {}).forEach(function(d) {
       if (d === targetDate) { return; }
       let dayCat = (trackingWeek?.[d] || {})[catId] || [];
       dayCat.forEach(function(item) {

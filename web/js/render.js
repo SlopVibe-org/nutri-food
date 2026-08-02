@@ -764,7 +764,7 @@ function _buildWeekSlotsForCat(catId, max) {
       allDates.sort(function(a, b) { return a.localeCompare(b); });
       let slotIdx = 0;
       allDates.forEach(function(d) {
-        if (d === unsavedDate && allDates.indexOf(unsavedDate) === allDates.lastIndexOf(unsavedDate)) {
+        if (d === unsavedDate && !allDates.includes(unsavedDate)) {
           // Place unsaved items for this date
           selItems.forEach(function(item) {
             let savedQty = 0;

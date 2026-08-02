@@ -175,7 +175,7 @@ function openFoodModal(catId, name) {
       if (typeof trackingWeek !== 'undefined' && trackingWeek) {
         let sortedDates = Object.keys(trackingWeek).sort(function(a, b) { return a.localeCompare(b); });
         sortedDates.forEach(function(d) {
-          let dayCat = (trackingWeek[d] || {})[catId] || [];
+          let dayCat = (trackingWeek?.[d] || {})[catId] || [];
           let found = dayCat.find(function(i) { return i.name === name; });
           if (found) { daysWithFood.push({ date: d, qty: found.qty || 1 }); }
         });
@@ -222,7 +222,7 @@ async function removeSimpleFood(catId, name, scope) {
     if (typeof trackingWeek !== 'undefined' && trackingWeek) {
       let dates = Object.keys(trackingWeek);
       for (let d of dates) {
-        let dayData = trackingWeek[d] || {};
+        let dayData = trackingWeek?.[d] || {};
         if (dayData[catId]) {
           dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
           if (dayData[catId].length === 0) { delete dayData[catId]; }
@@ -237,7 +237,7 @@ async function removeSimpleFood(catId, name, scope) {
       }
     }
   } else {
-    let dayData = (trackingWeek || {})[scope] || {};
+    let dayData = trackingWeek?.[scope] || {};
     if (dayData[catId]) {
       // Decrement by 1 instead of removing all
       let item = dayData[catId].find(function(i) { return i.name === name; });

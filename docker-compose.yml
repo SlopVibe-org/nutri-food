@@ -10,14 +10,15 @@ services:
       - 1.1.1.1
     environment:
       - DB_PATH=/data/nutrifood.db
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRY_HOURS=${JWT_EXPIRY_HOURS:-2160}
-      - SMTP_HOST=${SMTP_HOST}
-      - SMTP_PORT=${SMTP_PORT:-465}
-      - SMTP_USER=${SMTP_USER}
-      - SMTP_PASS=${SMTP_PASS}
-      - MAIL_FROM=${MAIL_FROM}
-      - APP_URL=${APP_URL}
+      - JWT_SECRET=4d94b004390976e65097c4adbb4e34da6ff1d02ae329cdc2c16beb8ba6db0eb2
+      - JWT_EXPIRY_HOURS=2160
+      # Email (SMTP)
+      - SMTP_HOST=smtp.fastmail.com
+      - SMTP_PORT=465
+      - SMTP_USER=ai@slopvibe.org
+      - SMTP_PASS=3q6q6a76769d6r5c
+      - MAIL_FROM=ai@slopvibe.org
+      - APP_URL=https://slopvibe.org/nutri-food/
 
   nutrifood-web:
     build: ./web

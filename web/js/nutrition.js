@@ -97,16 +97,28 @@ async function submitGoals() {
 function openResetConfirm() {
   let body = $('reset-confirm-body');
   if (currentMode === 'tracking') {
-    body.innerHTML =
-      '<p style="margin-bottom:16px;color:var(--text-dim);">Que voulez-vous réinitialiser?</p>' +
-      '<div style="display:flex;flex-direction:column;gap:8px;">' +
-      '<button class="submit-btn" id="reset-day-btn" style="background:var(--accent-amber);">📅 Journée (' + formatDayLabel(trackingDate) + ')</button>' +
-      '<button class="submit-btn" id="reset-week-btn" style="background:var(--accent-red);">📋 Semaine complète</button>' +
-      '<a class="cancel-link" id="reset-cancel-btn">Annuler</a>' +
-      '</div>';
-    $('reset-day-btn').addEventListener('click', function() { performTrackingReset('day'); });
-    $('reset-week-btn').addEventListener('click', function() { performTrackingReset('week'); });
-    $('reset-cancel-btn').addEventListener('click', closeResetConfirm);
+    if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+      // Simple view = weekly aggregate, only offer week reset
+      body.innerHTML =
+        '<p style="margin-bottom:16px;color:var(--text-dim);">Vider toutes les données de la semaine?</p>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        '<button class="submit-btn" id="reset-week-btn" style="background:var(--accent-red);">📋 Confirmer le reset de la semaine</button>' +
+        '<a class="cancel-link" id="reset-cancel-btn">Annuler</a>' +
+        '</div>';
+      $('reset-week-btn').addEventListener('click', function() { performTrackingReset('week'); });
+      $('reset-cancel-btn').addEventListener('click', closeResetConfirm);
+    } else {
+      body.innerHTML =
+        '<p style="margin-bottom:16px;color:var(--text-dim);">Que voulez-vous réinitialiser?</p>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;">' +
+        '<button class="submit-btn" id="reset-day-btn" style="background:var(--accent-amber);">📅 Journée (' + formatDayLabel(trackingDate) + ')</button>' +
+        '<button class="submit-btn" id="reset-week-btn" style="background:var(--accent-red);">📋 Semaine complète</button>' +
+        '<a class="cancel-link" id="reset-cancel-btn">Annuler</a>' +
+        '</div>';
+      $('reset-day-btn').addEventListener('click', function() { performTrackingReset('day'); });
+      $('reset-week-btn').addEventListener('click', function() { performTrackingReset('week'); });
+      $('reset-cancel-btn').addEventListener('click', closeResetConfirm);
+    }
   } else {
     body.innerHTML =
       '<p style="margin-bottom:16px;color:var(--text-dim);">Vider toutes les sélections de la semaine?</p>' +
@@ -162,7 +174,12 @@ async function performTrackingReset(scope) {
       }, 10000);
       showToast('Semaine réinitialisée', 'success');
     }
-    loadTrackingDay(trackingDate);
+    // Reload appropriate view
+    if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+      loadScript('js/tracking.js', function() { loadTrackingWeek(); });
+    } else {
+      loadTrackingDay(trackingDate);
+    }
   } catch(e) { console.error('[NutriFood] Tracking reset failed:', e); showToast('Erreur lors du reset', 'error'); }
 }
 

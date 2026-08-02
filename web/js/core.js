@@ -25,6 +25,7 @@ let trackingSelections = {};
 let trackingSnapshot = '{}';
 let trackingWeek = {};
 let mobileSelectedDay = 0;
+let pendingAddDate = null; // Target day for simple-view adds
 
 // ─── Deals data (epiceries.ca) ───
 let DEALS = {};

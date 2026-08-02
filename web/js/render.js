@@ -300,14 +300,25 @@ function scheduleAutoSave() {
   setDirty(true);
   clearTimeout(autoSaveTimer);
   if (currentMode === 'tracking') {
-    autoSaveTimer = setTimeout(function() { loadScript('js/tracking.js', function() { saveTracking(); }); }, 2000);
+    if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+      autoSaveTimer = setTimeout(function() { loadScript('js/tracking.js', function() { saveTrackingSimple(); }); }, 2000);
+    } else {
+      autoSaveTimer = setTimeout(function() { loadScript('js/tracking.js', function() { saveTracking(); }); }, 2000);
+    }
   } else {
     autoSaveTimer = setTimeout(function() { saveSelections(); }, 2000);
   }
 }
 
 async function saveSelections() {
-  if (currentMode === 'tracking') { loadScript('js/tracking.js', function() { saveTracking(); }); return; }
+  if (currentMode === 'tracking') {
+    if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+      loadScript('js/tracking.js', function() { saveTrackingSimple(); });
+    } else {
+      loadScript('js/tracking.js', function() { saveTracking(); });
+    }
+    return;
+  }
   // Cancel pending auto-save timer since we're saving now
   clearTimeout(autoSaveTimer);
   let btn = $('save-btn');
@@ -571,6 +582,8 @@ function renderSimple() {
     box.addEventListener('click', function(e) {
       e.stopPropagation();
       let catId = box.dataset.simpleAdd;
+      // Capture target day if specified
+      pendingAddDate = box.dataset.simpleDay || null;
       let dd = document.querySelector('[data-simple-dd="' + catId + '"]');
       if (dd) {
         let isVisible = dd.classList.contains('visible');
@@ -614,21 +627,32 @@ function renderSimple() {
   }, true);
 }
 
-function _renderSbox(slot, cat, dayTag, optional) {
+function _renderSbox(slot, cat, dayTag, optional, dayDate) {
   if (slot) {
     let fn = esc(slot.name);
     return '<span class="sbox filled" data-simple-food="' + fn + '" data-detail-cat="' + cat.id + '" data-detail-name="' + fn + '" title="' + fn + '">' + dayTag + '</span>';
   }
   let cls = optional ? 'sbox empty optional' : 'sbox empty';
-  return '<span class="' + cls + '" data-simple-add="' + cat.id + '">' + dayTag + '</span>';
+  let dayAttr = dayDate ? ' data-simple-day="' + dayDate + '"' : '';
+  return '<span class="' + cls + '" data-simple-add="' + cat.id + '"' + dayAttr + '>' + dayTag + '</span>';
 }
 
 function _renderSimpleBoxes(max, slots, cat) {
   let min = cat.weekly_min || 0;
+  // Compute this week's dates (Mon-Sun)
+  let today = new Date();
+  let monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  let weekDates = [];
+  for (let i = 0; i < 7; i++) {
+    let d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    weekDates.push(d.toISOString().slice(0, 10));
+  }
   let html = '<span class="simple-boxes">';
   if (max <= 7) {
     html += '<span class="simple-row">';
-    for (let i = 0; i < max; i++) { html += _renderSbox(slots[i], cat, '', i >= min); }
+    for (let i = 0; i < max; i++) { html += _renderSbox(slots[i], cat, '', i >= min, weekDates[i]); }
     html += '</span>';
   } else {
     let perDay = Math.floor(max / 7);
@@ -644,7 +668,7 @@ function _renderSimpleBoxes(max, slots, cat) {
       html += '<span class="simple-row">';
       for (let s = 0; s < count; s++) {
         let dayTag = '<span class="sbox-day">' + dayLabels[d] + '</span>';
-        html += _renderSbox(slots[slotIdx], cat, dayTag, s >= reqCount);
+        html += _renderSbox(slots[slotIdx], cat, dayTag, s >= reqCount, weekDates[d]);
         slotIdx++;
       }
       html += '</span>';
@@ -652,6 +676,123 @@ function _renderSimpleBoxes(max, slots, cat) {
   }
   html += '</span>';
   return html;
+}
+
+function _buildWeekSlotsForCat(catId, max) {
+  let slots = new Array(max).fill(null);
+  if (currentMode === 'tracking' && trackingWeek && Object.keys(trackingWeek).length > 0) {
+    // Build a map: foodName -> array of {date, qty} from trackingWeek
+    let foodDays = {}; // foodName -> [{date, qty}]
+    let weekDates = Object.keys(trackingWeek).sort();
+    weekDates.forEach(function(d) {
+      let dayCat = (trackingWeek[d] || {})[catId] || [];
+      dayCat.forEach(function(item) {
+        if (!foodDays[item.name]) { foodDays[item.name] = []; }
+        foodDays[item.name].push({ date: d, qty: item.qty || 1 });
+      });
+    });
+    // Also include unsaved items from selections (not yet in trackingWeek)
+    let selItems = selections[catId] || [];
+    selItems.forEach(function(item) {
+      let savedQty = 0;
+      (foodDays[item.name] || []).forEach(function(d) { savedQty += d.qty; });
+      let unsaved = (item.qty || 1) - savedQty;
+      if (unsaved > 0) {
+        if (!foodDays[item.name]) { foodDays[item.name] = []; }
+        // Unsaved items go to the pending day (or today if none specified)
+        let targetDay = (typeof pendingAddDate !== 'undefined' && pendingAddDate) || getTodayISO();
+        foodDays[item.name].push({ date: targetDay, qty: unsaved, unsaved: true });
+      }
+    });
+    // Now place items into slots
+    let unsavedDate = (typeof pendingAddDate !== 'undefined' && pendingAddDate) || getTodayISO();
+    if (max <= 7) {
+      // Single row — place items chronologically by day eaten
+      // Build ordered list: saved days + unsaved day inserted at right position
+      let allDates = weekDates.slice();
+      if (allDates.indexOf(unsavedDate) === -1) { allDates.push(unsavedDate); }
+      allDates.sort();
+      let slotIdx = 0;
+      allDates.forEach(function(d) {
+        if (d === unsavedDate && allDates.indexOf(d) === allDates.lastIndexOf(unsavedDate)) {
+          // Place unsaved items for this date
+          selItems.forEach(function(item) {
+            let savedQty = 0;
+            (foodDays[item.name] || []).forEach(function(fd) { if (!fd.unsaved) { savedQty += fd.qty; } });
+            let unsaved = (item.qty || 1) - savedQty;
+            for (let q = 0; q < unsaved; q++) {
+              if (slotIdx < max) { slots[slotIdx] = item; slotIdx++; }
+            }
+          });
+        } else if (trackingWeek[d]) {
+          let dayCat = trackingWeek[d][catId] || [];
+          dayCat.forEach(function(item) {
+            for (let q = 0; q < (item.qty || 1); q++) {
+              if (slotIdx < max) { slots[slotIdx] = item; slotIdx++; }
+            }
+          });
+        }
+      });
+    } else {
+      // Grouped by day — place in correct day group
+      let perDay = Math.floor(max / 7);
+      let extra = max % 7;
+      let dayOffsets = [];
+      let off = 0;
+      for (let dd = 0; dd < 7; dd++) { dayOffsets.push(off); off += perDay + (dd < extra ? 1 : 0); }
+      weekDates.forEach(function(d) {
+        let dateObj = new Date(d + 'T12:00:00');
+        let dayIdx = (dateObj.getDay() + 6) % 7; // 0=Monday
+        let dayStart = dayOffsets[dayIdx];
+        let dayCount = perDay + (dayIdx < extra ? 1 : 0);
+        let daySel = trackingWeek[d] || {};
+        let items = daySel[catId] || [];
+        let localIdx = 0;
+        items.forEach(function(item) {
+          for (let q = 0; q < (item.qty || 1); q++) {
+            if (localIdx < dayCount) {
+              slots[dayStart + localIdx] = item;
+              localIdx++;
+            } else {
+              for (let i = 0; i < max; i++) { if (!slots[i]) { slots[i] = item; break; } }
+            }
+          }
+        });
+      });
+      // Place unsaved items in the pending day's group (or today)
+      let unsavedDate2 = (typeof pendingAddDate !== 'undefined' && pendingAddDate) || getTodayISO();
+      let unsavedObj = new Date(unsavedDate2 + 'T12:00:00');
+      let unsavedIdx = (unsavedObj.getDay() + 6) % 7;
+      let unsavedStart = dayOffsets[unsavedIdx];
+      let unsavedCount = perDay + (unsavedIdx < extra ? 1 : 0);
+      let unsavedLocalIdx = 0;
+      // Count how many saved items are in the target day's slots
+      for (let i = unsavedStart; i < unsavedStart + unsavedCount; i++) { if (slots[i]) { unsavedLocalIdx++; } }
+      selItems.forEach(function(item) {
+        let savedQty = 0;
+        (foodDays[item.name] || []).forEach(function(fd) { if (!fd.unsaved) { savedQty += fd.qty; } });
+        let unsaved = (item.qty || 1) - savedQty;
+        for (let q = 0; q < unsaved; q++) {
+          if (unsavedLocalIdx < unsavedCount) {
+            slots[unsavedStart + unsavedLocalIdx] = item;
+            unsavedLocalIdx++;
+          } else {
+            for (let i = 0; i < max; i++) { if (!slots[i]) { slots[i] = item; break; } }
+          }
+        }
+      });
+    }
+  } else {
+    // Planning mode or no tracking data — flat from selections
+    let selected = selections[catId] || [];
+    let slotIdx = 0;
+    selected.forEach(function(item) {
+      for (let q = 0; q < (item.qty || 1); q++) {
+        if (slotIdx < max) { slots[slotIdx] = item; slotIdx++; }
+      }
+    });
+  }
+  return slots;
 }
 
 function renderSimpleCategory(cat) {
@@ -670,9 +811,7 @@ function renderSimpleCategory(cat) {
   html += '<span class="simple-cat-name"><span class="icon">' + cat.icon + '</span>' + cat.name + '</span>';
   html += '<span class="simple-cat-count ' + cls + '">' + totalCount + '/' + max + suffix + '</span>';
 
-  let slots = [];
-  selected.forEach(function(item) { for (let q = 0; q < item.qty; q++) { slots.push(item); } });
-  while (slots.length < max) { slots.push(null); }
+  let slots = _buildWeekSlotsForCat(cat.id, max);
 
   html += _renderSimpleBoxes(max, slots, cat);
   html += '</div>';

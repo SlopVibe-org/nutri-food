@@ -166,10 +166,117 @@ function openFoodModal(catId, name) {
   html += renderFoodTipsHTML(food, cat);
   html += renderFoodDealsHTML(food);
   if (alsoIn.length > 0) { html += '<div style="font-size:0.82rem;color:var(--text-dim);margin-top:8px;">Aussi dans: ' + alsoIn.join(', ') + '</div>'; }
+
+  // Remove section — only in tracking + simple view, if item exists in selections
+  if (typeof currentMode !== 'undefined' && currentMode === 'tracking' && typeof viewMode !== 'undefined' && viewMode === 'simple') {
+    let sel = (selections[catId] || []).find(function(s) { return s.name === name; });
+    if (sel) {
+      let daysWithFood = [];
+      if (typeof trackingWeek !== 'undefined' && trackingWeek) {
+        Object.keys(trackingWeek).sort().forEach(function(d) {
+          let dayCat = (trackingWeek[d] || {})[catId] || [];
+          let found = dayCat.find(function(i) { return i.name === name; });
+          if (found) { daysWithFood.push({ date: d, qty: found.qty || 1 }); }
+        });
+      }
+      html += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">';
+      if (daysWithFood.length === 0) {
+        html += '<button class="submit-btn food-modal-remove-day" data-date="" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + esc(name) + '</button>';
+      } else if (daysWithFood.length === 1) {
+        html += '<button class="submit-btn food-modal-remove-day" data-date="' + daysWithFood[0].date + '" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + formatDayLabel(daysWithFood[0].date) + '</button>';
+      } else {
+        daysWithFood.forEach(function(dw) {
+          html += '<button class="submit-btn food-modal-remove-day" data-date="' + dw.date + '" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + dw.qty + '× ' + formatDayLabel(dw.date) + '</button>';
+        });
+        html += '<button class="submit-btn" id="food-modal-remove-all" style="background:transparent;border:1px solid var(--accent-red);color:var(--accent-red);padding:6px 14px;width:auto;font-size:0.82rem;">Tout (' + sel.qty + ')</button>';
+      }
+      html += '</div>';
+    }
+  }
+
   // Show in suggestions modal (reuse)
   let content = document.getElementById('suggestions-content');
   if (content) {
     content.innerHTML = html;
     document.getElementById('suggestions-modal').classList.remove('hidden');
+    document.querySelectorAll('.food-modal-remove-day').forEach(function(btn) {
+      btn.addEventListener('click', function() { removeSimpleFood(catId, name, btn.dataset.date || null); });
+    });
+    let removeAllBtn = $('food-modal-remove-all');
+    if (removeAllBtn) {
+      removeAllBtn.addEventListener('click', function() { removeSimpleFood(catId, name, 'all'); });
+    }
   }
+}
+
+async function removeSimpleFood(catId, name, scope) {
+  document.getElementById('suggestions-modal').classList.add('hidden');
+  let token = getToken();
+  if (!token) { return; }
+
+  // Cancel any pending auto-save to prevent stale data overwrite
+  if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+
+  if (scope === 'all' || scope === null) {
+    if (typeof trackingWeek !== 'undefined' && trackingWeek) {
+      let dates = Object.keys(trackingWeek);
+      for (let i = 0; i < dates.length; i++) {
+        let d = dates[i];
+        let dayData = trackingWeek[d] || {};
+        if (dayData[catId]) {
+          dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
+          if (dayData[catId].length === 0) { delete dayData[catId]; }
+          try {
+            await fetchWithTimeout(API + '/tracking/' + d, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+              body: JSON.stringify({ selections: dayData })
+            }, 10000);
+          } catch(e) { console.error('[NutriFood] Remove error:', e); }
+        }
+      }
+    }
+  } else {
+    let dayData = (trackingWeek || {})[scope] || {};
+    if (dayData[catId]) {
+      // Decrement by 1 instead of removing all
+      let item = dayData[catId].find(function(i) { return i.name === name; });
+      if (item) {
+        item.qty = (item.qty || 1) - 1;
+        if (item.qty <= 0) {
+          dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
+        }
+      }
+      if (dayData[catId] && dayData[catId].length === 0) { delete dayData[catId]; }
+      try {
+        await fetchWithTimeout(API + '/tracking/' + scope, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+          body: JSON.stringify({ selections: dayData })
+        }, 10000);
+      } catch(e) { console.error('[NutriFood] Remove error:', e); }
+    }
+  }
+
+  // Update local selections immediately to prevent stale auto-save
+  if (selections[catId]) {
+    if (scope === 'all' || scope === null) {
+      selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
+      if (selections[catId].length === 0) { delete selections[catId]; }
+    } else {
+      // Decrement by 1 for the specific day removed
+      let item = selections[catId].find(function(s) { return s.name === name; });
+      if (item) {
+        item.qty = (item.qty || 1) - 1;
+        if (item.qty <= 0) {
+          selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
+          if (selections[catId].length === 0) { delete selections[catId]; }
+        }
+      }
+    }
+  }
+  if (typeof trackingSnapshot !== 'undefined') { trackingSnapshot = JSON.stringify(selections); savedSnapshot = trackingSnapshot; }
+
+  loadScript('js/tracking.js', function() { loadTrackingWeek(); });
+  showToast(name + ' retiré', 'success');
 }

@@ -38,12 +38,24 @@ function _applyModeAndRender() {
 function _wireViewToggle() {
   document.querySelectorAll('.view-toggle-btn').forEach(function(btn) {
     btn.addEventListener('click', function() {
+      let prevView = viewMode;
       viewMode = btn.dataset.view;
       try { localStorage.setItem('nf-view-mode', viewMode); } catch(e) { console.error('[NutriFood] localStorage error:', e); }
       document.querySelectorAll('.view-toggle-btn').forEach(function(b) {
         b.classList.toggle('active', b.dataset.view === viewMode);
       });
-      render();
+      // In tracking mode, reload appropriate data when switching views
+      if (currentMode === 'tracking' && prevView !== viewMode && currentUser) {
+        loadScript('js/tracking.js', function() {
+          if (viewMode === 'simple') {
+            loadTrackingWeek();
+          } else {
+            loadTrackingDay(trackingDate || getTodayISO());
+          }
+        });
+      } else {
+        render();
+      }
     });
   });
 }
@@ -60,7 +72,13 @@ async function _loadPostLoginContent() {
   }
   $('search-bar-container').style.display = 'block';
   if (currentMode === 'tracking') {
-    loadScript('js/tracking.js', function() { loadTrackingDay(trackingDate); });
+    loadScript('js/tracking.js', function() {
+      if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+        loadTrackingWeek();
+      } else {
+        loadTrackingDay(trackingDate);
+      }
+    });
   } else {
     render();
     updateSaveBar();
@@ -99,10 +117,8 @@ async function init() {
 if (window.location.hash) {
   if (window.location.hash.includes('reset=')) {
     document.addEventListener('DOMContentLoaded', function() {
-      let rm = $('reset-modal');
-      if (rm) { rm.classList.remove('hidden'); }
-      let rp = $('reset-password');
-      if (rp) { rp.focus(); }
+      $('reset-modal').classList.remove('hidden');
+      $('reset-password').focus();
     });
   } else if (window.location.hash.includes('share=')) {
     let shareMatch = /share=([^&]+)/.exec(window.location.hash);
@@ -114,8 +130,4 @@ if (window.location.hash) {
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
-}
+init();

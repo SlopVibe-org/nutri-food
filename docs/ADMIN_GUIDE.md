@@ -12,7 +12,6 @@ Guide pour les administrateurs NutriFood : gestion des aliments, des utilisateur
 2. Accédez à la base SQLite et promouvez votre compte :
 
 ```bash
-# Via Docker
 docker exec -it nutrifood-api python3 -c "
 import sqlite3
 db = sqlite3.connect('/data/nutrifood.db')
@@ -56,13 +55,6 @@ NutriFood contient **160 aliments** répartis dans 26 catégories :
 - **Fruits :** Petits fruits (7), protecteurs Vit C (11), autres fruits (11)
 - **Féculents :** Très bons choix (10), bons choix (7), tubercules (3)
 - **Habitudes :** Bons gras (8), fermentés (8), herbes/épices (13), boissons (2)
-
-### Ajouter un aliment via l'interface
-
-1. Menu **📦 Gérer** → onglet **Ajouter**
-2. Recherche dans la base CNF (5993 aliments de Santé Canada)
-3. Sélectionner la catégorie NutriFood
-4. L'aliment est ajouté avec : densité auto-calculée, profil nutritionnel complet, aliases, saisonnalité
 
 ### Masquer un aliment via l'API
 
@@ -151,22 +143,18 @@ curl -s http://localhost:5011/api/health
 # {"status":"ok"}
 ```
 
-### Vérifier la base de données
+### Vérifier les données de tracking
 
 ```bash
-# Taille du fichier
-ls -lh /opt/nutrifood/data/nutrifood.db
-
-# Intégrité
-docker exec nutrifood-api sqlite3 /data/nutrifood.db "PRAGMA integrity_check;"
-
-# Statistiques
+# Voir toutes les entrées de tracking
 docker exec nutrifood-api python3 -c "
-import sqlite3
+import sqlite3, json
 db = sqlite3.connect('/data/nutrifood.db')
-for t in ['users', 'selections', 'tracking', 'history_snapshots', 'nf_foods', 'food']:
-    count = db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]
-    print(f'{t}: {count}')
+db.row_factory = sqlite3.Row
+for row in db.execute('SELECT user_id, date, data FROM tracking ORDER BY date'):
+    data = json.loads(row['data']) if row['data'] else {}
+    cats = {k: len(v) for k, v in data.items()}
+    print(f'User {row[\"user_id\"]} | {row[\"date\"]} | {cats}')
 db.close()
 "
 ```
@@ -209,7 +197,7 @@ Les objectifs par défaut sont définis dans la table `user_goals` :
 |-------|-------------|
 | `users` | Comptes (id, email, name, password_hash, salt, is_admin, token_version) |
 | `selections` | Planification hebdomadaire (user_id, data JSON) |
-| `tracking` | Suivi quotidien (user_id, date, data JSON) |
+| `tracking` | Suivi quotidien (user_id, date, data JSON) — un enregistrement par jour |
 | `history_snapshots` | Snapshots hebdomadaires |
 | `user_goals` | Objectifs nutritionnels personnalisés |
 | `share_links` | Liens de partage avec expiration |
@@ -282,3 +270,5 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/purge_cache" 
 - **Les reset tokens** expirent après 1 heure
 - **Le rate limiting** est de 10 requêtes/minute par IP pour les endpoints sensibles
 - **L'architecture 2 conteneurs** (api + web/nginx) signifie que les fichiers frontend sont servis par nginx, pas par un serveur web externe
+- **La table `tracking`** stocke un enregistrement par utilisateur par jour (clé user_id + date)
+- **La vue simplifiée** agrège les données de tous les jours de la semaine (lundi→dimanche) via `/api/tracking/week`

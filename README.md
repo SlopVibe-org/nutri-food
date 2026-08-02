@@ -1,12 +1,13 @@
 # 🍎 NutriFood
 
-App de planification de repas et suivi nutritionnel basée sur le Guide alimentaire canadien.
+Suivi, optimisation et planification nutritionnelle basée sur le Guide alimentaire canadien.
 
 ## 📑 Table des matières
 
 - [Fonctionnalités](#fonctionnalités)
   - [Planification hebdomadaire](#planification-hebdomadaire)
   - [Suivi quotidien (tracking)](#suivi-quotidien-tracking)
+  - [Vue simplifiée](#vue-simplifiée)
   - [Spéciaux (deals hebdomadaires)](#spéciaux-deals-hebdomadaires)
 - [Architecture](#architecture)
   - [Stack](#stack)
@@ -28,26 +29,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | [📖 Guide utilisateur](docs/USER_GUIDE.md) | Comment utiliser NutriFood : comptes, navigation, sélection, recherche, objectifs, listes d'épicerie, reset |
 | [🚀 Guide de déploiement](docs/DEPLOYMENT.md) | Installation complète : Docker, configuration, reverse proxy, Cloudflare, sauvegardes |
 | [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
-| [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube (1er août 2026) |
-
-### Mode Simplifié
-
-- Vue compacte avec cases à cocher par catégorie
-- Portions distribuées par jour de semaine (L M M J V S D)
-- Clic sur case vide → recherche d'aliment
-- Bouton reset stylé
-- Idéal sur mobile
-
-### Aperçu
-
-| | | |
-|---|---|---|
-| ![Welcome](docs/screenshots/welcome.png) | ![Mode Suivi](docs/screenshots/tracking.png) | ![Mode Planification](docs/screenshots/planning.png) |
-| *Page d'accueil* | *Mode Suivi* | *Mode Planification* |
-| ![Recherche](docs/screenshots/search.png) | ![Spéciaux](docs/screenshots/deals.png) | ![Objectifs](docs/screenshots/goals.png) |
-| *Recherche* | *Spéciaux d'épicerie* | *Objectifs nutritionnels* |
-| ![Liste d'épicerie](docs/screenshots/grocery.png) | | |
-| *Liste d'épicerie* | | |
+| [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube |
 
 ---
 
@@ -70,11 +52,25 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 > 📖 Voir : [Guide utilisateur — Les deux modes](docs/USER_GUIDE.md#📊-les-deux-modes--suivi-et-planification)
 
 - Onglet "Suivi" (par défaut) pour enregistrer ce que vous mangez réellement
-- Navigation par jour (‹ ›) pour consulter l'historique
-- Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
+- **Vue avancée** : navigation par jour (‹ ›), dashboard double (jour + semaine cumulée)
+- **Vue simplifiée** : vue hebdomadaire agrégée avec cases par jour de semaine
 - Données préservées entre les deux modes (planification ↔ suivi)
 - Mode mémorisé dans localStorage
 - Réinitialisation : badge 🔄 cliquable → jour ou semaine complète
+
+### Vue simplifiée
+
+La vue simplifiée affiche une **semaine complète** avec des cases visuelles par catégorie :
+
+- **Cases par jour** : les catégories avec ≥7 portions regroupent les cases par journée (L M M J V S S D)
+- **Cases chronologiques** : les catégories avec <7 portions affichent les items dans l'ordre des jours consommés
+- **Placement intelligent** : cliquer sur une case d'un jour spécifique ajoute l'aliment au bon jour
+- **Retrait par jour** : cliquer sur une case remplie ouvre le modal alimentaire avec des boutons de retrait par jour
+- **Dropdown adaptatif** : le menu de recherche s'ouvre vers le bas ou vers le haut selon l'espace disponible
+- **Bouton de sauvegarde** : affiche "Sauvegarder" quand modifié, "Sauvegardé" une fois sauvegardé
+- Idéal sur mobile — plus rapide à consulter
+
+La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. Les deux vues partagent les mêmes données.
 
 ### Spéciaux (deals hebdomadaires)
 
@@ -92,7 +88,7 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 ### Stack
 
 - **Frontend:** HTML/CSS/JS vanilla (15 modules avec lazy loading)
-- **Backend:** Python Flask (API REST, ~2000 lignes)
+- **Backend:** Python Flask (API REST)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
 - **Aliments:** 160 aliments du Guide alimentaire canadien (CNF + custom)
 - **Déploiement:** Docker Compose (2 conteneurs)
@@ -106,14 +102,14 @@ App de planification de repas et suivi nutritionnel basée sur le Guide alimenta
 | `core.js` | Config API, état global, helpers DOM, loader de scripts (lazy loading) |
 | `app.js` | Point d'entrée, init, restauration de session, orchestration |
 | `auth.js` | Connexion, inscription, JWT, menu utilisateur, mot de passe oublié |
-| `render.js` | Rendu des sections, catégories, chips, filtres, event delegation |
+| `render.js` | Rendu des sections, catégories, chips, vue simplifiée, event delegation |
 | `nutrition.js` | Totaux nutritionnels, objectifs, dashboard suivi, reset confirmation |
-| `tracking.js` | Mode Suivi : switch onglets, chargement/sauvegarde par jour |
+| `tracking.js` | Mode Suivi : switch onglets, chargement par jour, agrégation semaine (vue simple) |
 | `search.js` | Recherche normalisée (accents, ligatures) avec résultats en direct |
 | `deals.js` | Spéciaux d'épicerie (epiceries.ca), badges, modal comparatif |
 | `suggestions.js` | Suggestions automatiques basées sur carences nutritionnelles |
 | `grocery.js` | Génération, partage et impression de la liste d'épicerie |
-| `food-modal.js` | Fiche détaillée d'un aliment (tooltips, info-bulles) |
+| `food-modal.js` | Fiche détaillée d'un aliment + retrait par jour (vue simplifiée) |
 | `history.js` | Historique des snapshots hebdomadaires |
 | `share.js` | Vue partagée en lecture seule (lien public) |
 | `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
@@ -212,8 +208,8 @@ Volumes Docker :
 - `GET /api/tracking/<date>` — sélections du jour
 - `POST /api/tracking/<date>` — sauvegarder le jour
 - `DELETE /api/tracking/<date>` — effacer les données du jour
-- `GET /api/tracking/week` — toutes les entrées de la semaine
-- `DELETE /api/tracking/week` — effacer toute la semaine (lundi→dimanche)
+- `GET /api/tracking/week` — toutes les entrées de la semaine (lun→dim)
+- `DELETE /api/tracking/week` — effacer toute la semaine
 - `GET /api/tracking/nutrition/<date>` — totaux nutritionnels (jour + semaine cumulée)
 
 ### Objectifs
@@ -258,7 +254,7 @@ Volumes Docker :
 - Rate limiting: 10 req/min sur endpoints sensibles
 - Reset tokens expirent après 1h
 
-### Résultats QA (1er août 2026)
+### Résultats QA (2 août 2026)
 
 📋 [Rapport QA complet](docs/QA_REPORT.md)
 
@@ -266,7 +262,7 @@ Volumes Docker :
 |-------|----------|
 | **Lighthouse** | Performance 100 · Accessibility 100 · Best Practices 100 · SEO 100 |
 | **OWASP ZAP** | 0 FAIL · 5 WARN (CSP hardening) · 1 INFO |
-| **SonarQube** | 0 bugs · 4 code smells · 2 vuln (architecture) · 0.3% duplications |
+| **SonarQube** | 32 issues (8 BLOCKER faux positifs, 0 actionable dans le code récent) |
 | **Sécurité** | 8/8 security headers · JWT auth · rate limiting · CORP + COOP |
 | **Mobile** | ✅ Aucun overflow · toutes fonctionnalités opérationnelles |
 

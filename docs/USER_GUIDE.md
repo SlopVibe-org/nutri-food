@@ -1,6 +1,6 @@
 # 👤 Guide utilisateur — NutriFood
 
-Guide complet pour utiliser NutriFood, votre outil de planification nutritionnelle hebdomadaire.
+Guide complet pour utiliser NutriFood, votre outil de suivi, optimisation et planification nutritionnelle.
 
 ---
 
@@ -34,8 +34,8 @@ NutriFood a deux modes indépendants, accessibles via les onglets en haut de pag
 
 ### Mode Suivi (par défaut)
 - Enregistre ce que vous avez **réellement mangé** jour par jour
-- Navigation par jour (‹ ›) pour consulter l'historique
-- Dashboard double : totaux du jour (instantané) + cumul de la semaine (API)
+- **Vue avancée** : navigation par jour (‹ ›), dashboard double (jour + semaine cumulée)
+- **Vue simplifiée** : vue hebdomadaire avec cases visuelles par jour (voir ci-dessous)
 - Données préservées quand vous changez d'onglet
 
 ### Mode Planification
@@ -45,18 +45,44 @@ NutriFood a deux modes indépendants, accessibles via les onglets en haut de pag
 
 Le mode actif est mémorisé dans votre navigateur (localStorage).
 
+---
+
+## 🗂️ Vues : Avancée et Simplifiée
+
+Le bouton **Avancé / Simplifié** (à côté des onglets Suivi/Planification) bascule entre deux affichages :
+
+### Vue Avancée
+
+Cartes détaillées avec :
+- Tous les aliments par catégorie
+- Compteurs de portions avec code couleur
+- Icônes, densité nutritionnelle, nutriments
+- Tooltips au survol
+
 ### Vue Simplifiée
 
-Le bouton **Simplifié** (à côté d'Avancé) bascule vers une vue compacte :
+Vue compacte avec cases visuelles par catégorie :
 
-- Une ligne par catégorie avec des cases □□□□□□□
-- Les portions sont distribuées par **jour de semaine** (L M M J V S D)
-- Cases pleines = aliments suivis (hover = nom, click = détails)
-- Cases vides = cliquez pour ajouter un aliment (recherche)
+- **Cases par jour** : les catégories avec ≥7 portions regroupent les cases par journée (L M M J V S D)
+- **Cases chronologiques** : les catégories avec <7 portions affichent les items dans l'ordre des jours consommés
+- **Clic sur case vide** → ouvre un menu de recherche (adaptatif : vers le bas ou vers le haut)
+- **Clic sur case remplie** → ouvre la fiche détaillée de l'aliment avec option de retrait
+- Chaque case connaît son jour : ajouter sur la case du mardi enregistre pour mardi
 - Bouton **🔄 Reset** en haut à droite
 - Idéal sur mobile — plus rapide à consulter
 
-La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. Les deux vues partagent les mêmes données en temps réel.
+#### Retirer un aliment (vue simplifiée)
+
+1. Cliquez sur une case remplie → la fiche de l'aliment s'ouvre
+2. En bas de la fiche, des boutons de retrait apparaissent :
+   - **Un seul jour** → bouton "🗑️ Hier" ou "🗑️ Jeudi" (retire 1 portion)
+   - **Plusieurs jours** → un bouton par jour + bouton "Tout (N)" pour tout retirer
+3. Le retrait décrémente d'1 portion à la fois
+
+#### Sauvegarde (vue simplifiée)
+
+- La sauvegarde est **automatique** après chaque ajout
+- Le bouton en bas de page affiche l'état : **Sauvegarder** (modifications en attente) → **Sauvegarde…** → **Sauvegardé**
 
 ---
 
@@ -74,7 +100,7 @@ NutriFood organise les aliments en 5 sections nutritionnelles :
 
 ---
 
-## 🖱️ Sélectionner des aliments
+## 🖱️ Sélectionner des aliments (vue avancée)
 
 ### Dropdown (sélection unique)
 
@@ -118,13 +144,16 @@ Cliquez sur le badge **🔄 Reset dans Xj** dans le tableau de bord nutritionnel
 - Un modal de confirmation s'ouvre avant l'effacement
 - Les données sont immédiatement effacées du serveur
 
-### Mode Suivi
+### Mode Suivi — Vue avancée
 
 Cliquez sur le badge **🔄 Reset** dans le tableau de bord pour choisir :
 
 - **📅 Journée** — efface seulement les données du jour affiché
 - **📋 Semaine complète** — efface toutes les entrées de la semaine (lundi→dimanche)
-- **Annuler** — ferme sans rien effacer
+
+### Mode Suivi — Vue simplifiée
+
+Cliquez sur le bouton **🔄 Reset** en haut à droite pour effacer toute la semaine.
 
 ---
 
@@ -135,11 +164,11 @@ La recherche est **normalisée** — elle gère les accents et ligatures automat
 | Vous tapez | Résultat |
 |------------|----------|
 | `boeuf` | ✅ Trouve « Bœuf » |
-| `BŒUF` | ✅ Trouvre « Bœuf » |
+| `BŒUF` | ✅ Trouve « Bœuf » |
 | `bleuet` | ✅ Trouve « Bleuets » |
 | `kale` | ✅ Trouve « Kale » |
 
-💡 **Aucune besoin de gérer les accents.** Tapez naturellement.
+💡 **Aucun besoin de gérer les accents.** Tapez naturellement.
 
 ---
 
@@ -185,8 +214,6 @@ Survolez un badge pour voir :
 - Le **prix** et le **format**
 - Le **prix unitaire** ($/100g, etc.)
 - Un **lien** direct vers le flyer
-
-Cliquez sur 🏷️ dans la liste des spéciaux pour ouvrir le modal comparatif.
 
 ---
 
@@ -269,8 +296,9 @@ Un bouton flottant 💡 apparaît quand des suggestions sont disponibles.
 
 ## 💡 Astuces
 
-- **Deux modes indépendants** — Planification (semaine) et Suivi (par jour) ont chacun leurs données, préservées quand vous changez d'onglet
-- **Tout est sauvegardé automatiquement** — pas de bouton « sauvegarder »
-- **Fonctionne hors ligne** — vos données sont en cache navigateur (localStorage), synchronisées au retour de la connexion
+- **Deux modes indépendants** — Planification (semaine) et Suivi (par jour) ont chacun leurs données
+- **Vue simplifiée = semaine entière** — les cases représentent les portions de toute la semaine
+- **Cliquez le bon jour** — en vue simplifiée, chaque case connaît son jour de la semaine
+- **Sauvegarde automatique** — les ajouts sont sauvegardés immédiatement
 - **Recherche rapide** — tapez quelques lettres, pas besoin de mot complet
-- **Reset rapide** — cliquez le badge 🔄 pour repartir à zéro (jour ou semaine)
+- **Reset rapide** — cliquez le badge 🔄 pour repartir à zéro

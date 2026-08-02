@@ -167,12 +167,12 @@ db.close()
 ├── docker-compose.yml      # Orchestration 2 conteneurs
 ├── .env                    # Variables (JWT_SECRET, SMTP, etc.)
 ├── backend/
-│   ├── app.py              # API Flask (~1770 lignes)
+│   ├── app.py              # API Flask
 │   ├── Dockerfile
 │   └── requirements.txt
 ├── web/
 │   ├── Dockerfile          # Image nginx
-│   ├── nginx.conf           # Config avec security headers
+│   ├── nginx.conf          # Config avec security headers
 │   ├── entrypoint.sh
 │   ├── defaults/            # Fichiers seed (copiés si volume vide)
 │   │   ├── index.html
@@ -186,9 +186,13 @@ db.close()
 │   ├── index.html          # Frontend actif (édité via déploiement)
 │   ├── favicon.svg
 │   ├── foods.json          # Cache foods pour le frontend
-│   └── js/                 # Les 14 modules JS
+│   ├── nutrifood.css       # CSS partagé
+│   └── js/                 # Les 15 modules JS
 │       ├── core.js
 │       ├── app.js
+│       ├── render.js
+│       ├── tracking.js
+│       ├── food-modal.js
 │       └── ...
 └── docs/
 ```

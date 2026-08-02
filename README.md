@@ -31,6 +31,12 @@ Suivi, optimisation et planification nutritionnelle basée sur le Guide alimenta
 | [🔧 Guide administrateur](docs/ADMIN_GUIDE.md) | Gestion des aliments, utilisateurs, DB, logs, maintenance |
 | [📊 Rapport QA](docs/QA_REPORT.md) | Résultats Lighthouse, OWASP ZAP, SonarQube |
 
+### Aperçu
+
+![NutriFood — Connexion](docs/screenshots/welcome.png)
+
+> Voir plus de captures d'écran : [Mode Suivi](docs/screenshots/tracking.png) · [Mode Planification](docs/screenshots/planning.png) · [Recherche](docs/screenshots/search.png) · [Spéciaux](docs/screenshots/deals.png) · [Objectifs](docs/screenshots/goals.png) · [Liste d'épicerie](docs/screenshots/grocery.png)
+
 ---
 
 ## Fonctionnalités

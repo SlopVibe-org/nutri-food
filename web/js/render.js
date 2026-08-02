@@ -301,7 +301,8 @@ function scheduleAutoSave() {
   clearTimeout(autoSaveTimer);
   if (currentMode === 'tracking') {
     if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
-      autoSaveTimer = setTimeout(function() { loadScript('js/tracking.js', function() { saveTrackingSimple(); }); }, 2000);
+      // Simple view saves immediately via addSimpleFood, no auto-save needed
+      return;
     } else {
       autoSaveTimer = setTimeout(function() { loadScript('js/tracking.js', function() { saveTracking(); }); }, 2000);
     }
@@ -313,7 +314,7 @@ function scheduleAutoSave() {
 async function saveSelections() {
   if (currentMode === 'tracking') {
     if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
-      loadScript('js/tracking.js', function() { saveTrackingSimple(); });
+      return; // Simple view handles saves via addSimpleFood
     } else {
       loadScript('js/tracking.js', function() { saveTracking(); });
     }
@@ -615,7 +616,14 @@ function renderSimple() {
     item.addEventListener('click', function(e) {
       e.stopPropagation();
       let catId = item.dataset.cat;
-      addItem(catId, { name: decodeEntities(item.dataset.simplePick), density: Number.parseInt(item.dataset.density || 0), nutrients: item.dataset.nutrients || '' });
+      let foodName = decodeEntities(item.dataset.simplePick);
+      let density = Number.parseInt(item.dataset.density || 0);
+      let nutrients = item.dataset.nutrients || '';
+      if (currentMode === 'tracking') {
+        addSimpleFood(catId, foodName, density, nutrients);
+      } else {
+        addItem(catId, { name: foodName, density: density, nutrients: nutrients });
+      }
       document.querySelectorAll('.simple-dropdown.visible').forEach(function(d) { d.classList.remove('visible'); });
     });
   });
@@ -676,6 +684,48 @@ function _renderSimpleBoxes(max, slots, cat) {
   }
   html += '</span>';
   return html;
+}
+
+async function addSimpleFood(catId, name, density, nutrients) {
+  let targetDate = (typeof pendingAddDate !== 'undefined' && pendingAddDate) || getTodayISO();
+  pendingAddDate = null;
+
+  // 1. Update trackingWeek directly for the target day
+  if (!trackingWeek[targetDate]) { trackingWeek[targetDate] = {}; }
+  if (!trackingWeek[targetDate][catId]) { trackingWeek[targetDate][catId] = []; }
+  let existing = trackingWeek[targetDate][catId].find(function(s) { return s.name === name; });
+  if (existing) {
+    existing.qty = (existing.qty || 1) + 1;
+  } else {
+    trackingWeek[targetDate][catId].push({ name: name, density: density, nutrients: nutrients, qty: 1 });
+  }
+
+  // 2. Update aggregate selections for display
+  if (!selections[catId]) { selections[catId] = []; }
+  let selItem = selections[catId].find(function(s) { return s.name === name; });
+  if (selItem) {
+    selItem.qty = (selItem.qty || 1) + 1;
+  } else {
+    selections[catId].push({ name: name, density: density, nutrients: nutrients, qty: 1 });
+  }
+
+  // 3. Save that specific day to server
+  let token = getToken();
+  if (token) {
+    try {
+      await fetchWithTimeout(API + '/tracking/' + targetDate, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ selections: trackingWeek[targetDate] })
+      }, 10000);
+      trackingSnapshot = JSON.stringify(selections);
+      savedSnapshot = trackingSnapshot;
+    } catch(e) { console.error('[NutriFood] Simple add save error:', e); }
+  }
+
+  // 4. Re-render
+  renderSimple();
+  updateSaveBar();
 }
 
 function _buildWeekSlotsForCat(catId, max) {

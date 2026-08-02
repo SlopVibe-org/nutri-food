@@ -114,8 +114,8 @@ async function saveTrackingSimple() {
   if (!currentUser || currentMode !== 'tracking') { return; }
   let token = getToken();
   if (!token) { return; }
-  let targetDate = pendingAddDate || getTodayISO();
-  pendingAddDate = null; // Reset after use
+  let targetDate = (typeof pendingAddDate !== 'undefined' && pendingAddDate) || getTodayISO();
+  if (typeof pendingAddDate !== 'undefined') { pendingAddDate = null; }
 
   // Compute target day's delta: what the aggregate has minus what other days already account for
   let todaySelections = {};

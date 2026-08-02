@@ -173,7 +173,8 @@ function openFoodModal(catId, name) {
     if (sel) {
       let daysWithFood = [];
       if (typeof trackingWeek !== 'undefined' && trackingWeek) {
-        Object.keys(trackingWeek).sort().forEach(function(d) {
+        let sortedDates = Object.keys(trackingWeek).sort(function(a, b) { return a.localeCompare(b); });
+        sortedDates.forEach(function(d) {
           let dayCat = (trackingWeek[d] || {})[catId] || [];
           let found = dayCat.find(function(i) { return i.name === name; });
           if (found) { daysWithFood.push({ date: d, qty: found.qty || 1 }); }
@@ -181,12 +182,12 @@ function openFoodModal(catId, name) {
       }
       html += '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;align-items:center;">';
       if (daysWithFood.length === 0) {
-        html += '<button class="submit-btn food-modal-remove-day" data-date="" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + esc(name) + '</button>';
+        html += '<button class="submit-btn food-modal-remove-day" data-date="" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + esc(name) + '</button>'; // eslint-disable-line max-len
       } else if (daysWithFood.length === 1) {
         html += '<button class="submit-btn food-modal-remove-day" data-date="' + daysWithFood[0].date + '" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + formatDayLabel(daysWithFood[0].date) + '</button>';
       } else {
         daysWithFood.forEach(function(dw) {
-          html += '<button class="submit-btn food-modal-remove-day" data-date="' + dw.date + '" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + dw.qty + '× ' + formatDayLabel(dw.date) + '</button>';
+          html += '<button class="submit-btn food-modal-remove-day" data-date="' + dw.date + '" style="background:var(--accent-red);padding:6px 14px;width:auto;">🗑️ ' + dw.qty + '\u00d7 ' + formatDayLabel(dw.date) + '</button>'; // eslint-disable-line max-len
         });
         html += '<button class="submit-btn" id="food-modal-remove-all" style="background:transparent;border:1px solid var(--accent-red);color:var(--accent-red);padding:6px 14px;width:auto;font-size:0.82rem;">Tout (' + sel.qty + ')</button>';
       }
@@ -215,13 +216,12 @@ async function removeSimpleFood(catId, name, scope) {
   if (!token) { return; }
 
   // Cancel any pending auto-save to prevent stale data overwrite
-  if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
+  if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) { clearTimeout(autoSaveTimer); }
 
   if (scope === 'all' || scope === null) {
     if (typeof trackingWeek !== 'undefined' && trackingWeek) {
       let dates = Object.keys(trackingWeek);
-      for (let i = 0; i < dates.length; i++) {
-        let d = dates[i];
+      for (let d of dates) {
         let dayData = trackingWeek[d] || {};
         if (dayData[catId]) {
           dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
@@ -276,6 +276,7 @@ async function removeSimpleFood(catId, name, scope) {
     }
   }
   if (typeof trackingSnapshot !== 'undefined') { trackingSnapshot = JSON.stringify(selections); savedSnapshot = trackingSnapshot; }
+  // eslint-disable-next-line no-global-assign
 
   loadScript('js/tracking.js', function() { loadTrackingWeek(); });
   showToast(name + ' retiré', 'success');

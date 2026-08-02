@@ -683,7 +683,7 @@ function _buildWeekSlotsForCat(catId, max) {
   if (currentMode === 'tracking' && trackingWeek && Object.keys(trackingWeek).length > 0) {
     // Build a map: foodName -> array of {date, qty} from trackingWeek
     let foodDays = {}; // foodName -> [{date, qty}]
-    let weekDates = Object.keys(trackingWeek).sort();
+    let weekDates = Object.keys(trackingWeek).sort(function(a, b) { return a.localeCompare(b); });
     weekDates.forEach(function(d) {
       let dayCat = (trackingWeek[d] || {})[catId] || [];
       dayCat.forEach(function(item) {
@@ -710,11 +710,11 @@ function _buildWeekSlotsForCat(catId, max) {
       // Single row — place items chronologically by day eaten
       // Build ordered list: saved days + unsaved day inserted at right position
       let allDates = weekDates.slice();
-      if (allDates.indexOf(unsavedDate) === -1) { allDates.push(unsavedDate); }
-      allDates.sort();
+      if (!allDates.includes(unsavedDate)) { allDates.push(unsavedDate); }
+      allDates.sort(function(a, b) { return a.localeCompare(b); });
       let slotIdx = 0;
       allDates.forEach(function(d) {
-        if (d === unsavedDate && allDates.indexOf(d) === allDates.lastIndexOf(unsavedDate)) {
+        if (d === unsavedDate && allDates.indexOf(unsavedDate) === allDates.lastIndexOf(unsavedDate)) {
           // Place unsaved items for this date
           selItems.forEach(function(item) {
             let savedQty = 0;

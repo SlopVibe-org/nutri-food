@@ -210,73 +210,65 @@ function openFoodModal(catId, name) {
   }
 }
 
+function _removeFoodFromDayData(dayData, catId, name, decrement) {
+  if (!dayData[catId]) { return; }
+  if (decrement) {
+    let item = dayData[catId].find(function(i) { return i.name === name; });
+    if (!item) { return; }
+    item.qty = (item.qty || 1) - 1;
+    if (item.qty > 0) { return; }
+  }
+  dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
+  if (dayData[catId].length === 0) { delete dayData[catId]; }
+}
+
+async function _saveDayToServer(date, dayData, token) {
+  try {
+    await fetchWithTimeout(API + '/tracking/' + date, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ selections: dayData })
+    }, 10000);
+  } catch(e) { console.error('[NutriFood] Remove error:', e); }
+}
+
+function _decrementLocalSelections(catId, name, removeAll) {
+  if (!selections[catId]) { return; }
+  if (removeAll) {
+    selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
+  } else {
+    let item = selections[catId].find(function(s) { return s.name === name; });
+    if (!item) { return; }
+    item.qty = (item.qty || 1) - 1;
+    if (item.qty > 0) { return; }
+    selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
+  }
+  if (selections[catId] && selections[catId].length === 0) { delete selections[catId]; }
+}
+
 async function removeSimpleFood(catId, name, scope) {
-  document.getElementById('suggestions-modal').classList.add('hidden');
+  $('suggestions-modal').classList.add('hidden');
   let token = getToken();
   if (!token) { return; }
-
-  // Cancel any pending auto-save to prevent stale data overwrite
   if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) { clearTimeout(autoSaveTimer); }
 
-  if (scope === 'all' || scope === null) {
-    if (typeof trackingWeek !== 'undefined' && trackingWeek) {
-      let dates = Object.keys(trackingWeek);
-      for (let d of dates) {
-        let dayData = trackingWeek?.[d] || {};
-        if (dayData[catId]) {
-          dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
-          if (dayData[catId].length === 0) { delete dayData[catId]; }
-          try {
-            await fetchWithTimeout(API + '/tracking/' + d, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-              body: JSON.stringify({ selections: dayData })
-            }, 10000);
-          } catch(e) { console.error('[NutriFood] Remove error:', e); }
-        }
-      }
+  let removeAll = (scope === 'all' || scope === null);
+
+  if (removeAll) {
+    let dates = Object.keys(trackingWeek || {});
+    for (let d of dates) {
+      let dayData = trackingWeek?.[d] || {};
+      _removeFoodFromDayData(dayData, catId, name, false);
+      await _saveDayToServer(d, dayData, token);
     }
   } else {
     let dayData = trackingWeek?.[scope] || {};
-    if (dayData[catId]) {
-      // Decrement by 1 instead of removing all
-      let item = dayData[catId].find(function(i) { return i.name === name; });
-      if (item) {
-        item.qty = (item.qty || 1) - 1;
-        if (item.qty <= 0) {
-          dayData[catId] = dayData[catId].filter(function(i) { return i.name !== name; });
-        }
-      }
-      if (dayData[catId] && dayData[catId].length === 0) { delete dayData[catId]; }
-      try {
-        await fetchWithTimeout(API + '/tracking/' + scope, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-          body: JSON.stringify({ selections: dayData })
-        }, 10000);
-      } catch(e) { console.error('[NutriFood] Remove error:', e); }
-    }
+    _removeFoodFromDayData(dayData, catId, name, true);
+    await _saveDayToServer(scope, dayData, token);
   }
 
-  // Update local selections immediately to prevent stale auto-save
-  if (selections[catId]) {
-    if (scope === 'all' || scope === null) {
-      selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
-      if (selections[catId].length === 0) { delete selections[catId]; }
-    } else {
-      // Decrement by 1 for the specific day removed
-      let item = selections[catId].find(function(s) { return s.name === name; });
-      if (item) {
-        item.qty = (item.qty || 1) - 1;
-        if (item.qty <= 0) {
-          selections[catId] = selections[catId].filter(function(i) { return i.name !== name; });
-          if (selections[catId].length === 0) { delete selections[catId]; }
-        }
-      }
-    }
-  }
+  _decrementLocalSelections(catId, name, removeAll);
   if (typeof trackingSnapshot !== 'undefined') { trackingSnapshot = JSON.stringify(selections); savedSnapshot = trackingSnapshot; }
-  // eslint-disable-next-line no-global-assign
 
   loadScript('js/tracking.js', function() { loadTrackingWeek(); });
   showToast(name + ' retiré', 'success');

@@ -100,8 +100,21 @@ async function submitAuth() {
     submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
     // Load selections and render
     await loadSelectionsFromServer();
+    planningSelections = structuredClone(selections);
     await loadUserGoals();
-    loadScript('js/deals.js', function() { loadDeals(); render(); });
+    if (currentMode === 'tracking') {
+      // In tracking mode, load tracking data (not planning selections)
+      loadScript('js/tracking.js', function() {
+        loadScript('js/deals.js', function() { loadDeals(); });
+        if (typeof viewMode !== 'undefined' && viewMode === 'simple') {
+          loadTrackingWeek();
+        } else {
+          loadTrackingDay(trackingDate || getTodayISO());
+        }
+      });
+    } else {
+      loadScript('js/deals.js', function() { loadDeals(); render(); });
+    }
     updateSaveBar();
     // Seasonal now in suggestions panel
     loadScript('js/suggestions.js', function() { checkSuggestionsBadge(); });

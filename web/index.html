@@ -151,8 +151,11 @@
   .remove-product-item:hover { background: rgba(255,100,100,0.08); border-color: var(--accent-red) !important; }
 
   #save-bar {
-    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center;
+    position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border);
+    padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; z-index: 100;
+    transform: translateY(100%); transition: transform 0.3s ease;
   }
+  #save-bar.visible { transform: translateY(0); }
   #save-bar .save-info { font-size: 0.85rem; color: var(--text-dim); }
   #save-btn {
     padding: 10px 24px; background: var(--accent-dim); color: #0f1117; border: none; border-radius: 8px;

@@ -14,7 +14,7 @@ tar --exclude='__pycache__' \
     --exclude='node_modules' \
     --exclude='*.pyc' \
     --exclude='.pytest_cache' \
-    -cf - . | ssh "$REMOTE_HOST" "rm -rf ${REMOTE_DIR} && mkdir -p ${REMOTE_DIR} && tar -xf - -C ${REMOTE_DIR}"
+    -cf - . | ssh "$REMOTE_HOST" "sudo rm -rf ${REMOTE_DIR} && mkdir -p ${REMOTE_DIR} && tar -xf - -C ${REMOTE_DIR}"
 
 echo "🐳 Running pytest in Docker on ${REMOTE_HOST}..."
 

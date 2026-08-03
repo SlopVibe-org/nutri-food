@@ -23,6 +23,7 @@ async function _restoreSession() {
 }
 
 function _applyModeAndRender() {
+  if (!currentUser) { return; }
   if (currentMode === 'tracking') {
     document.querySelectorAll('.mode-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.mode === 'tracking'); });
     $('tracking-bar').style.display = 'flex';

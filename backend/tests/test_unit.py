@@ -43,7 +43,7 @@ class TestJWT:
     def test_make_and_verify(self):
         token = app_module.make_token(1, 'user@test.com', 0)
         assert token is not None
-        assert token.count('.') == 1  # payload.signature format
+        assert token.count('.') == 2  # standard JWT: header.payload.signature
 
     def test_verify_invalid_token(self):
         assert app_module.verify_token('invalid.token.here') is None
@@ -52,9 +52,9 @@ class TestJWT:
 
     def test_verify_tampered_signature(self):
         token = app_module.make_token(1, 'user@test.com', 0)
-        payload_b64, _ = token.split('.')
-        fake_sig = 'aaaa' * 16
-        tampered = f'{payload_b64}.{fake_sig}'
+        parts = token.split('.')
+        # Tamper the signature (3rd part of standard JWT)
+        tampered = '.'.join([parts[0], parts[1], 'a' * 43])
         assert app_module.verify_token(tampered) is None
 
 

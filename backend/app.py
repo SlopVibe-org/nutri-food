@@ -1,11 +1,9 @@
-import hmac
 import os
 import json
 import sqlite3
 import hashlib
 import secrets
 import time
-import base64
 import smtplib
 import urllib.request
 import urllib.parse
@@ -14,6 +12,7 @@ from email.mime.multipart import MIMEMultipart
 import re
 import threading
 from datetime import datetime, timedelta, date, timezone
+import jwt as pyjwt
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 
@@ -248,38 +247,26 @@ def make_token(user_id, email, token_version=0):
     payload = {
         'uid': user_id,
         'email': email,
-        'exp': int(time.time()) + (JWT_EXPIRY_HOURS * 3600),
+        'exp': datetime.now(timezone.utc) + timedelta(hours=JWT_EXPIRY_HOURS),
         'tv': token_version
     }
-    payload_json = json.dumps(payload, separators=(',', ':'))
-    payload_b64 = base64.urlsafe_b64encode(payload_json.encode()).decode().rstrip('=')
-    sig = hmac.new(JWT_SECRET.encode(), payload_b64.encode(), hashlib.sha256)
-    sig_b64 = base64.urlsafe_b64encode(sig.digest()).decode().rstrip('=')
-    return f'{payload_b64}.{sig_b64}'
+    return pyjwt.encode(payload, JWT_SECRET, algorithm='HS256')
 
 def verify_token(token):
     if not token:
         return None
     try:
-        parts = token.split('.')
-        if len(parts) != 2:
-            return None
-        payload_b64, sig_b64 = parts
-        expected_sig = hmac.new(JWT_SECRET.encode(), payload_b64.encode(), hashlib.sha256)
-        expected_sig_b64 = base64.urlsafe_b64encode(expected_sig.digest()).decode().rstrip('=')
-        if not secrets.compare_digest(sig_b64, expected_sig_b64):
-            return None
-        padding = 4 - len(payload_b64) % 4
-        payload_json = base64.urlsafe_b64decode(payload_b64 + '=' * padding).decode()
-        payload = json.loads(payload_json)
-        if payload.get('exp', 0) < time.time():
-            return None
+        payload = pyjwt.decode(token, JWT_SECRET, algorithms=['HS256'])
         # Check token_version against DB to invalidate old tokens after password change
         db = get_db()
         user = db.execute(SQL_TOKEN_VERSION, (payload.get('uid'),)).fetchone()
         if not user or payload.get('tv', 0) != user['token_version']:
             return None
         return payload
+    except pyjwt.ExpiredSignatureError:
+        return None
+    except pyjwt.InvalidTokenError:
+        return None
     except Exception:
         return None
 

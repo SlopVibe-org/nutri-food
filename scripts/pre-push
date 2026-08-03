@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# NutriFood pre-push hook — runs CI via act on ai-docker-01
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Only run for nutri-food repo
+if [ ! -f "backend/app.py" ]; then
+  exit 0
+fi
+
+echo "🔍 Running local CI (act on ai-docker-01)..."
+if bash scripts/ci-local.sh; then
+  echo "✅ CI passed — push allowed"
+  exit 0
+else
+  echo "❌ CI failed — push blocked"
+  echo "   To bypass: git push --no-verify"
+  exit 1
+fi

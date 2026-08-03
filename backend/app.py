@@ -377,6 +377,7 @@ NF_DB_PATH = os.environ.get('NF_DB_PATH', '/data/nutrifood.db')
 
 NUTRIENT_MAP = {
     203: 'protein', 291: 'fiber', 303: 'iron', 401: 'vit_c', 301: 'calcium',
+    208: 'calories',
 }
 
 def get_nf_db():

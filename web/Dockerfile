@@ -1,7 +1,8 @@
 FROM nginx:alpine
 
 # Copy frontend files into the image
-COPY index.html favicon.svg /usr/share/nginx/html/
+COPY index.html /usr/share/nginx/html/
+COPY defaults/favicon.svg /usr/share/nginx/html/favicon.svg
 COPY js/ /usr/share/nginx/html/js/
 COPY nutrifood.css /usr/share/nginx/html/
 

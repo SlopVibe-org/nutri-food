@@ -10,6 +10,8 @@ FROM python:3.13-slim
 WORKDIR /app
 
 COPY --from=builder /install /usr/local/lib/python3.13/site-packages/
+ENV PATH="/usr/local/lib/python3.13/site-packages/bin:$PATH"
+
 COPY app.py extensions.py .
 COPY blueprints/ blueprints/
 COPY utils/ utils/

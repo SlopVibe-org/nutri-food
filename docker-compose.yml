@@ -20,7 +20,5 @@ services:
     restart: unless-stopped
     ports:
       - "5011:80"
-    volumes:
-      - ./config:/usr/share/nginx/html
     depends_on:
       - nutrifood-api

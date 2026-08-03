@@ -7,11 +7,12 @@ Ce document décrit l'ensemble des outils et procédures pour tester l'applicati
 ## Table des matières
 
 1. [Tests automatisés (pytest)](#1-tests-automatisés-pytest)
-2. [SonarQube — Analyse statique du code](#2-sonarqube--analyse-statique-du-code)
-3. [OWASP ZAP — Scan de sécurité dynamique](#3-owasp-zap--scan-de-sécurité-dynamique)
-4. [Lighthouse — Performance et accessibilité](#4-lighthouse--performance-et-accessibilité)
-5. [Tests manuels — Checklist](#5-tests-manuels--checklist)
-6. [Workflow de QA recommandé](#6-workflow-de-qa-recommandé)
+2. [Intégration continue (CI locale + GitHub Actions)](#2-intégration-continue-ci-locale--github-actions)
+3. [SonarQube — Analyse statique du code](#3-sonarqube--analyse-statique-du-code)
+4. [OWASP ZAP — Scan de sécurité dynamique](#4-owasp-zap--scan-de-sécurité-dynamique)
+5. [Lighthouse — Performance et accessibilité](#5-lighthouse--performance-et-accessibilité)
+6. [Tests manuels — Checklist](#6-tests-manuels--checklist)
+7. [Workflow de QA recommandé](#7-workflow-de-qa-recommandé)
 
 ---
 
@@ -99,7 +100,89 @@ class TestNouvelleFeature:
 
 ---
 
-## 2. SonarQube — Analyse statique du code
+## 2. Intégration continue (CI locale + GitHub Actions)
+
+Le projet dispose d'un système de CI hybride : un **hook pre-push local** qui exécute les tests dans Docker sur ai-docker-01 avant chaque push, et un **workflow GitHub Actions** prêt à activer pour CI hébergée.
+
+### Architecture
+
+```
+Dev (ai-001/ai-002)
+  └── git push
+       └── pre-push hook
+            └── scripts/ci-local.sh
+                 └── tar + ssh → ai-docker-01
+                      └── docker run python:3.13-slim
+                           └── pytest (64 tests, ~28s)
+                                ├── ✅ pass → push autorisé
+                                └── ❌ fail → push bloqué
+```
+
+### Installation du hook (obligatoire pour chaque dev)
+
+```bash
+cd nutri-food
+bash scripts/install-hooks.sh
+# ✅ Pre-push hook installed → .git/hooks/pre-push
+```
+
+Cela installe un hook `.git/hooks/pre-push` qui exécute `scripts/ci-local.sh` avant chaque push. Si les tests échouent, le push est bloqué.
+
+### Exécution manuelle
+
+```bash
+# Lancer le CI localement sans pousser
+bash scripts/ci-local.sh
+
+# Bypasser le hook (urgence uniquement)
+git push --no-verify
+```
+
+### Ce que fait le CI local
+
+1. **Synchronise** le code vers ai-docker-01 (`/tmp/nutrifood-ci/`) via tar+ssh
+2. **Lance pytest** dans un container `python:3.13-slim` avec les variables d'environnement de test
+3. **Affiche les résultats** détaillés (64 tests, verbose)
+4. **Bloque le push** si un seul test échoue
+
+### Fichiers concernés
+
+| Fichier | Rôle |
+|---------|------|
+| `.github/workflows/ci.yml` | Workflow GitHub Actions (pytest + ruff + bandit). Prêt à activer sur GitHub. |
+| `scripts/ci-local.sh` | Script principal — sync + Docker + pytest sur ai-docker-01 |
+| `scripts/pre-push` | Hook git appelé avant chaque push |
+| `scripts/install-hooks.sh` | Installation du hook pour un nouveau dev |
+
+### Workflow GitHub Actions (pour activation future)
+
+Le fichier `.github/workflows/ci.yml` est configuré pour tourner sur `ubuntu-latest` avec :
+- **pytest** — 64 tests (Python 3.12)
+- **ruff** — linting du code backend
+- **bandit** — scan de sécurité AST
+
+Pour activer : il suffit de pousser le fichier sur GitHub. Les runs se déclencheront sur chaque push/PR vers `main`. Coût : 2 000 min/mois gratuites (repos privés), ~2-3 min par run.
+
+### Ajouter un dev au CI local
+
+Chaque développeur doit :
+
+1. Avoir accès SSH à `ai-docker` (10.81.69.110)
+2. Cloner le repo
+3. Lancer `bash scripts/install-hooks.sh`
+
+### Dépannage
+
+| Problème | Solution |
+|----------|----------|
+| `permission denied` sur Docker | `sudo usermod -aG docker <user>` puis nouvelle session SSH |
+| `rm: cannot remove` dans /tmp/nutrifood-ci | Le script utilise déjà `sudo rm -rf`, vérifier les permissions Docker |
+| Tests lents (~60s+) | Le premier run télécharge `python:3.13-slim` (~150MB). Les runs suivants réutilisent l'image. |
+| Image Python introuvable | `ssh ai-docker "sudo docker pull python:3.13-slim"` |
+
+---
+
+## 3. SonarQube — Analyse statique du code
 
 La QA Suite ([github.com/SlopVibe-org/qa-suite](https://github.com/SlopVibe-org/qa-suite)) inclut SonarQube Community Edition pour l'analyse statique du code source.
 
@@ -194,7 +277,7 @@ docker run --rm \
 
 ---
 
-## 3. OWASP ZAP — Scan de sécurité dynamique
+## 4. OWASP ZAP — Scan de sécurité dynamique
 
 ZAP attaque l'application en cours d'exécution pour trouver des vulnérabilités réelles (XSS, injection, headers manquants).
 
@@ -255,7 +338,7 @@ NutriFood utilise nginx avec une CSP complète et des security headers (voir `we
 
 ---
 
-## 4. Lighthouse — Performance et accessibilité
+## 5. Lighthouse — Performance et accessibilité
 
 Lighthouse analyse la page rendue : Core Web Vitals, accessibilité, bonnes pratiques, SEO.
 
@@ -332,7 +415,7 @@ lighthouse https://slopvibe.org/nutri-food/ \
 
 ---
 
-## 5. Tests manuels — Checklist
+## 6. Tests manuels — Checklist
 
 ### Authentification
 
@@ -376,13 +459,13 @@ lighthouse https://slopvibe.org/nutri-food/ \
 
 ---
 
-## 6. Workflow de QA recommandé
+## 7. Workflow de QA recommandé
 
 ```
 ┌──────────────────────────────────────────────────────┐
 │                   AVANT CHAQUE RELEASE                │
 │                                                       │
-│  1. pytest (local)          → 64 tests doivent passer │
+│  1. CI locale (pre-push)    → 64 tests doivent passer │
 │  2. SonarQube scan          → Rating A sur tous       │
 │  3. Lighthouse (desktop)    → > 80 sur les 4 catég.   │
 │  4. ZAP baseline            → 0 FAIL                  │
@@ -393,9 +476,9 @@ lighthouse https://slopvibe.org/nutri-food/ \
 │               APRÈS CHANGEMENTS MAJEURS                │
 │                                                       │
 │  • Changements auth/sécurité → ZAP full scan          │
-│  • Nouveau endpoint API     → Ajouter tests pytest    │
+│  • Nouveau endpoint API     → Ajouter tests pytest + CI │
 │  • Changements frontend     → Lighthouse + test manuel │
-│  • Refactor backend         → SonarQube + pytest      │
+│  • Refactor backend         → SonarQube + pytest + CI  │
 └──────────────────────────────────────────────────────┘
 ```
 

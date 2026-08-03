@@ -94,7 +94,8 @@ La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. 
 ### Stack
 
 - **Frontend:** HTML/CSS/JS vanilla (15 modules avec lazy loading)
-- **Backend:** Python Flask (API REST)
+- **Backend:** Python Flask (API REST, architecture Blueprints modulaire)
+- **Auth:** JWT via PyJWT (HS256)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
 - **Aliments:** 160 aliments du Guide alimentaire canadien (CNF + custom)
 - **Déploiement:** Docker Compose (2 conteneurs)
@@ -120,18 +121,39 @@ La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. 
 | `share.js` | Vue partagée en lecture seule (lien public) |
 | `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
 
+### Modules backend (Blueprints)
+
+| Module | Rôle |
+|--------|------|
+| `app.py` | App factory, config, re-exports backward-compatible |
+| `extensions.py` | Constantes partagées, DB helpers, rate limiter |
+| `blueprints/auth.py` | Register, login, JWT (PyJWT), changement/reset password |
+| `blueprints/foods.py` | Foods API, CNF search, admin, seasonal |
+| `blueprints/selections.py` | Selections CRUD, historique, share links |
+| `blueprints/tracking.py` | Tracking quotidien, goals, nutrition summary |
+| `blueprints/journal.py` | Journal CRUD + summary |
+| `blueprints/deals.py` | Spéciaux d'épicerie |
+| `blueprints/suggestions.py` | Suggestions basées sur carences |
+| `blueprints/meal_plan.py` | Plans de repas hebdomadaires |
+| `utils/email.py` | SMTP (welcome, reset) |
+| `utils/nutrition.py` | Calculs densité, totaux nutritionnels |
+| `utils/season.py` | Calendrier saisonnier Québec |
+| `utils/foods_helpers.py` | Construction dicts aliments, filtres deals |
+
 ### Docker
 
 > 📖 Voir : [Guide de déploiement — Démarrer les conteneurs](docs/DEPLOYMENT.md#🐳-étape-3--démarrer-les-conteneurs)
 
-Architecture 2 conteneurs :
+Architecture 2 conteneurs, images publiées sur [GitHub Container Registry](https://github.com/orgs/SlopVibe-org/packages) :
 
 ```
-nutrifood-api   (Flask/Gunicorn, port 5000 interne)
-nutrifood-web   (Nginx, port 5011 hôte → proxy vers API)
+ghcr.io/slopvibe-org/nutrifood-backend:latest   (Flask/Gunicorn, port 5000 interne)
+ghcr.io/slopvibe-org/nutrifood-web:latest        (Nginx, port 5011 hôte → proxy vers API)
 ```
 
 Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requêtes `/api/` vers le backend (nutrifood-api).
+
+Tags disponibles : `latest` (main), `v1.0.0` (releases), `sha-xxxxx` (par commit).
 
 ### Données persistantes
 
@@ -254,11 +276,20 @@ Volumes Docker :
 - `Cross-Origin-Opener-Policy`
 
 ### Authentification
-- JWT tokens (Bearer), pas de cookies de session
+- JWT tokens (PyJWT, HS256) via header `Authorization: Bearer`
 - Password hashing: PBKDF2-SHA256
 - Token invalidation on password change (token_version)
 - Rate limiting: 10 req/min sur endpoints sensibles
 - Reset tokens expirent après 1h
+
+### CI et tests
+
+> 📖 Voir : [Guide de test complet](TESTING.md)
+
+- **64 tests** pytest (24 unitaires + 40 intégration API)
+- **CI local** : pre-push hook → Docker sur ai-docker-01 (~30s)
+- **GitHub Actions** : pytest + ruff + bandit sur chaque PR
+- **Docker publishing** : images build sur ghcr.io à chaque push sur main
 
 ### Résultats QA (2 août 2026)
 
@@ -287,7 +318,30 @@ Volumes Docker :
 git clone https://github.com/SlopVibe-org/nutri-food.git
 cd nutri-food
 cp .env.example .env  # Éditer avec vos valeurs
-docker compose up -d --build
+docker compose up -d    # Pull les images depuis ghcr.io
+```
+
+### Mise à jour
+```bash
+# Pull les dernières images + restart (~5s de downtime)
+bash scripts/deploy.sh
+
+# Ou manuellement
+docker compose pull && docker compose up -d
+```
+
+### Releases et tags
+
+Les images Docker sont taggées automatiquement :
+- **`latest`** — dernier push sur main
+- **`v1.0.0`** — sur GitHub Release (rollback précis)
+- **`sha-xxxxx`** — par commit (debugging)
+
+Créer une release :
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+# → GitHub Actions build & push l'image taggée
 ```
 
 ### Configuration (.env)

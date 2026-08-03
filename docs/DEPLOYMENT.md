@@ -65,17 +65,19 @@ openssl rand -hex 32
 
 ## 🐳 Étape 3 — Démarrer les conteneurs
 
+Les images sont publiées sur [GitHub Container Registry](https://github.com/orgs/SlopVibe-org/packages) :
+
 ```bash
 cd /opt/nutrifood
-docker compose up -d --build
+docker compose up -d    # Pull les images depuis ghcr.io
 ```
 
 Cela démarre 2 conteneurs :
 
 | Conteneur | Image | Port | Rôle |
 |-----------|-------|------|------|
-| `nutrifood-api` | Python Flask/Gunicorn | 5000 (interne) | API REST + SQLite |
-| `nutrifood-web` | Nginx Alpine | 5011 (hôte) | Frontend statique + reverse proxy |
+| `nutrifood-api` | `ghcr.io/slopvibe-org/nutrifood-backend:latest` | 5000 (interne) | API REST + SQLite |
+| `nutrifood-web` | `ghcr.io/slopvibe-org/nutrifood-web:latest` | 5011 (hôte) | Frontend statique + reverse proxy |
 
 ### Vérifier
 
@@ -164,37 +166,16 @@ db.close()
 
 ```
 /opt/nutrifood/
-├── docker-compose.yml      # Orchestration 2 conteneurs
+├── docker-compose.yml      # Orchestration 2 conteneurs (images ghcr.io)
 ├── .env                    # Variables (JWT_SECRET, SMTP, etc.)
-├── backend/
-│   ├── app.py              # API Flask
-│   ├── Dockerfile
-│   └── requirements.txt
-├── web/
-│   ├── Dockerfile          # Image nginx
-│   ├── nginx.conf          # Config avec security headers
-│   ├── entrypoint.sh
-│   ├── defaults/            # Fichiers seed (copiés si volume vide)
-│   │   ├── index.html
-│   │   └── favicon.svg
-│   └── (ne pas éditer directement — le volume config/ les override)
 ├── data/                   # Volume → /data dans nutrifood-api
 │   ├── nutrifood.db
-│   ├── nutrifood.db-wal
+│   ├── cnf.db
 │   └── deals_raw.json
-├── config/                 # Volume → /usr/share/nginx/html dans nutrifood-web
-│   ├── index.html          # Frontend actif (édité via déploiement)
-│   ├── favicon.svg
-│   ├── foods.json          # Cache foods pour le frontend
-│   ├── nutrifood.css       # CSS partagé
-│   └── js/                 # Les 15 modules JS
-│       ├── core.js
-│       ├── app.js
-│       ├── render.js
-│       ├── tracking.js
-│       ├── food-modal.js
-│       └── ...
-└── docs/
+└── scripts/
+    ├── deploy.sh           # Pull + restart
+    ├── ci-local.sh         # CI local via Docker
+    └── install-hooks.sh    # Hook pre-push
 ```
 
 ---
@@ -227,19 +208,46 @@ docker compose -f /opt/nutrifood/docker-compose.yml up -d
 
 ## 🔄 Mise à jour
 
+### Méthode recommandée (images ghcr.io)
+
 ```bash
+# Pull les dernières images + restart (~5s de downtime)
+bash scripts/deploy.sh
+
+# Ou manuellement
 cd /opt/nutrifood
+docker compose pull
+docker compose up -d
+docker image prune -f    # Nettoyer les anciennes images
+```
 
-# 1. Sauvegarder
+### Rollback vers une version antérieure
+
+```bash
+# Éditer docker-compose.yml avec le tag désiré
+# image: ghcr.io/slopvibe-org/nutrifood-backend:v1.0.0
+docker compose up -d
+```
+
+### Sauvegarde avant mise à jour
+
+```bash
 docker exec nutrifood-api sqlite3 /data/nutrifood.db ".backup '/data/backup.db'"
+```
 
-# 2. Récupérer le nouveau code
-git pull origin main
+### Workflow de release
 
-# 3. Reconstruire et redémarrer
-docker compose up -d --build
+Les images sont taggées automatiquement :
+- **`latest`** — dernier push sur main (via `docker-publish.yml`)
+- **`v1.0.0`** — sur GitHub Release (via `release.yml`)
+- **`sha-xxxxx`** — par commit
 
-# 4. Purger le cache Cloudflare (si applicable)
+Créer une release :
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+# → GitHub Actions build & push les images taggées
+# → Créer la release sur GitHub pour déclencher le workflow
 ```
 
 ---

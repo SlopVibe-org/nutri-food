@@ -28,12 +28,12 @@
   .header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
   .header-row > div { display: flex; align-items: center; }
   .header-row .header-left { flex: 0 0 auto; flex-direction: column; align-items: flex-start; }
-  .header-row .header-search { flex: 1 1 100%; min-width: 150px; }
+  .header-row .header-search { flex: 1 1 0; min-width: 150px; }
   .header-row .header-right { flex: 0 0 auto; }
   .header-row .search-bar { width: 100%; margin: 0; }
   @media (max-width: 600px) {
     .header-row .header-left .subtitle { display: none; }
-    .header-row .header-search { flex: 1 1 0; min-width: 100px; }
+    .header-row .header-search { flex: 1 1 100%; min-width: 100px; }
     .header-row .header-left h1 { font-size: 1.1rem; }
     .search-bar input { font-size: 0.8rem; padding: 6px 8px 6px 28px; }
     .search-icon { font-size: 0.75rem; }

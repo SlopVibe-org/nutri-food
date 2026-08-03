@@ -1,6 +1,6 @@
 services:
   nutrifood-api:
-    build: ./backend
+    image: ghcr.io/slopvibe-org/nutrifood-backend:latest
     container_name: nutrifood-api
     restart: unless-stopped
     volumes:
@@ -15,7 +15,7 @@ services:
       - APP_URL=${APP_URL:-https://slopvibe.org/nutri-food/}
 
   nutrifood-web:
-    build: ./web
+    image: ghcr.io/slopvibe-org/nutrifood-web:latest
     container_name: nutrifood-web
     restart: unless-stopped
     ports:

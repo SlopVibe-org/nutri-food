@@ -128,14 +128,21 @@ function clearAuth() {
   try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage clear error:', e); }
   currentUser = null;
   selections = {};
+  planningSelections = {};
+  trackingSelections = {};
+  trackingWeek = {};
   savedSnapshot = '{}';
   let fab = $('suggestions-fab');
   if (fab) { fab.classList.remove('visible', 'pulsing'); }
   let banner = $('seasonal-banner');
   if (banner) { banner.classList.add('hidden'); }
+  let searchBar = $('search-bar-container');
+  if (searchBar) { searchBar.style.display = 'none'; }
+  let trackingBar = $('tracking-bar');
+  if (trackingBar) { trackingBar.style.display = 'none'; }
   renderUserArea();
-  render();
-  updateSaveBar();
+  renderWelcome();
+  $('save-bar').classList.remove('visible');
 }
 
 // ─── Search normalization ───

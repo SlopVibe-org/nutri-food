@@ -17,7 +17,7 @@ COPY foods.json /defaults/foods.json
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh && \
-    mkdir -p /var/cache/nginx && chown -R 101:101 /var/cache/nginx
+    mkdir -p /var/cache/nginx /run && chown -R 101:101 /var/cache/nginx /run
 
 # Run as non-root user (nginx already has a non-root user in alpine image)
 # We use the built-in nginx user (uid 101)

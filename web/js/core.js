@@ -140,6 +140,8 @@ function clearAuth() {
   if (searchBar) { searchBar.style.display = 'none'; }
   let trackingBar = $('tracking-bar');
   if (trackingBar) { trackingBar.style.display = 'none'; }
+  let modeTabs = $('mode-tabs');
+  if (modeTabs) { modeTabs.style.display = 'none'; }
   renderUserArea();
   renderWelcome();
   $('save-bar').classList.remove('visible');

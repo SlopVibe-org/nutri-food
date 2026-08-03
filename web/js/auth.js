@@ -96,6 +96,8 @@ async function submitAuth() {
     setAuth(data.token, data.user);
     $('auth-modal').classList.add('hidden');
     $('search-bar-container').style.display = 'block';
+    let modeTabs = $('mode-tabs');
+    if (modeTabs) { modeTabs.style.display = 'flex'; }
     submitBtn.disabled = false;
     submitBtn.textContent = authMode === 'register' ? "S'inscrire" : 'Connexion';
     // Load selections and render

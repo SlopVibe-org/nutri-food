@@ -71,6 +71,8 @@ async function _loadPostLoginContent() {
     return;
   }
   $('search-bar-container').style.display = 'block';
+  let modeTabs = $('mode-tabs');
+  if (modeTabs) { modeTabs.style.display = 'flex'; }
   if (currentMode === 'tracking') {
     loadScript('js/tracking.js', function() {
       if (typeof viewMode !== 'undefined' && viewMode === 'simple') {

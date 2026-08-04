@@ -43,11 +43,13 @@ function collectGroceryItems(grocerySelections, month) {
 
 function renderGroceryItemsHTML(items, dealCount, dealTotal) {
   let container = $('grocery-items');
+  container.innerHTML = '';
   if (items.length === 0) {
     container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Aucun aliment sélectionné.</p>';
     return;
   }
-  container.innerHTML = items.map(function(item) {
+  // Build items
+  items.forEach(function(item) {
     let dealHtml = '';
     if (item.dealInfo) {
       let d = item.dealInfo;
@@ -56,17 +58,32 @@ function renderGroceryItemsHTML(items, dealCount, dealTotal) {
       let storeName = storeInfo.name || d.store || '?';
       let letter = storeName.charAt(0).toUpperCase();
       let link = d.link || '#';
-      dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">\uD83C\uDFF7\uFE0F <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
+      dealHtml = ' <a class="gi-deal" href="' + esc(link) + '" target="_blank" rel="noopener" title="' + esc(d.name || '') + '">🏷️ <span class="grocery-deal-store-badge" style="background:' + color + ';">' + letter + '</span>' + (d.price || '') + '$ ' + esc(storeName) + '</a>';
     }
-    return '<div class="grocery-item"><input type="checkbox"><span class="gi-name">' + item.icon + ' ' + item.name + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span></div>';
-  }).join('');
+    let div = document.createElement('div');
+    div.className = 'grocery-item';
+    div.dataset.name = item.name;
+    div.dataset.qty = item.qty;
+    div.innerHTML = '<input type="checkbox"><span class="gi-name">' + item.icon + ' ' + esc(item.name) + dealHtml + '</span><span class="gi-qty">' + (item.qty > 1 ? '×' + item.qty : '') + '</span>';
+    container.appendChild(div);
+  });
+  // Deal total (appendChild, NOT innerHTML +=)
+  if (dealCount > 0) {
+    let totalDiv = document.createElement('div');
+    totalDiv.className = 'grocery-total';
+    totalDiv.innerHTML = '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div><div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
+    container.appendChild(totalDiv);
+  }
+  // Wire checkboxes (after all DOM is built)
   container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
     cb.addEventListener('change', function() {
       let item = this.closest('.grocery-item');
       item.classList.toggle('checked', this.checked);
-      // Move checked items to bottom
+      // Move checked items to bottom (but before grocery-total if it exists)
+      let total = container.querySelector('.grocery-total');
       if (this.checked) {
-        container.appendChild(item);
+        if (total) { container.insertBefore(item, total); }
+        else { container.appendChild(item); }
       } else {
         // Move unchecked back up (before first checked item)
         let firstChecked = container.querySelector('.grocery-item.checked');
@@ -76,13 +93,6 @@ function renderGroceryItemsHTML(items, dealCount, dealTotal) {
       }
     });
   });
-  if (dealCount > 0) {
-    let totalHtml = '<div class="grocery-total">';
-    totalHtml += '<div class="gt-amount">Total estimé: ' + dealTotal.toFixed(2) + '$</div>';
-    totalHtml += '<div class="gt-note">Prix indicatifs selon les circulaires actuelles</div>';
-    totalHtml += '</div>';
-    container.innerHTML += totalHtml;
-  }
 }
 
 function wireGroceryButtons() {
@@ -118,38 +128,43 @@ function wireGroceryButtons() {
     clearBtn.onclick = function() {
       let container = $('grocery-items');
       let checked = container.querySelectorAll('.grocery-item.checked');
-      if (checked.length === 0) { showToast('Aucun item coch\u00e9', 'info'); return; }
+      if (checked.length === 0) { showToast('Aucun item coché', 'info'); return; }
       checked.forEach(function(el) { el.remove(); });
-      showToast(checked.length + ' item' + (checked.length > 1 ? 's' : '') + ' retir\u00e9' + (checked.length > 1 ? 's' : ''), 'success');
+      showToast(checked.length + ' item' + (checked.length > 1 ? 's' : '') + ' retiré' + (checked.length > 1 ? 's' : ''), 'success');
     };
   }
 
   let printBtn = $('grocery-print-btn');
   if (printBtn) {
     printBtn.onclick = function() {
-      // Build print HTML from current grocery items (preserves checked state)
       let container = $('grocery-items');
       let groceryItems = container.querySelectorAll('.grocery-item');
       let date = new Date().toLocaleDateString('fr-CA');
-      let printHtml = '<h1>Liste \u00e9picerie</h1>';
+      let printHtml = '<h1>Liste d\'épicerie</h1>';
       printHtml += '<div class="print-date">' + date + '</div>';
       groceryItems.forEach(function(el) {
-        let nameEl = el.querySelector('.gi-name');
-        let qtyEl = el.querySelector('.gi-qty');
+        // Use dataset.name (clean food name, no icons)
+        let name = el.dataset.name || '';
+        let qty = el.dataset.qty ? '×' + el.dataset.qty : '';
         let isChecked = el.classList.contains('checked');
-        let name = nameEl ? nameEl.textContent.trim() : '';
-        let qty = qtyEl ? qtyEl.textContent.trim() : '';
         let cls = isChecked ? 'print-item checked' : 'print-item';
-        printHtml += '<div class="' + cls + '"><div class="print-checkbox' + (isChecked ? ' checked' : '') + '"></div><span>' + esc(name) + '</span>' + (qty ? '<span class="print-qty">' + qty + '</span>' : '') + '</div>';
+        let cbCls = 'print-checkbox' + (isChecked ? ' checked' : '');
+        printHtml += '<div class="' + cls + '"><div class="' + cbCls + '"></div><span>' + esc(name) + '</span>' + (qty && el.dataset.qty !== '1' ? '<span class="print-qty">' + qty + '</span>' : '') + '</div>';
       });
       $('print-area-grocery').innerHTML = printHtml;
+      // Clean up after print dialog closes
+      window.onafterprint = function() {
+        $('print-area-grocery').innerHTML = '';
+        window.onafterprint = null;
+      };
       window.print();
     };
   }
 }
 
 function showGroceryList() {
-  let grocerySelections = (currentMode === 'tracking') ? planningSelections : selections;
+  // Always use planning selections — grocery list is for planning
+  let grocerySelections = planningSelections || {};
   let month = new Date().getMonth() + 1;
 
   let result = collectGroceryItems(grocerySelections, month);
@@ -161,10 +176,11 @@ function showGroceryList() {
 
 function copyGroceryList() {
   let lines = [];
-  Object.keys(selections).forEach(function(catId) {
+  let grocerySelections = planningSelections || {};
+  Object.keys(grocerySelections).forEach(function(catId) {
     let cat = DATA.categories.find(function(c) { return c.id === catId; });
     if (!cat) { return; }
-    selections[catId].forEach(function(item) {
+    grocerySelections[catId].forEach(function(item) {
       let qty = item.qty > 1 ? ' x' + item.qty : '';
       lines.push(item.name + qty);
     });

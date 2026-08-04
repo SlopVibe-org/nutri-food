@@ -149,8 +149,8 @@ function wireGroceryButtons() {
         let isChecked = el.classList.contains('checked');
         let cls = isChecked ? 'print-item checked' : 'print-item';
         let cbCls = 'print-checkbox' + (isChecked ? ' checked' : '');
-        let spanStyle = isChecked ? ' style="text-decoration:line-through;color:#999;"' : '';
-        printHtml += '<div class="' + cls + '"><div class="' + cbCls + '"></div><span' + spanStyle + '>' + esc(name) + '</span>' + (qty && el.dataset.qty !== '1' ? '<span class="print-qty"' + (isChecked ? ' style="text-decoration:line-through;color:#999;"' : '') + '>' + qty + '</span>' : '') + '</div>';
+        let divStyle = isChecked ? ' style="text-decoration:line-through;color:#999;"' : '';
+        printHtml += '<div class="' + cls + '"' + divStyle + '><div class="' + cbCls + '"></div><span>' + esc(name) + '</span>' + (qty && el.dataset.qty !== '1' ? '<span class="print-qty">' + qty + '</span>' : '') + '</div>';
       });
       $('print-area-grocery').innerHTML = printHtml;
       // Clean up after print dialog closes

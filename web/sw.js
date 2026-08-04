@@ -14,6 +14,7 @@ const STATIC_ASSETS = [
   '/nutri-food/js/cnf.js',
   '/nutri-food/js/food-modal.js',
   '/nutri-food/js/share.js',
+  '/nutri-food/js/journal.js',
 ];
 
 // Install: pre-cache static assets

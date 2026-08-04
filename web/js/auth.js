@@ -10,6 +10,7 @@ function renderUserArea() {
     let menuItems = '';
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
+    menuItems += '<button class="user-menu-item" id="menu-journal"><span class="icon">📓</span> Journal</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
     if (currentUser.is_admin) { menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>'; }
     menuItems += '<button class="user-menu-item" id="menu-deals"><span class="icon">🏷️</span> Spéciaux</button>';
@@ -28,6 +29,7 @@ function renderUserArea() {
     });
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/grocery.js', function() { showGroceryList(); }); });
     $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
+    $('menu-journal').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/journal.js', function() { showJournal(); }); });
     $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/history.js', function() { showHistory(); }); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });

@@ -612,28 +612,6 @@
   .nutri-progress-fill.good { background: var(--accent); }
   .nutri-progress-fill.ok { background: var(--accent-amber); }
   .nutri-progress-fill.low { background: var(--accent-red); }
-
-  /* Journal */
-  .journal-entry { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); }
-  .je-info { display:flex; align-items:center; gap:10px; }
-  .je-icon { font-size:1.2rem; }
-  .je-name { font-weight:600; color:var(--text); }
-  .je-qty { color:var(--accent); font-weight:400; }
-  .je-nutri { font-size:0.8rem; color:var(--text-dim); }
-  .je-remove { background:none; border:none; color:var(--accent-red); cursor:pointer; font-size:1rem; padding:4px 8px; border-radius:4px; }
-  .je-remove:hover { background:rgba(248,113,113,0.1); }
-  .journal-add-form { display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
-  .journal-add-form input, .journal-add-form select { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:8px 10px; font-size:0.9rem; }
-  .journal-add-form input:focus, .journal-add-form select:focus { border-color:var(--accent-dim); outline:none; }
-  #journal-food-name { flex:1; min-width:140px; }
-  #journal-food-qty { width:60px; }
-  #journal-date { width:140px; }
-  .journal-summary-header { font-size:0.9rem; font-weight:600; color:var(--text-dim); margin-bottom:8px; }
-  .journal-stats-row { display:flex; flex-wrap:wrap; gap:8px; }
-  .journal-stat { background:var(--card); border:1px solid var(--border); border-radius:8px; padding:8px 12px; text-align:center; min-width:70px; }
-  .js-value { display:block; font-size:1.1rem; font-weight:700; color:var(--accent); }
-  .js-label { display:block; font-size:0.75rem; color:var(--text-dim); }
-  .js-unit { font-size:0.7rem; color:var(--text-dim); }
 </style>
 </head>
 <body>
@@ -842,26 +820,6 @@
 <div id="save-bar">
   <span class="save-info" id="save-info">Chargement…</span>
   <button id="save-btn" disabled>Sauvegarder</button>
-</div>
-
-<div class="modal-overlay hidden" id="journal-modal">
-  <div class="modal" style="max-width:520px;">
-    <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3>📓 Journal nutritionnel</h3>
-      <button class="modal-close" onclick="$('journal-modal').classList.add('hidden')" style="background:none;border:none;color:var(--text-dim);font-size:1.4rem;cursor:pointer;">✕</button>
-    </div>
-    <div class="journal-add-form">
-      <input type="date" id="journal-date" value="">
-      <input type="text" id="journal-food-name" placeholder="Aliment..." autocomplete="off" list="journal-food-list">
-      <datalist id="journal-food-list"></datalist>
-      <input type="number" id="journal-food-qty" value="1" min="1" max="20" style="width:60px;">
-      <button class="submit-btn" onclick="addJournalEntry()">➕ Ajouter</button>
-    </div>
-    <div id="journal-entries" style="max-height:300px;overflow-y:auto;"></div>
-    <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:12px;">
-      <div id="journal-summary"></div>
-    </div>
-  </div>
 </div>
 
 <div class="toast-container" id="toast-container"></div>

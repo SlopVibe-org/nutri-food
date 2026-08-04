@@ -615,19 +615,19 @@
 
   /* Print styles */
   @media print {
-    body * { visibility: hidden; }
-    .print-area, .print-area * { visibility: visible; }
+    body { background: #fff !important; padding: 0 !important; max-width: none !important; }
+    body > *:not(.print-area) { display: none !important; }
     .print-area {
-      position: absolute;
-      left: 0; top: 0; width: 100%;
+      display: block !important;
+      position: static;
       background: #fff; color: #000;
       font-family: 'Helvetica Neue', Arial, sans-serif;
       font-size: 12pt; line-height: 1.6;
-      padding: 0;
+      padding: 20px;
     }
     .print-area h1 {
       font-size: 16pt; color: #000; margin: 0 0 4px 0;
-      -webkit-text-fill-color: #000;
+      -webkit-text-fill-color: #000; background: none;
     }
     .print-area .print-date {
       font-size: 10pt; color: #555; margin-bottom: 16px;

@@ -1,15 +1,26 @@
+# Stage 1: Build (bundle + minify JS)
+FROM node:22-alpine AS builder
+
+WORKDIR /src
+
+# Copy frontend source
+COPY index.html ./
+COPY defaults/ ./defaults/
+COPY js/ ./js/
+COPY nutrifood.css ./
+COPY manifest.json ./
+COPY sw.js ./
+COPY foods.json ./
+COPY favicon-*.png ./
+COPY build.sh ./
+
+RUN chmod +x build.sh && ./build.sh
+
+# Stage 2: Runtime (nginx)
 FROM nginx:alpine
 
-# Copy frontend files into the image
-COPY index.html /usr/share/nginx/html/
-COPY defaults/favicon.svg /usr/share/nginx/html/favicon.svg
-COPY js/ /usr/share/nginx/html/js/
-COPY nutrifood.css /usr/share/nginx/html/
-COPY manifest.json /usr/share/nginx/html/
-COPY sw.js /usr/share/nginx/html/
-
-# Copy store favicon icons
-COPY favicon-*.png /usr/share/nginx/html/
+# Copy built files from builder stage
+COPY --from=builder /dist /usr/share/nginx/html
 
 # Copy defaults for first-install fallback (entrypoint seeds foods.json if missing)
 COPY defaults/ /defaults/

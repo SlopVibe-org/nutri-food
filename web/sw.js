@@ -1,5 +1,5 @@
 // NutriFood Service Worker — offline cache for static assets
-const CACHE_NAME = 'nutrifood-v5';
+const CACHE_NAME = 'nutrifood-v6';
 const STATIC_ASSETS = [
   '/nutri-food/',
   '/nutri-food/foods.json',

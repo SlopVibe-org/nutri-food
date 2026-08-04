@@ -612,49 +612,6 @@
   .nutri-progress-fill.good { background: var(--accent); }
   .nutri-progress-fill.ok { background: var(--accent-amber); }
   .nutri-progress-fill.low { background: var(--accent-red); }
-
-  /* Print styles */
-  @media print {
-    body { background: #fff !important; padding: 0 !important; max-width: none !important; }
-    body > *:not(.print-area) { display: none !important; }
-    .print-area {
-      display: block !important;
-      position: static;
-      background: #fff; color: #000;
-      font-family: 'Helvetica Neue', Arial, sans-serif;
-      font-size: 12pt; line-height: 1.6;
-      padding: 20px;
-    }
-    .print-area h1 {
-      font-size: 16pt; color: #000; margin: 0 0 4px 0;
-      -webkit-text-fill-color: #000; background: none;
-    }
-    .print-area .print-date {
-      font-size: 10pt; color: #555; margin-bottom: 16px;
-    }
-    .print-area .print-item {
-      display: flex; align-items: center; gap: 8px;
-      padding: 4px 0; border-bottom: 1px solid #ddd;
-      page-break-inside: avoid;
-    }
-    .print-area .print-checkbox {
-      width: 14px; height: 14px; border: 1.5px solid #000;
-      background: #fff; flex-shrink: 0; border-radius: 2px;
-    }
-    .print-area .print-item span { color: #000; }
-    .print-area .print-qty {
-      margin-left: auto; color: #333; font-size: 11pt; font-weight: 600;
-    }
-    .print-area .print-item.checked {
-      text-decoration: line-through !important; color: #999 !important;
-    }
-    .print-area .print-item.checked span {
-      color: #999 !important;
-    }
-    .print-area .print-checkbox.checked {
-      background: #000 !important;
-    }
-  }
 </style>
 </head>
 <body>

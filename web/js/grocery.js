@@ -140,25 +140,52 @@ function wireGroceryButtons() {
       let container = $('grocery-items');
       let groceryItems = container.querySelectorAll('.grocery-item');
       let date = new Date().toLocaleDateString('fr-CA');
-      let printHtml = '<h1>Liste d\'épicerie</h1>';
-      printHtml += '<div class="print-date">' + date + '</div>';
+
+      // Build a standalone HTML document in a hidden iframe for clean printing
+      let itemsHtml = '';
       groceryItems.forEach(function(el) {
-        // Use dataset.name (clean food name, no icons)
         let name = el.dataset.name || '';
-        let qty = el.dataset.qty ? '×' + el.dataset.qty : '';
+        let qty = el.dataset.qty && el.dataset.qty !== '1' ? '×' + el.dataset.qty : '';
         let isChecked = el.classList.contains('checked');
-        let cls = isChecked ? 'print-item checked' : 'print-item';
-        let cbCls = 'print-checkbox' + (isChecked ? ' checked' : '');
-        let divStyle = isChecked ? ' style="text-decoration:line-through;color:#999;"' : '';
-        printHtml += '<div class="' + cls + '"' + divStyle + '><div class="' + cbCls + '"></div><span>' + esc(name) + '</span>' + (qty && el.dataset.qty !== '1' ? '<span class="print-qty">' + qty + '</span>' : '') + '</div>';
+        let rowStyle = isChecked ? 'text-decoration:line-through;color:#999;' : '';
+        let cbStyle = isChecked ? 'background:#000;' : '';
+        itemsHtml += '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #ccc;' + rowStyle + '">';
+        itemsHtml += '<div style="width:14px;height:14px;border:1.5px solid #000;border-radius:2px;flex-shrink:0;' + cbStyle + '"></div>';
+        itemsHtml += '<span>' + esc(name) + '</span>';
+        if (qty) { itemsHtml += '<span style="margin-left:auto;font-weight:600;">' + qty + '</span>'; }
+        itemsHtml += '</div>';
       });
-      $('print-area-grocery').innerHTML = printHtml;
-      // Clean up after print dialog closes
-      window.onafterprint = function() {
-        $('print-area-grocery').innerHTML = '';
-        window.onafterprint = null;
+
+      let html = '<!DOCTYPE html><html><head><meta charset="UTF-8">';
+      html += '<style>';
+      html += 'body { font-family: Helvetica, Arial, sans-serif; font-size:12pt; line-height:1.6; color:#000; background:#fff; padding:20px; margin:0; }';
+      html += 'h1 { font-size:16pt; margin:0 0 4px; }';
+      html += '.date { font-size:10pt; color:#555; margin-bottom:16px; }';
+      html += '@media print { body { padding:0; } }';
+      html += '</style></head><body>';
+      html += '<h1>Liste d\'épicerie</h1>';
+      html += '<div class="date">' + date + '</div>';
+      html += itemsHtml;
+      html += '</body></html>';
+
+      let iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      iframe.onload = function() {
+        iframe.contentWindow.onafterprint = function() {
+          document.body.removeChild(iframe);
+        };
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
       };
-      window.print();
+
+      iframe.srcdoc = html;
     };
   }
 }

@@ -83,7 +83,7 @@ function getPortionHint(cat) {
 
 function getSeasonPrefix(food) {
   let month = new Date().getMonth() + 1;
-  if (food.season?.length > 0) {
+  if (food.season?.length > 0 && food.season.length < 12) {
     if (food.season.includes(month)) return '🌱 ';
     if (food.import_season?.includes(month)) return '✈️ ';
   } else if (food.import_season?.length > 0 && food.import_season.length < 12) {
@@ -381,8 +381,6 @@ function adminAddFood(catId) {
   // Clear fields
   nameEl.value = ''; densityEl.value = ''; nutrientsEl.value = '';
   
-  // Save to server
-  saveFoodsToServer();
   render();
 }
 
@@ -395,13 +393,8 @@ function adminRemoveFood(catId, name) {
     selections[catId] = selections[catId].filter(function(s) { return s.name !== name; });
     if (selections[catId].length === 0) { delete selections[catId]; }
   }
-  saveFoodsToServer();
   render();
   updateSaveBar();
-}
-
-async function saveFoodsToServer() {
-  // Deprecated — foods are now managed via /api/admin/food/show and /api/admin/food/hide
 }
 
 async function hideFood(catId, name) {

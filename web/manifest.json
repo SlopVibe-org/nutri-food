@@ -1,0 +1,20 @@
+{
+  "name": "NutriFood",
+  "short_name": "NutriFood",
+  "description": "Planifiez vos repas et suivez votre nutrition basée sur le Guide alimentaire canadien.",
+  "start_url": "/nutri-food/",
+  "scope": "/nutri-food/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "lang": "fr",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

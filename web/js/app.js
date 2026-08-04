@@ -134,3 +134,14 @@ if (window.location.hash) {
 }
 
 init();
+
+// ─── Service Worker registration (PWA) ───
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/nutri-food/sw.js').then(function(reg) {
+      console.log('[NutriFood] SW registered:', reg.scope);
+    }).catch(function(err) {
+      console.warn('[NutriFood] SW registration failed:', err);
+    });
+  });
+}

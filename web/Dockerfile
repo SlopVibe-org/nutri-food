@@ -5,6 +5,8 @@ COPY index.html /usr/share/nginx/html/
 COPY defaults/favicon.svg /usr/share/nginx/html/favicon.svg
 COPY js/ /usr/share/nginx/html/js/
 COPY nutrifood.css /usr/share/nginx/html/
+COPY manifest.json /usr/share/nginx/html/
+COPY sw.js /usr/share/nginx/html/
 
 # Copy store favicon icons
 COPY favicon-*.png /usr/share/nginx/html/

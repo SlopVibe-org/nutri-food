@@ -11,6 +11,7 @@ function renderUserArea() {
     menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
     menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
     menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
+    menuItems += '<button class="user-menu-item" id="menu-export"><span class="icon">💾</span> Exporter (CSV)</button>';
     if (currentUser.is_admin) { menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>'; }
     menuItems += '<button class="user-menu-item" id="menu-deals"><span class="icon">🏷️</span> Spéciaux</button>';
     menuItems += '<div class="user-menu-divider"></div>';
@@ -29,6 +30,27 @@ function renderUserArea() {
     $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/grocery.js', function() { showGroceryList(); }); });
     $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
     $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/history.js', function() { showHistory(); }); });
+    $('menu-export').addEventListener('click', async function() {
+      $('user-menu-dropdown').classList.remove('visible');
+      let token = getToken();
+      if (!token) { return; }
+      try {
+        let res = await fetchWithTimeout(API + '/export/csv', {
+          headers: { 'Authorization': '***' + token }
+        }, 15000);
+        if (!res.ok) { showToast('Erreur d\'export', 'error'); return; }
+        let blob = await res.blob();
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement('a');
+        a.href = url;
+        a.download = 'nutrifood-export.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Export t\u00e9l\u00e9charg\u00e9', 'success');
+      } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
+    });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {

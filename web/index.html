@@ -11,7 +11,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NutriFood">
-<title>NutriFood — Densité Nutritionnelle</title>
+<title>NutriFood — Suivi, optimisation et planification nutritionnelle</title>
 <style>
   :root {
     --bg: #0f1117; --card: #1a1d27; --accent: #4ade80; --accent-dim: #22c55e;
@@ -645,6 +645,12 @@
     .print-area .print-qty {
       margin-left: auto; color: #333; font-size: 11pt; font-weight: 600;
     }
+    .print-area .print-item.checked span {
+      text-decoration: line-through; color: #999;
+    }
+    .print-area .print-checkbox.checked {
+      background: #000;
+    }
   }
 </style>
 </head>
@@ -833,6 +839,7 @@
     <div id="grocery-items"></div>
     <div class="grocery-actions">
       <button class="grocery-copy" id="grocery-copy-btn">📋 Copier</button>
+      <button class="grocery-copy" id="grocery-clear-btn" style="background:transparent;color:var(--accent-red);border:1px solid var(--accent-red);">🗑️ Retirer achetés</button>
       <button class="grocery-copy" id="grocery-share-btn" style="background:transparent;color:var(--accent);border:1px solid var(--accent-dim);">📤 Partager</button>
       <button class="grocery-close print-only-btn" id="grocery-print-btn" style="background:transparent;color:var(--text);border:1px solid var(--border);">🖨️ Imprimer</button>
       <button class="grocery-close" id="grocery-close-btn">Fermer</button>

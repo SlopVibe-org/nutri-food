@@ -440,7 +440,7 @@ function renderWelcome() {
   $('app').innerHTML = `
     <div class="welcome">
       <h2>🍎 NutriFood</h2>
-      <p>Planifiez votre semaine nutritionnelle — aliments classés par densité nutritionnelle.</p>
+      <p>Suivi, optimisation et planification nutritionnelle.</p>
       <div class="features">
         <div class="feature">🥩 <strong>Viandes & Laitiers</strong></div>
         <div class="feature">🥔 <strong>Féculents</strong></div>

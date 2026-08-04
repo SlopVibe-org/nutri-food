@@ -62,7 +62,18 @@ function renderGroceryItemsHTML(items, dealCount, dealTotal) {
   }).join('');
   container.querySelectorAll('.grocery-item input[type="checkbox"]').forEach(function(cb) {
     cb.addEventListener('change', function() {
-      this.closest('.grocery-item').classList.toggle('checked', this.checked);
+      let item = this.closest('.grocery-item');
+      item.classList.toggle('checked', this.checked);
+      // Move checked items to bottom
+      if (this.checked) {
+        container.appendChild(item);
+      } else {
+        // Move unchecked back up (before first checked item)
+        let firstChecked = container.querySelector('.grocery-item.checked');
+        if (firstChecked) {
+          container.insertBefore(item, firstChecked);
+        }
+      }
     });
   });
   if (dealCount > 0) {
@@ -97,28 +108,39 @@ function wireGroceryButtons() {
           showToast('Erreur de partage', 'error');
           shareBtn.textContent = origText;
         }
-      } catch(e) { /* Share link generation failed — non-critical */ console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
+      } catch(e) { console.error('[NutriFood] Grocery share error:', e); showToast('Erreur: ' + e.message, 'error'); shareBtn.textContent = origText; }
       shareBtn.disabled = false;
+    };
+  }
+
+  let clearBtn = $('grocery-clear-btn');
+  if (clearBtn) {
+    clearBtn.onclick = function() {
+      let container = $('grocery-items');
+      let checked = container.querySelectorAll('.grocery-item.checked');
+      if (checked.length === 0) { showToast('Aucun item coch\u00e9', 'info'); return; }
+      checked.forEach(function(el) { el.remove(); });
+      showToast(checked.length + ' item' + (checked.length > 1 ? 's' : '') + ' retir\u00e9' + (checked.length > 1 ? 's' : ''), 'success');
     };
   }
 
   let printBtn = $('grocery-print-btn');
   if (printBtn) {
     printBtn.onclick = function() {
-      let printItems = [];
-      Object.keys(selections).forEach(function(catId) {
-        let cat = DATA.categories.find(function(c) { return c.id === catId; });
-        if (!cat) { return; }
-        selections[catId].forEach(function(item) {
-          printItems.push({ name: item.name, qty: item.qty || 1 });
-        });
-      });
-      printItems.sort(function(a, b) { return a.name.localeCompare(b.name); });
+      // Build print HTML from current grocery items (preserves checked state)
+      let container = $('grocery-items');
+      let groceryItems = container.querySelectorAll('.grocery-item');
       let date = new Date().toLocaleDateString('fr-CA');
       let printHtml = '<h1>Liste \u00e9picerie</h1>';
       printHtml += '<div class="print-date">' + date + '</div>';
-      printItems.forEach(function(item) {
-        printHtml += '<div class="print-item"><div class="print-checkbox"></div><span>' + item.name + '</span>' + (item.qty > 1 ? '<span class="print-qty">x' + item.qty + '</span>' : '') + '</div>';
+      groceryItems.forEach(function(el) {
+        let nameEl = el.querySelector('.gi-name');
+        let qtyEl = el.querySelector('.gi-qty');
+        let isChecked = el.classList.contains('checked');
+        let name = nameEl ? nameEl.textContent.trim() : '';
+        let qty = qtyEl ? qtyEl.textContent.trim() : '';
+        let cls = isChecked ? 'print-item checked' : 'print-item';
+        printHtml += '<div class="' + cls + '"><div class="print-checkbox' + (isChecked ? ' checked' : '') + '"></div><span>' + esc(name) + '</span>' + (qty ? '<span class="print-qty">' + qty + '</span>' : '') + '</div>';
       });
       $('print-area-grocery').innerHTML = printHtml;
       window.print();

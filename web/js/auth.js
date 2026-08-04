@@ -36,7 +36,7 @@ function renderUserArea() {
       if (!token) { return; }
       try {
         let res = await fetchWithTimeout(API + '/export/csv', {
-          headers: { 'Authorization': '***' + token }
+          headers: { 'Authorization': 'Bearer ' + token }
         }, 15000);
         if (!res.ok) { showToast('Erreur d\'export', 'error'); return; }
         let blob = await res.blob();

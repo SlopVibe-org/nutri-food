@@ -1,11 +1,13 @@
 """Email helpers for NutriFood."""
 import smtplib
+import threading
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import extensions as _ext
 
 
-def send_email(to_email, subject, html_body, text_body):
+def _send_email_sync(to_email, subject, html_body, text_body):
+    """Build MIME message and send via SMTP_SSL (blocking)."""
     msg = MIMEMultipart('alternative')
     msg['From'] = 'NutriFood <ai@slopvibe.org>'
     msg['To'] = to_email
@@ -21,6 +23,20 @@ def send_email(to_email, subject, html_body, text_body):
     except Exception as e:
         print(f'[NutriFood] Email error: {e}')
         return False
+
+
+def send_email(to_email, subject, html_body, text_body):
+    """Send email asynchronously via a daemon thread.
+
+    Returns True immediately (fire-and-forget). Errors are logged in the thread.
+    """
+    thread = threading.Thread(
+        target=_send_email_sync,
+        args=(to_email, subject, html_body, text_body),
+        daemon=True,
+    )
+    thread.start()
+    return True
 
 
 def send_welcome_email(to_email, name):

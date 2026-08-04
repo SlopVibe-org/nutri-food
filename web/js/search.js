@@ -80,9 +80,15 @@ function actualSearch() {
     // Wire up result clicks
     results.querySelectorAll('.search-result[data-cat]').forEach(function(el) {
       el.addEventListener('click', function() {
-        addItem(el.dataset.cat, { name: decodeEntities(el.dataset.name), density: Number.parseInt(el.dataset.density), nutrients: decodeEntities(el.dataset.nutrients) });
+        let catId = el.dataset.cat;
+        var foodData = { name: decodeEntities(el.dataset.name), density: Number.parseInt(el.dataset.density), nutrients: decodeEntities(el.dataset.nutrients) };
+        if (currentMode === 'tracking' && typeof viewMode !== 'undefined' && viewMode === 'simple') {
+          addSimpleFood(catId, foodData.name, foodData.density, foodData.nutrients);
+        } else {
+          addItem(catId, foodData);
+        }
         // Switch to that tab
-        let cat = DATA.categories.find(function(c) { return c.id === el.dataset.cat; });
+        let cat = DATA.categories.find(function(c) { return c.id === catId; });
         if (cat) { activeTab = cat.section; render(); }
         $('search-input').value = '';
         results.classList.remove('visible');

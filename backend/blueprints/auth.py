@@ -3,7 +3,7 @@ import hashlib
 import secrets
 from datetime import datetime, timezone, timedelta
 import jwt as pyjwt
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 
 from extensions import (
     get_db, EMAIL_RE,
@@ -14,6 +14,23 @@ import extensions as _ext
 from utils.email import send_welcome_email, send_reset_email
 
 bp = Blueprint('auth', __name__)
+
+# ─── Cookie helper ───
+COOKIE_NAME = 'nutrifood_token'
+COOKIE_MAX_AGE = 2160 * 3600  # 90 days, matches JWT_EXPIRY_HOURS
+
+
+def _set_auth_cookie(response, token):
+    """Set httpOnly cookie for progressive JWT migration."""
+    response.set_cookie(
+        COOKIE_NAME, token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=True,
+        secure=True,
+        samesite='Strict',
+        path='/'
+    )
+    return response
 
 # ─── Auth helpers ───
 
@@ -52,17 +69,20 @@ def verify_token(token):
 
 
 def get_auth_user():
+    # Progressive migration: accept Bearer header (explicit) first, fall back to httpOnly cookie
     auth = request.headers.get('Authorization', '')
-    if not auth.startswith('Bearer '):
+    if auth.startswith('Bearer '):
+        token = auth[7:]
+    else:
+        token = request.cookies.get('nutrifood_token')
+    if not token:
         return None
-    token = auth[7:]
     payload = verify_token(token)
     if not payload:
         return None
     db = get_db()
     user = db.execute('SELECT id, email, name, is_admin FROM users WHERE id = ?', (payload['uid'],)).fetchone()
     return user
-
 
 # ─── Routes ───
 
@@ -107,10 +127,11 @@ def register():
     send_welcome_email(email, name)
 
     token = make_token(cursor.lastrowid, email, 0)
-    return jsonify({
+    resp = make_response(jsonify({
         'token': token,
         'user': {'id': cursor.lastrowid, 'email': email, 'name': name, 'is_admin': 0}
-    }), 201
+    }), 201)
+    return _set_auth_cookie(resp, token)
 
 
 @bp.route('/api/login', methods=['POST'])
@@ -137,10 +158,11 @@ def login():
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 
     token = make_token(user['id'], user['email'], user['token_version'])
-    return jsonify({
+    resp = make_response(jsonify({
         'token': token,
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
-    })
+    }))
+    return _set_auth_cookie(resp, token)
 
 
 @bp.route('/api/me', methods=['GET'])
@@ -227,11 +249,12 @@ def reset_password():
     # Issue new login token with updated version
     new_version = db.execute(SQL_TOKEN_VERSION, (user['id'],)).fetchone()['token_version']
     token = make_token(user['id'], user['email'], new_version)
-    return jsonify({
+    resp = make_response(jsonify({
         'status': 'ok',
         'token': token,
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
-    })
+    }))
+    return _set_auth_cookie(resp, token)
 
 
 @bp.route('/api/change-password', methods=['POST'])
@@ -269,4 +292,5 @@ def change_password():
     # Issue new token with updated version
     new_version = db.execute(SQL_TOKEN_VERSION, (user['id'],)).fetchone()['token_version']
     token = make_token(user['id'], user['email'], new_version)
-    return jsonify({'status': 'ok', 'token': token})
+    resp = make_response(jsonify({'status': 'ok', 'token': token}))
+    return _set_auth_cookie(resp, token)

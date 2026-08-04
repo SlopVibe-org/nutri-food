@@ -104,6 +104,9 @@ function showToast(message, type = 'info') {
 
 // ─── Fetch with timeout ───
 function fetchWithTimeout(url, options, timeoutMs = 10000) {
+  // Ensure credentials are sent for httpOnly cookie auth
+  options = options || {};
+  if (!options.credentials) { options.credentials = 'same-origin'; }
   return Promise.race([
     fetch(url, options),
     new Promise(function(_, reject) {
@@ -116,6 +119,8 @@ function fetchWithTimeout(url, options, timeoutMs = 10000) {
 function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { console.error('[NutriFood] localStorage access denied:', e); return null; } }
 
 function setAuth(token, user) {
+  // Token is now set via httpOnly cookie by the backend.
+  // We keep storing it in localStorage during the transition period for backward compat.
   try {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));

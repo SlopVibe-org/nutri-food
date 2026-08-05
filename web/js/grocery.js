@@ -191,11 +191,28 @@ function wireGroceryButtons() {
 }
 
 function showGroceryList() {
-  // Always use planning selections — grocery list is for planning
-  let grocerySelections = planningSelections || {};
-  let month = new Date().getMonth() + 1;
+  // Use planning selections by default, or tracking selections if in tracking mode
+  let sourceMode = currentMode === 'tracking' ? 'tracking' : 'planning';
+  let grocerySelections = sourceMode === 'tracking' ? trackingSelections : (planningSelections || {});
 
+  // If tracking selections are empty but planning has data, offer planning as fallback
+  let hasTrackingData = Object.keys(grocerySelections).length > 0 &&
+    Object.values(grocerySelections).some(function(items) { return items && items.length > 0; });
+  if (!hasTrackingData && planningSelections && Object.keys(planningSelections).length > 0) {
+    grocerySelections = planningSelections;
+    sourceMode = 'planning';
+  }
+
+  let month = new Date().getMonth() + 1;
   let result = collectGroceryItems(grocerySelections, month);
+
+  // Update title to show source
+  let titleEl = document.querySelector('#grocery-overlay h2, #grocery-overlay .grocery-title');
+  if (titleEl) {
+    let sourceLabel = sourceMode === 'tracking' ? 'Suivi' : 'Planification';
+    titleEl.textContent = '🛒 Liste d\'épicerie (' + sourceLabel + ')';
+  }
+
   renderGroceryItemsHTML(result.items, result.dealCount, result.dealTotal);
   wireGroceryButtons();
 
@@ -204,7 +221,8 @@ function showGroceryList() {
 
 function copyGroceryList() {
   let lines = [];
-  let grocerySelections = planningSelections || {};
+  // Match the same logic as showGroceryList
+  let grocerySelections = (currentMode === 'tracking' && Object.keys(trackingSelections).length > 0) ? trackingSelections : (planningSelections || {});
   Object.keys(grocerySelections).forEach(function(catId) {
     let cat = DATA.categories.find(function(c) { return c.id === catId; });
     if (!cat) { return; }

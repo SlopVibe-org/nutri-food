@@ -50,6 +50,7 @@ def create_app():
     from blueprints.suggestions import bp as suggestions_bp
     from blueprints.meal_plan import bp as meal_plan_bp
     from blueprints.export import bp as export_bp
+    from blueprints.profile import bp as profile_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(foods_bp)
@@ -60,6 +61,7 @@ def create_app():
     app.register_blueprint(suggestions_bp)
     app.register_blueprint(meal_plan_bp)
     app.register_blueprint(export_bp)
+    app.register_blueprint(profile_bp)
 
     return app
 
@@ -166,6 +168,19 @@ def init_db():
         );
         CREATE INDEX IF NOT EXISTS idx_tracking_user_date ON tracking(user_id, date);
     ''')
+    # ─── Migration: add profile columns if missing (#31) ───
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(users)").fetchall()}
+    for col, col_type, default in [
+        ('weight', 'REAL', None),
+        ('height', 'REAL', None),
+        ('age', 'INTEGER', None),
+        ('sex', 'TEXT', "'other'"),
+        ('activity_level', 'TEXT', "'moderate'"),
+        ('diet', 'TEXT', "'none'"),
+        ('allergies', 'TEXT', None),
+    ]:
+        if col not in cols:
+            conn.execute(f'ALTER TABLE users ADD COLUMN {col} {col_type} DEFAULT {default}')
     conn.commit()
     conn.close()
 

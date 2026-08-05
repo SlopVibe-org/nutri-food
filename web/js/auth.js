@@ -15,6 +15,7 @@ function renderUserArea() {
     if (currentUser.is_admin) { menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>'; }
     menuItems += '<button class="user-menu-item" id="menu-deals"><span class="icon">🏷️</span> Spéciaux</button>';
     menuItems += '<div class="user-menu-divider"></div>';
+    menuItems += '<button class="user-menu-item" id="menu-profile"><span class="icon">👤</span> Mon profil</button>';
     menuItems += '<button class="user-menu-item" id="menu-password"><span class="icon">🔑</span> Mot de passe</button>';
     menuItems += '<button class="user-menu-item" id="menu-logout" style="color:var(--accent-red);"><span class="icon">🚪</span> Déconnexion</button>';
 
@@ -51,6 +52,7 @@ function renderUserArea() {
         showToast('Export t\u00e9l\u00e9charg\u00e9', 'success');
       } catch(e) { showToast('Erreur: ' + e.message, 'error'); }
     });
+    $('menu-profile').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/profile.js', function() { showProfile(); }); });
     $('menu-password').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showChangePassword(); });
     $('menu-logout').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); clearAuth(); });
     if (currentUser.is_admin) {

@@ -26,7 +26,7 @@ async function loadJournalDay(dateStr) {
   if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/journal?date=' + dateStr, {
-      headers: { 'Authorization': '***' + token }
+      headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
     if (res.ok) {
       let data = await res.json();
@@ -41,7 +41,7 @@ async function loadJournalSummary(days) {
   if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/journal/summary?days=' + days, {
-      headers: { 'Authorization': '***' + token }
+      headers: { 'Authorization': 'Bearer ' + token }
     }, 10000);
     if (res.ok) {
       _journalSummary = await res.json();
@@ -140,7 +140,7 @@ async function addJournalEntry() {
   try {
     let res = await fetchWithTimeout(API + '/journal', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': '***' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({
         date: dateStr,
         food_name: name,
@@ -168,7 +168,7 @@ async function deleteJournalEntry(foodName) {
   try {
     let res = await fetchWithTimeout(API + '/journal', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json', 'Authorization': '***' + token },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
       body: JSON.stringify({ date: dateStr, food_name: foodName })
     }, 10000);
     if (res.ok) {

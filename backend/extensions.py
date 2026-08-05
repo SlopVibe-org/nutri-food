@@ -3,7 +3,7 @@ import os
 import sqlite3
 import time
 import re
-from flask import g
+from flask import g, request
 
 # ─── Config ───
 DB_PATH = os.environ.get('DB_PATH', '/data/nutrifood.db')
@@ -30,6 +30,14 @@ SQL_SELECTIONS = 'SELECT data FROM selections WHERE user_id = ?'
 RATE_LIMIT = {}  # key: ip+endpoint, value: [count, first_attempt_time]
 RATE_WINDOW = 60  # seconds
 RATE_MAX = 10  # requests per window
+
+
+def get_client_ip():
+    """Get real client IP, respecting X-Forwarded-For behind proxies."""
+    fwd = request.headers.get('X-Forwarded-For', '')
+    if fwd:
+        return fwd.split(',')[0].strip()
+    return request.remote_addr or 'unknown'
 
 
 def check_rate_limit(key):
@@ -60,7 +68,15 @@ def get_db():
 
 
 def get_nf_db():
-    """Get a connection to the nutrifood DB (for nf_* tables)."""
+    """Get a connection to the nutrifood DB (for nf_* tables).
+    Stored in g during request context; created directly outside request context.
+    Caller is responsible for closing outside request context."""
+    if g:
+        if 'nf_db' not in g:
+            g.nf_db = sqlite3.connect(NF_DB_PATH)
+            g.nf_db.row_factory = sqlite3.Row
+        return g.nf_db
+    # Outside request context (background threads)
     db = sqlite3.connect(NF_DB_PATH)
     db.row_factory = sqlite3.Row
     return db
@@ -71,6 +87,9 @@ def close_db(error):
     db = g.pop('db', None)
     if db is not None:
         db.close()
+    nf_db = g.pop('nf_db', None)
+    if nf_db is not None:
+        nf_db.close()
 
 
 def reset_rate_limit():

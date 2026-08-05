@@ -63,8 +63,8 @@ function loadScript(url, callback) {
 function $(id) { return document.getElementById(id); }
 
 // ─── Escape HTML ───
-const ENTITY_MAP = { '\u0026': '\u0026amp;', "'": '&#39;', '"': '&quot;', '<': '&lt;', '>': '&gt;' };
-function esc(s) { return String(s == null ? '' : s).replace(/[&'"<>]/g, function(c) { return ENTITY_MAP[c]; }); }
+const ENTITY_MAP = { '\u0026': '\u0026amp;', "'": '&#39;', '"': '&quot;', '<': '&lt;', '>': '&gt;', '`': '&#96;' };
+function esc(s) { return String(s == null ? '' : s).replace(/[&'"<>`]/g, function(c) { return ENTITY_MAP[c]; }); }
 
 // ─── HTML entity decode helper ───
 function decodeEntities(str) {

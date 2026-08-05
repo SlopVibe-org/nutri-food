@@ -8,7 +8,7 @@ from flask import Blueprint, request, jsonify, make_response
 from extensions import (
     get_db, EMAIL_RE,
     ERR_UNAUTHORIZED, ERR_RATE_LIMIT, SQL_TOKEN_VERSION,
-    check_rate_limit,
+    check_rate_limit, get_client_ip,
 )
 import extensions as _ext
 from utils.email import send_welcome_email, send_reset_email
@@ -93,7 +93,7 @@ def health():
 
 @bp.route('/api/register', methods=['POST'])
 def register():
-    if not check_rate_limit(request.remote_addr + ':register'):
+    if not check_rate_limit(get_client_ip() + ':register'):
         return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     email = (data.get('email') or '').strip().lower()
@@ -136,7 +136,7 @@ def register():
 
 @bp.route('/api/login', methods=['POST'])
 def login():
-    if not check_rate_limit(request.remote_addr + ':login'):
+    if not check_rate_limit(get_client_ip() + ':login'):
         return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
@@ -177,7 +177,7 @@ def me():
 
 @bp.route('/api/forgot-password', methods=['POST'])
 def forgot_password():
-    if not check_rate_limit(request.remote_addr + ':forgot-password'):
+    if not check_rate_limit(get_client_ip() + ':forgot-password'):
         return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     identifier = (data.get('email') or data.get('identifier') or '').strip()
@@ -210,6 +210,8 @@ def forgot_password():
 
 @bp.route('/api/reset-password', methods=['POST'])
 def reset_password():
+    if not check_rate_limit(get_client_ip() + ':reset-password'):
+        return jsonify({'error': ERR_RATE_LIMIT}), 429
     data = request.get_json() or {}
     reset_token = data.get('token') or ''
     new_password = data.get('password') or ''

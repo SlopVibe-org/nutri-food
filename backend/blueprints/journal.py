@@ -7,6 +7,14 @@ from extensions import get_db, ERR_UNAUTHORIZED
 from blueprints.auth import get_auth_user
 from utils.nutrition import _compute_journal_avg
 
+
+def _validate_date(d):
+    """Validate ISO date format (YYYY-MM-DD). Returns date object or None."""
+    try:
+        return date.fromisoformat(d)
+    except (ValueError, TypeError):
+        return None
+
 bp = Blueprint('journal', __name__)
 
 
@@ -17,7 +25,10 @@ def get_journal():
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
 
     journal_date = request.args.get('date')
-    if not journal_date:
+    if journal_date:
+        if not _validate_date(journal_date):
+            return jsonify({'error': 'Format de date invalide'}), 400
+    else:
         journal_date = date.today().isoformat()
 
     db = get_db()
@@ -56,6 +67,8 @@ def save_journal_entry():
 
     if not journal_date or not food_name:
         return jsonify({'error': 'Date et nom d\'aliment requis'}), 400
+    if not _validate_date(journal_date):
+        return jsonify({'error': 'Format de date invalide'}), 400
 
     try:
         qty = int(qty)
@@ -116,6 +129,8 @@ def delete_journal_entry():
 
     if not journal_date or not food_name:
         return jsonify({'error': 'Date et nom d\'aliment requis'}), 400
+    if not _validate_date(journal_date):
+        return jsonify({'error': 'Format de date invalide'}), 400
 
     db = get_db()
     db.execute(

@@ -4,6 +4,14 @@ from datetime import date, timedelta
 from flask import Blueprint, request, jsonify
 
 from extensions import get_db, ERR_UNAUTHORIZED, SQL_SELECTIONS
+
+
+def _validate_date(d):
+    """Validate ISO date format (YYYY-MM-DD). Returns date object or None."""
+    try:
+        return date.fromisoformat(d)
+    except (ValueError, TypeError):
+        return None
 from blueprints.auth import get_auth_user
 from utils.foods_helpers import load_foods
 from utils.nutrition import (
@@ -44,6 +52,8 @@ def get_tracking(date):
     user = get_auth_user()
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
+    if not _validate_date(date):
+        return jsonify({'error': 'Format de date invalide'}), 400
     db = get_db()
     row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user["id"], date)).fetchone()
     data = json.loads(row['data']) if row and row['data'] else {}
@@ -55,6 +65,8 @@ def save_tracking(date):
     user = get_auth_user()
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
+    if not _validate_date(date):
+        return jsonify({'error': 'Format de date invalide'}), 400
     data = request.get_json() or {}
     selections_data = data.get('selections', {})
     db = get_db()
@@ -86,10 +98,12 @@ def get_tracking_week():
 @bp.route('/api/tracking/nutrition/<date>', methods=['GET'])
 def tracking_nutrition(date):
     """Get nutrition totals for a specific tracking day + week cumulative."""
-    from datetime import date as _date
     user = get_auth_user()
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
+    day_date = _validate_date(date)
+    if not day_date:
+        return jsonify({'error': 'Format de date invalide'}), 400
     foods_data = load_foods()
     categories = foods_data.get('categories', [])
 
@@ -101,11 +115,7 @@ def tracking_nutrition(date):
     # Compute day totals
     day_totals = compute_totals_from_selections(day_selections, categories)
 
-    # Get week cumulative
-    try:
-        day_date = _date.fromisoformat(date)
-    except ValueError:
-        day_date = _date.today()
+    # Get week cumulative (day_date already validated above)
     monday = day_date - timedelta(days=day_date.weekday())
     week_rows = db.execute('SELECT date, data FROM tracking WHERE user_id = ? AND date >= ? AND date <= ?',
                            (user['id'], monday.isoformat(), date)).fetchall()
@@ -126,6 +136,8 @@ def delete_tracking(date):
     user = get_auth_user()
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
+    if not _validate_date(date):
+        return jsonify({'error': 'Format de date invalide'}), 400
     db = get_db()
     db.execute('DELETE FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date))
     db.commit()

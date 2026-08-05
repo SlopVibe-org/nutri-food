@@ -364,10 +364,16 @@ def _save_season_and_deals(new_id, name):
 
 # ─── Raw deals file helpers ───
 import os
+import threading
 
 DEALS_RAW_FILE = '/data/deals_raw.json'
 DEALS_LOCK_FILE = '/data/deals.lock'
 DEALS_RAW_TTL = 7 * 24 * 3600  # 1 week
+
+# Thread-safe lock for deals_raw.json read-modify-write operations
+_deals_file_lock = threading.Lock()
+# Thread-safe flag for background refresh (replaces DEALS_BUILDING global)
+_deals_refresh_lock = threading.Lock()
 
 STORE_META = {
     'maxi':    {'name': 'Maxi',     'color': '#0a6cff'},
@@ -416,67 +422,75 @@ def fetch_all_deals_raw():
         'updated': datetime.now(timezone.utc).isoformat(),
         'count': total
     }
-    try:
-        with open(DEALS_RAW_FILE, 'w') as f:
-            json.dump(cache_data, f, ensure_ascii=False)
-    except Exception as e:
-        print(f'[NutriFood] Raw deals file write error: {e}')
+    with _deals_file_lock:
+        try:
+            with open(DEALS_RAW_FILE, 'w') as f:
+                json.dump(cache_data, f, ensure_ascii=False)
+        except Exception as e:
+            print(f'[NutriFood] Raw deals file write error: {e}')
     print(f'[NutriFood] Raw deals fetched: {total} items across {len(all_raw)} foods')
     return total
 
 
 def load_raw_deals():
     """Load raw deals from file. Returns (raw_dict, updated_str) or (None, None)."""
-    try:
-        if os.path.exists(DEALS_RAW_FILE):
-            with open(DEALS_RAW_FILE, 'r') as f:
-                data = json.load(f)
-            return data.get('raw', {}), data.get('updated')
-    except Exception as e:
-        print(f'[NutriFood] Raw deals read error: {e}')
+    with _deals_file_lock:
+        try:
+            if os.path.exists(DEALS_RAW_FILE):
+                with open(DEALS_RAW_FILE, 'r') as f:
+                    data = json.load(f)
+                return data.get('raw', {}), data.get('updated')
+        except Exception as e:
+            print(f'[NutriFood] Raw deals read error: {e}')
     return None, None
 
 
 def add_to_raw_deals(food_name, deals):
     """Add or update deals for a food in the raw file."""
     from datetime import datetime, timezone
-    try:
-        raw, _updated = load_raw_deals()
-        if raw is None:
-            raw = {}
-        if deals:
-            raw[food_name] = deals
-        elif food_name in raw:
-            del raw[food_name]
-        cache_data = {
-            'raw': raw,
-            'updated': datetime.now(timezone.utc).isoformat(),
-            'count': sum(len(v) for v in raw.values())
-        }
-        with open(DEALS_RAW_FILE, 'w') as f:
-            json.dump(cache_data, f, ensure_ascii=False)
-    except Exception as e:
-        print(f'[NutriFood] Error updating raw deals: {e}')
+    with _deals_file_lock:
+        try:
+            if os.path.exists(DEALS_RAW_FILE):
+                with open(DEALS_RAW_FILE, 'r') as f:
+                    raw = json.load(f).get('raw', {})
+            else:
+                raw = {}
+            if deals:
+                raw[food_name] = deals
+            elif food_name in raw:
+                del raw[food_name]
+            cache_data = {
+                'raw': raw,
+                'updated': datetime.now(timezone.utc).isoformat(),
+                'count': sum(len(v) for v in raw.values())
+            }
+            with open(DEALS_RAW_FILE, 'w') as f:
+                json.dump(cache_data, f, ensure_ascii=False)
+        except Exception as e:
+            print(f'[NutriFood] Error updating raw deals: {e}')
 
 
 def remove_from_raw_deals(food_name):
     """Remove a food from the raw deals file."""
     from datetime import datetime, timezone
-    try:
-        raw, _updated = load_raw_deals()
-        if raw is None:
-            raw = {}
-        if food_name in raw:
-            del raw[food_name]
-        cache_data = {
-            'raw': raw,
-            'updated': datetime.now(timezone.utc).isoformat(),
-            'count': sum(len(v) for v in raw.values())
-        }
-        with open(DEALS_RAW_FILE, 'w') as f:
-            json.dump(cache_data, f, ensure_ascii=False)
-    except Exception as e:
-        print(f'[NutriFood] Error removing from raw deals: {e}')
+    with _deals_file_lock:
+        try:
+            if os.path.exists(DEALS_RAW_FILE):
+                with open(DEALS_RAW_FILE, 'r') as f:
+                    raw = json.load(f).get('raw', {})
+            else:
+                raw = {}
+            if food_name in raw:
+                del raw[food_name]
+            cache_data = {
+                'raw': raw,
+                'updated': datetime.now(timezone.utc).isoformat(),
+                'count': sum(len(v) for v in raw.values())
+            }
+            with open(DEALS_RAW_FILE, 'w') as f:
+                json.dump(cache_data, f, ensure_ascii=False)
+        except Exception as e:
+            print(f'[NutriFood] Error removing from raw deals: {e}')
 
 
 def is_raw_deals_fresh():
@@ -494,15 +508,15 @@ def is_raw_deals_fresh():
 
 def trigger_raw_refresh_async():
     """Start background fetch of raw deals if not already running."""
-    import threading
     from datetime import datetime, timezone
-    global DEALS_BUILDING
-    if DEALS_BUILDING:
+    # Try to acquire the refresh lock (non-blocking)
+    if not _deals_refresh_lock.acquire(blocking=False):
         return False
     if os.path.exists(DEALS_LOCK_FILE):
         try:
             lock_age = (datetime.now(timezone.utc) - datetime.fromtimestamp(os.path.getmtime(DEALS_LOCK_FILE), tz=timezone.utc)).total_seconds()
             if lock_age < 300:
+                _deals_refresh_lock.release()
                 return False
         except Exception:
             pass
@@ -511,15 +525,13 @@ def trigger_raw_refresh_async():
             f.write(datetime.now(timezone.utc).isoformat())
     except Exception:
         pass
-    DEALS_BUILDING = True
     def _worker():
-        global DEALS_BUILDING
         try:
             fetch_all_deals_raw()
         except Exception as e:
             print(f'[NutriFood] Background raw fetch failed: {e}')
         finally:
-            DEALS_BUILDING = False
+            _deals_refresh_lock.release()
             try:
                 if os.path.exists(DEALS_LOCK_FILE):
                     os.remove(DEALS_LOCK_FILE)
@@ -528,6 +540,3 @@ def trigger_raw_refresh_async():
     t = threading.Thread(target=_worker, daemon=True)
     t.start()
     return True
-
-
-DEALS_BUILDING = False

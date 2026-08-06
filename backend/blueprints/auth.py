@@ -165,8 +165,6 @@ def health():
         'service': 'nutrifood-api',
         **deals_info,
     })
-
-
 @bp.route('/api/logout', methods=['POST'])
 def logout():
     """Clear auth and CSRF cookies on logout."""

@@ -612,6 +612,28 @@
   .nutri-progress-fill.good { background: var(--accent); }
   .nutri-progress-fill.ok { background: var(--accent-amber); }
   .nutri-progress-fill.low { background: var(--accent-red); }
+  /* Journal trends (issue #45) */
+  .trends-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .trends-toggle { display: flex; gap: 4px; }
+  .trends-btn { padding: 4px 12px; background: #12141c; color: var(--text-dim); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem; cursor: pointer; }
+  .trends-btn.active { background: var(--accent-dim); color: #0f1117; border-color: var(--accent-dim); font-weight: 600; }
+  .trends-chart-wrap { background: #12141c; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .trends-nutrients { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .trends-nutrient-chip { display: flex; align-items: center; gap: 4px; font-size: 0.75rem; color: var(--text-dim); padding: 4px 8px; background: #12141c; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; }
+  .trends-nutrient-chip input { width: 12px; height: 12px; }
+  .journal-entry { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .je-info { display: flex; align-items: center; gap: 8px; }
+  .je-icon { font-size: 1.2rem; }
+  .je-name { font-size: 0.9rem; }
+  .je-qty { color: var(--text-dim); font-size: 0.8rem; }
+  .je-nutri { font-size: 0.75rem; color: var(--text-dim); }
+  .je-remove { background: none; border: none; color: var(--accent-red); cursor: pointer; font-size: 1rem; padding: 4px; }
+  .journal-summary-header { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 8px; font-weight: 600; }
+  .journal-stats-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .journal-stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; flex: 1; }
+  .js-value { font-size: 1.1rem; font-weight: 700; color: var(--accent); }
+  .js-label { font-size: 0.7rem; color: var(--text-dim); }
+  .js-unit { font-size: 0.65rem; color: var(--text-dim); }
 </style>
 </head>
 <body>
@@ -807,6 +829,32 @@
   </div>
 </div>
 
+<!-- Journal modal (with trends — issue #45) -->
+<div class="modal-overlay hidden" id="journal-modal">
+  <div class="modal wide scrollable" style="max-width:680px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;">📔 Journal nutritionnel</h2>
+      <button class="auth-btn outline" id="journal-close" style="padding:4px 12px;">✕</button>
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.8rem;color:var(--text-dim);">Date</label>
+      <input type="date" id="journal-date" style="width:100%;padding:8px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;margin-top:4px;">
+    </div>
+    <div style="margin-bottom:16px;">
+      <label style="font-size:0.8rem;color:var(--text-dim);">Ajouter un aliment</label>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <input type="text" id="journal-food-name" placeholder="Nom de l'aliment" list="journal-food-list" style="flex:1;padding:8px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;">
+        <datalist id="journal-food-list"></datalist>
+        <input type="number" id="journal-food-qty" value="1" min="1" max="20" style="width:60px;padding:8px;background:#12141c;color:var(--text);border:1px solid var(--border);border-radius:8px;">
+        <button class="auth-btn" id="journal-add-btn">+ Ajouter</button>
+      </div>
+    </div>
+    <div id="journal-entries" style="margin-bottom:20px;"></div>
+    <div id="journal-trends" style="margin-bottom:16px;"></div>
+    <div id="journal-summary"></div>
+  </div>
+</div>
+
 <!-- Reset confirmation modal -->
 <div class="modal-overlay hidden" id="reset-confirm-modal">
   <div class="modal">
@@ -825,6 +873,7 @@
 
 <div class="toast-container" id="toast-container"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" crossorigin="anonymous" defer></script>
 <script src="js/app.bundle.js"></script>
 </body>
 </html>

@@ -23,7 +23,7 @@ npx esbuild /tmp/core-concat.js \
   --outfile="$DIST/js/app.bundle.js"
 
 # 2. Minify each lazy-loaded script individually (same filename)
-for f in tracking deals suggestions grocery history cnf food-modal share; do
+for f in tracking deals suggestions grocery history cnf food-modal share journal profile; do
   if [ -f "$SRC/js/$f.js" ]; then
     npx esbuild "$SRC/js/$f.js" \
       --minify \

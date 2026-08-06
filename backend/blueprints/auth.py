@@ -104,9 +104,47 @@ def _validate_csrf():
 
 # ─── Auth helpers ───
 
+# Argon2id parameters (OWASP recommended)
+_ARGON2_TIME_COST = 3
+_ARGON2_MEMORY_COST = 65536  # 64 MB
+_ARGON2_PARALLELISM = 4
 
-def hash_password(password, salt):
+try:
+    from argon2 import PasswordHasher, Type
+    _argon2 = PasswordHasher(
+        time_cost=_ARGON2_TIME_COST,
+        memory_cost=_ARGON2_MEMORY_COST,
+        parallelism=_ARGON2_PARALLELISM,
+        type=Type.ID,
+    )
+    _HAS_ARGON2 = True
+except ImportError:
+    _HAS_ARGON2 = False
+
+
+def hash_password(password, salt=''):
+    """Hash password with argon2id (new) or PBKDF2 (legacy fallback).
+    New passwords always use argon2id. The salt param is kept for backward compat."""
+    if _HAS_ARGON2:
+        return _argon2.hash(password)
     return hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
+
+
+def verify_password(password, stored_hash, salt):
+    """Verify a password against stored hash. Supports both argon2id and legacy PBKDF2.
+    Returns (is_valid, needs_rehash) — if needs_rehash, caller should re-hash with argon2id."""
+    # argon2id hashes start with $argon2
+    if stored_hash.startswith('$argon2'):
+        try:
+            _argon2.verify(stored_hash, password)
+            return True, False
+        except Exception:
+            return False, False
+    # Legacy PBKDF2
+    pw_hash = hashlib.pbkdf2_hmac('sha256', password.encode(), salt.encode(), 100000).hex()
+    if secrets.compare_digest(pw_hash, stored_hash):
+        return True, _HAS_ARGON2  # needs rehash if argon2 available
+    return False, False
 
 
 def make_token(user_id, email, token_version=0):
@@ -198,11 +236,10 @@ def register():
     if existing_name:
         return jsonify({'error': 'Ce nom d\'usager est déjà pris'}), 409
 
-    salt = secrets.token_hex(16)
-    pw_hash = hash_password(password, salt)
+    pw_hash = hash_password(password)
     cursor = db.execute(
         'INSERT INTO users (email, name, password_hash, salt) VALUES (?, ?, ?, ?)',
-        (email, name, pw_hash, salt)
+        (email, name, pw_hash, '')
     )
     db.execute('INSERT INTO selections (user_id, data) VALUES (?, ?)', (cursor.lastrowid, '{}'))
     db.commit()
@@ -238,9 +275,15 @@ def login():
     if not user:
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
 
-    pw_hash = hash_password(password, user['salt'])
-    if not secrets.compare_digest(pw_hash, user['password_hash']):
+    is_valid, needs_rehash = verify_password(password, user['password_hash'], user['salt'])
+    if not is_valid:
         return jsonify({'error': 'Email ou mot de passe incorrect'}), 401
+
+    # Transparent migration: re-hash with argon2id if still on PBKDF2
+    if needs_rehash:
+        new_hash = hash_password(password)
+        db.execute('UPDATE users SET password_hash = ?, salt = ? WHERE id = ?', (new_hash, '', user['id']))
+        db.commit()
 
     token = make_token(user['id'], user['email'], user['token_version'])
     resp = make_response(jsonify({
@@ -329,11 +372,10 @@ def reset_password():
     if not user:
         return jsonify({'error': 'Utilisateur introuvable'}), 400
 
-    new_salt = secrets.token_hex(16)
-    new_hash = hash_password(new_password, new_salt)
+    new_hash = hash_password(new_password)
     db.execute(
         'UPDATE users SET password_hash = ?, salt = ?, token_version = token_version + 1, updated_at = datetime(\'now\') WHERE id = ?',
-        (new_hash, new_salt, user['id'])
+        (new_hash, '', user['id'])
     )
     db.execute('UPDATE reset_tokens SET used = 1 WHERE id = ?', (row['id'],))
     db.commit()
@@ -370,16 +412,15 @@ def change_password():
     full_user = db.execute('SELECT * FROM users WHERE id = ?', (user['id'],)).fetchone()
 
     # Verify current password
-    pw_hash = hash_password(current_password, full_user['salt'])
-    if not secrets.compare_digest(pw_hash, full_user['password_hash']):
+    is_valid, _ = verify_password(current_password, full_user['password_hash'], full_user['salt'])
+    if not is_valid:
         return jsonify({'error': 'Mot de passe actuel incorrect'}), 403
 
     # Update password
-    new_salt = secrets.token_hex(16)
-    new_hash = hash_password(new_password, new_salt)
+    new_hash = hash_password(new_password)
     db.execute(
         'UPDATE users SET password_hash = ?, salt = ?, token_version = token_version + 1, updated_at = datetime(\'now\') WHERE id = ?',
-        (new_hash, new_salt, user['id'])
+        (new_hash, '', user['id'])
     )
     db.commit()
 

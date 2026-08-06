@@ -99,14 +99,12 @@ function wireGroceryButtons() {
   let shareBtn = $('grocery-share-btn');
   if (shareBtn) {
     shareBtn.onclick = async function() {
-      let token = getToken();
-      if (!token) { return; }
       let origText = shareBtn.textContent;
       shareBtn.disabled = true; shareBtn.textContent = '⏳…';
       try {
         let res = await fetchWithTimeout(API + '/share', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }
+          headers: { 'Content-Type': 'application/json' }
         }, 10000);
         let data = await res.json();
         if (res.ok && data.share_url) {

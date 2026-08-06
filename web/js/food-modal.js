@@ -226,7 +226,7 @@ async function _saveDayToServer(date, dayData, token) {
   try {
     await fetchWithTimeout(API + '/tracking/' + date, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ selections: dayData })
     }, 10000);
   } catch(e) { console.error('[NutriFood] Remove error:', e); }
@@ -248,8 +248,6 @@ function _decrementLocalSelections(catId, name, removeAll) {
 
 async function removeSimpleFood(catId, name, scope) {
   $('suggestions-modal').classList.add('hidden');
-  let token = getToken();
-  if (!token) { return; }
   if (typeof autoSaveTimer !== 'undefined' && autoSaveTimer) { clearTimeout(autoSaveTimer); }
 
   let removeAll = (scope === 'all' || scope === null);

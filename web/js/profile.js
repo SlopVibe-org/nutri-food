@@ -37,8 +37,6 @@ const ALLERGY_OPTIONS = [
 ];
 
 async function showProfile() {
-  let token = getToken();
-  if (!token) return;
 
   let overlay = document.createElement('div');
   overlay.className = 'modal-overlay';
@@ -57,7 +55,7 @@ async function showProfile() {
 
   try {
     let res = await fetchWithTimeout(API + '/profile', {
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: {  }
     }, 8000);
     if (!res.ok) { overlay.querySelector('.loading').textContent = 'Erreur de chargement'; return; }
     let data = await res.json();
@@ -155,8 +153,6 @@ function wireProfileForm(overlay, currentProfile) {
   let recalcBtn = overlay.querySelector('#profile-recalc');
 
   saveBtn.addEventListener('click', async function() {
-    let token = getToken();
-    if (!token) return;
     errEl.textContent = '';
     saveBtn.disabled = true;
     saveBtn.textContent = '⏳ Sauvegarde…';
@@ -179,7 +175,7 @@ function wireProfileForm(overlay, currentProfile) {
     try {
       let res = await fetchWithTimeout(API + '/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile: profile }),
       }, 8000);
       let data = await res.json();
@@ -195,15 +191,13 @@ function wireProfileForm(overlay, currentProfile) {
   });
 
   recalcBtn.addEventListener('click', async function() {
-    let token = getToken();
-    if (!token) return;
     errEl.textContent = '';
     recalcBtn.disabled = true;
     recalcBtn.textContent = '⏳…';
 
     try {
       let res = await fetchWithTimeout(API + '/profile/recommend-targets', {
-        headers: { 'Authorization': 'Bearer ' + token },
+        headers: {  },
       }, 8000);
       let data = await res.json();
       if (!res.ok) { errEl.textContent = data.error || 'Erreur'; recalcBtn.disabled = false; recalcBtn.textContent = '🎯 Recommander objectifs'; return; }
@@ -223,12 +217,10 @@ function wireProfileForm(overlay, currentProfile) {
       // Wire apply button
       let applyBtn = overlay.querySelector('#profile-apply-targets');
       applyBtn.onclick = async function() {
-        let token2 = getToken();
-        if (!token2) return;
         try {
           await fetchWithTimeout(API + '/goals', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token2 },
+            headers: { 'Content-Type': 'application/json'2 },
             body: JSON.stringify({ goals: rec }),
           }, 8000);
           showToast('Objectifs appliqués!', 'success');

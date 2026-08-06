@@ -104,9 +104,17 @@ function showToast(message, type = 'info') {
 
 // ─── Fetch with timeout ───
 function fetchWithTimeout(url, options, timeoutMs = 10000) {
-  // Ensure credentials are sent for httpOnly cookie auth
   options = options || {};
   if (!options.credentials) { options.credentials = 'same-origin'; }
+  // Auto-inject CSRF token on mutating requests (double-submit cookie pattern)
+  var method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') {
+    if (!options.headers) { options.headers = {}; }
+    var csrfToken = getCSRFToken();
+    if (csrfToken && !options.headers['X-CSRF-Token']) {
+      options.headers['X-CSRF-Token'] = csrfToken;
+    }
+  }
   return Promise.race([
     fetch(url, options),
     new Promise(function(_, reject) {
@@ -115,14 +123,19 @@ function fetchWithTimeout(url, options, timeoutMs = 10000) {
   ]);
 }
 
+// ─── CSRF token helper (double-submit cookie) ───
+function getCSRFToken() {
+  var match = document.cookie.match(/(?:^|;\s*)nf_csrf_token=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 // ─── Token helpers ───
 function getToken() { try { return localStorage.getItem(TOKEN_KEY); } catch(e) { console.error('[NutriFood] localStorage access denied:', e); return null; } }
 
 function setAuth(token, user) {
-  // Token is now set via httpOnly cookie by the backend.
-  // We keep storing it in localStorage during the transition period for backward compat.
+  // Auth token is set via httpOnly cookie by the backend — no localStorage storage.
+  // We only store the user profile (non-sensitive) for UI rendering.
   try {
-    localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
   } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage error:', e); }
   currentUser = user;
@@ -130,6 +143,7 @@ function setAuth(token, user) {
 }
 
 function clearAuth() {
+  // Clear localStorage user data (token is in httpOnly cookie, cleared by backend logout)
   try { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(USER_KEY); } catch(e) { /* localStorage may be unavailable in private browsing */ console.error('[NutriFood] localStorage clear error:', e); }
   currentUser = null;
   selections = {};

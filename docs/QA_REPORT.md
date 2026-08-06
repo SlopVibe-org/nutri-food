@@ -1,6 +1,7 @@
 # 🍎 NutriFood — Rapport QA
 
 **Date:** 1er août 2026  
+**Note:** Des changements ont été apportés depuis cette date (5 août — profil utilisateur, recherche CNF étendue, fix sécurité). Un re-run QA complet est recommandé.  
 **Commit:** `787e39d`  
 **URL:** https://slopvibe.org/nutri-food/
 
@@ -112,6 +113,7 @@ Tous liés au CSP (hardening) :
 | Dropdown searchable (simple) | ✅ | ✅ |
 | Bouton reset | ✅ | ✅ |
 | Header sur une ligne | ✅ | ✅ |
+| Header sur une ligne (mobile) | ✅ | ✅ |
 
 ---
 

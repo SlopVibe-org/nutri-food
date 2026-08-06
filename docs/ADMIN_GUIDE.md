@@ -104,6 +104,38 @@ db.close()
 
 ---
 
+## 👤 Gestion du profil utilisateur
+
+Les utilisateurs peuvent maintenant configurer un profil complet via le menu de l'application. Ce profil permet de personnaliser l'expérience et de recommander des objectifs nutritionnels.
+
+### Colonnes de profil (table `users`)
+
+| Colonne | Type | Description |
+|---------|------|-------------|
+| `weight` | REAL | Poids (kg) |
+| `height` | REAL | Taille (cm) |
+| `age` | INTEGER | Âge |
+| `sex` | TEXT | Sexe biologique (`male` / `female`) |
+| `activity_level` | TEXT | Niveau d'activité (`sedentary`, `light`, `moderate`, `active`, `very_active`) |
+| `diet` | TEXT | Régime alimentaire (ex. `omnivore`, `vegetarian`, `vegan`, `keto`) |
+| `allergies` | TEXT | Allergies alimentaires (séparées par virgules) |
+
+### Migration automatique
+
+Au démarrage de l'application, une migration automatique s'exécute : si les colonnes de profil sont manquantes dans la table `users`, un `ALTER TABLE` est exécuté pour les ajouter. Aucune intervention manuelle n'est requise.
+
+### Recommandation d'objectifs — Formule Mifflin-St Jeor
+
+Lorsqu'un profil complet est configuré, l'application recommande des objectifs caloriques quotidiens basés sur la formule de Mifflin-St Jeor :
+
+- **Hommes :** BMR = 10 × poids(kg) + 6.25 × taille(cm) − 5 × âge + 5
+- **Femmes :** BMR = 10 × poids(kg) + 6.25 × taille(cm) − 5 × âge − 161
+- **TDEE** = BMR × facteur d'activité
+
+Les objectifs hebdomadaires sont ensuite dérivés du TDEE quotidien × 7.
+
+---
+
 ## 🔄 Rafraîchir le cache des spéciaux d'épicerie
 
 Les spéciaux sont rafraîchis automatiquement (une fois par semaine). Pour forcer un rafraîchissement :
@@ -195,7 +227,7 @@ Les objectifs par défaut sont définis dans la table `user_goals` :
 
 | Table | Description |
 |-------|-------------|
-| `users` | Comptes (id, email, name, password_hash, salt, is_admin, token_version) |
+| `users` | Comptes (id, email, name, password_hash, salt, is_admin, token_version, weight, height, age, sex, activity_level, diet, allergies) |
 | `selections` | Planification hebdomadaire (user_id, data JSON) |
 | `tracking` | Suivi quotidien (user_id, date, data JSON) — un enregistrement par jour |
 | `history_snapshots` | Snapshots hebdomadaires |
@@ -266,9 +298,9 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/purge_cache" 
 
 - **Ne jamais supprimer** `/data/nutrifood.db` — c'est la seule source de données
 - **Toujours sauvegarder** avant une mise à jour
-- **Les tokens JWT** sont valides 90 jours (2160h) par défaut
+- **Les tokens JWT** sont valides 90 jours (2160h) par défaut, transmis via cookie httpOnly (migration progressive, header Bearer toujours accepté)
 - **Les reset tokens** expirent après 1 heure
-- **Le rate limiting** est de 10 requêtes/minute par IP pour les endpoints sensibles
+- **Le rate limiting** est de 10 requêtes/minute par IP (X-Forwarded-For respecté derrière proxy) sur register, login, forgot-password, reset-password
 - **L'architecture 2 conteneurs** (api + web/nginx) signifie que les fichiers frontend sont servis par nginx, pas par un serveur web externe
 - **La table `tracking`** stocke un enregistrement par utilisateur par jour (clé user_id + date)
 - **La vue simplifiée** agrège les données de tous les jours de la semaine (lundi→dimanche) via `/api/tracking/week`

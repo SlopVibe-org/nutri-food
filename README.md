@@ -48,7 +48,7 @@ Suivi, optimisation et planification nutritionnelle basée sur le Guide alimenta
 - Sélection d'aliments par catégorie (protéines, légumes, fruits, grains, etc.)
 - Calcul automatique des objectifs nutritionnels (protéines, fibres, fer, vitamine C, calcium, oméga-3, calories)
 - Objectifs personnalisables par semaine → [Guide utilisateur — Objectifs](docs/USER_GUIDE.md#🎯-objectifs-nutritionnels-personnalisés)
-- Liste d'épicerie générée à partir des sélections → [Guide utilisateur — Liste d'épicerie](docs/USER_GUIDE.md#🛒-liste-dépicerie)
+- Liste d'épicerie générée à partir des sélections (fonctionne depuis le mode tracking ET planification) → [Guide utilisateur — Liste d'épicerie](docs/USER_GUIDE.md#🛒-liste-dépicerie)
 - Suggestions de portions et carences en nutriments
 - Sauvegarde automatique et historique des semaines
 - Réinitialisation rapide (badge 🔄 cliquable) → [Guide utilisateur — Reset](docs/USER_GUIDE.md#🔄-réinitialiser-les-données)
@@ -64,6 +64,13 @@ Suivi, optimisation et planification nutritionnelle basée sur le Guide alimenta
 - Mode mémorisé dans localStorage
 - Réinitialisation : badge 🔄 cliquable → jour ou semaine complète
 
+### Profil utilisateur
+
+- Saisie du poids, taille, âge, sexe et niveau d'activité
+- Régimes alimentaires (végétarien, végétalien, sans gluten, etc.)
+- Allergies et intolérances
+- Recommandations automatiques des objectifs nutritionnels via l'équation de Mifflin-St Jeor
+
 ### Vue simplifiée
 
 La vue simplifiée affiche une **semaine complète** avec des cases visuelles par catégorie :
@@ -77,6 +84,12 @@ La vue simplifiée affiche une **semaine complète** avec des cases visuelles pa
 - Idéal sur mobile — plus rapide à consulter
 
 La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. Les deux vues partagent les mêmes données.
+
+- **Mini-dashboard en vue simplifiée** : barres de progression nutritionnelles
+
+### Recherche CNF étendue
+
+La recherche principale interroge aussi la base CNF (5993 aliments) quand les résultats locaux sont insuffisants, offrant un catalogue beaucoup plus large d'aliments canadiens.
 
 ### Spéciaux (deals hebdomadaires)
 
@@ -93,7 +106,7 @@ La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. 
 
 ### Stack
 
-- **Frontend:** HTML/CSS/JS vanilla (15 modules avec lazy loading)
+- **Frontend:** HTML/CSS/JS vanilla (16 modules avec lazy loading)
 - **Backend:** Python Flask (API REST, architecture Blueprints modulaire)
 - **Auth:** JWT via PyJWT (HS256)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
@@ -120,6 +133,8 @@ La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. 
 | `history.js` | Historique des snapshots hebdomadaires |
 | `share.js` | Vue partagée en lecture seule (lien public) |
 | `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
+| `profile.js` | Profil utilisateur (poids, taille, âge, sexe, activité, régime, allergies) |
+| `journal.js` | Journal nutritionnel |
 
 ### Modules backend (Blueprints)
 
@@ -135,6 +150,8 @@ La vue **Avancée** affiche les cartes détaillées avec nutriments et icônes. 
 | `blueprints/deals.py` | Spéciaux d'épicerie |
 | `blueprints/suggestions.py` | Suggestions basées sur carences |
 | `blueprints/meal_plan.py` | Plans de repas hebdomadaires |
+| `blueprints/profile.py` | Profil utilisateur (GET/POST + recommandations) |
+| `blueprints/export.py` | Export CSV |
 | `utils/email.py` | SMTP (welcome, reset) |
 | `utils/nutrition.py` | Calculs densité, totaux nutritionnels |
 | `utils/season.py` | Calendrier saisonnier Québec |
@@ -169,7 +186,7 @@ Volumes Docker :
 
 | Table | Description |
 |-------|-------------|
-| `users` | Comptes utilisateurs (email, password_hash, is_admin, token_version) |
+| `users` | Comptes utilisateurs (email, password_hash, is_admin, token_version, weight, height, age, sex, activity_level, diet, allergies) — colonnes profil ajoutées par migration auto au démarrage |
 | `selections` | Planification hebdomadaire par utilisateur |
 | `tracking` | Suivi quotidien (user_id, date, data JSON) |
 | `history_snapshots` | Snapshots des semaines passées |
@@ -257,6 +274,14 @@ Volumes Docker :
 - `GET /api/journal/summary` — résumé du journal
 - `GET /api/health` — health check
 
+### Profil utilisateur
+- `GET /api/profile` — récupérer le profil (poids, taille, âge, sexe, activité, régime, allergies)
+- `POST /api/profile` — mettre à jour le profil
+- `GET /api/profile/recommend-targets` — recommandations d'objectifs basées sur le profil (Mifflin-St Jeor)
+
+### Export
+- `GET /api/export/csv` — export CSV des données (suivi, journal, sélections)
+
 ### Administration
 - `POST /api/admin/food/hide` — masquer un aliment (admin only)
 - `POST /api/admin/food/show` — afficher un aliment (admin only)
@@ -279,8 +304,9 @@ Volumes Docker :
 - JWT tokens (PyJWT, HS256) via header `Authorization: Bearer`
 - Password hashing: PBKDF2-SHA256
 - Token invalidation on password change (token_version)
-- Rate limiting: 10 req/min sur endpoints sensibles
+- Rate limiting: 10 req/min sur endpoints sensibles (login, register, forgot-password, reset-password) — utilise X-Forwarded-For
 - Reset tokens expirent après 1h
+- JWT en cookie httpOnly + header Bearer (migration progressive)
 
 ### CI et tests
 

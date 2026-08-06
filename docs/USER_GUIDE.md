@@ -2,6 +2,10 @@
 
 Guide complet pour utiliser NutriFood, votre outil de suivi, optimisation et planification nutritionnelle.
 
+### Header mobile
+
+Sur mobile, le header est maintenant sur **une seule ligne** : le nom **NutriFood**, la barre de recherche et le menu sont regroupés horizontalement pour gagner de l'espace.
+
 ---
 
 ## 📝 Création de compte et connexion
@@ -60,6 +64,8 @@ Cartes détaillées avec :
 - Tooltips au survol
 
 ### Vue Simplifiée
+
+Un **mini-dashboard nutritionnel** (6 barres de progression) s'affiche en haut de la vue simplifiée, montrant vos objectifs en temps réel.
 
 Vue compacte avec cases visuelles par catégorie :
 
@@ -170,6 +176,10 @@ La recherche est **normalisée** — elle gère les accents et ligatures automat
 
 💡 **Aucun besoin de gérer les accents.** Tapez naturellement.
 
+### Recherche étendue (base canadienne)
+
+Quand la recherche locale (160 aliments) donne peu de résultats, NutriFood interroge **automatiquement** la base de données canadienne (5993 aliments CNF). Les résultats étendus apparaissent dans une **section séparée**. Cliquez pour voir les détails nutritionnels.
+
 ---
 
 ## 💡 Info-bulles (tooltips)
@@ -237,13 +247,49 @@ Les barres de progression du tableau de bord utiliseront ces nouvelles valeurs.
 
 ---
 
+## 👤 Mon profil
+
+**Menu** → **👤 Mon profil**
+
+Renseignez votre profil pour des recommandations personnalisées :
+
+### Informations personnelles
+
+- **Poids** (kg), **taille** (cm), **âge**, **sexe**
+- **Niveau d'activité** : sédentaire, léger, modéré, actif, très actif
+
+### Régime alimentaire
+
+Choisissez un régime parmi :
+
+- Aucun, Végétarien, Végétalien, Cétogène, Méditerranéen, Sans gluten
+
+### Allergies
+
+Cochez vos allergies parmi :
+
+- Arachides, noix, lait/lactose, œufs, soya, blé/gluten, poisson, fruits de mer, sésame, moutarde
+
+### Recommandations automatiques
+
+- **🎯 Recommander objectifs** — calcule automatiquement vos objectifs nutritionnels (calories, protéines, etc.) basés sur votre profil, en utilisant la formule Mifflin-St Jeor avec facteur d'activité
+- **Appliquer** — met à jour vos objectifs nutritionnels d'un seul clic
+
+---
+
 ## 🛒 Liste d'épicerie
 
 ### Générer la liste
 
 **Menu** → **🛒 Liste d'épicerie**
 
-La liste est générée à partir de vos sélections. Elle inclut :
+La liste utilise maintenant les sélections du **mode actif** :
+
+- Si le mode **Suivi** est actif, la liste est générée à partir de votre suivi de la semaine
+- Si le suivi est vide, un **fallback automatique** bascule vers les sélections de planification
+- Le **titre de la liste indique la source** (Suivi ou Planification)
+
+Elle inclut :
 - Tous les aliments sélectionnés
 - Les **meilleurs prix** trouvés chez les marchands partenaires
 - Le **total estimé** de votre panier

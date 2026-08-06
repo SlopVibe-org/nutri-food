@@ -201,7 +201,7 @@ init_db()
 from extensions import EMAIL_RE as _er  # noqa: already imported above
 
 # Functions used by test_unit.py via app_module
-from blueprints.auth import hash_password, make_token, verify_token  # noqa
+from blueprints.auth import hash_password, verify_password, make_token, verify_token  # noqa
 from utils.nutrition import calculate_density, compute_nutrition_totals, compute_totals_from_selections, get_user_targets, DEFAULT_TARGETS  # noqa
 from utils.season import lookup_quebec_season, QUEBEC_SEASONS  # noqa
 from utils.foods_helpers import _extract_food_keywords  # noqa

@@ -22,3 +22,4 @@ Thumbs.db
 .idea/
 .scannerwork/
 backend/nutrifood.db
+.coverage

@@ -25,18 +25,21 @@ class TestGetWeekKey:
 
 
 class TestHashPassword:
-    def test_deterministic(self):
-        salt = 'abc123'
-        h1 = app_module.hash_password('password', salt)
-        h2 = app_module.hash_password('password', salt)
-        assert h1 == h2
+    def test_hash_works(self):
+        h = app_module.hash_password('password', 'salt123')
+        assert h is not None
+        assert len(h) > 0
 
     def test_different_passwords(self):
-        salt = 'abc123'
-        assert app_module.hash_password('pass1', salt) != app_module.hash_password('pass2', salt)
+        assert app_module.hash_password('pass1', 'salt') != app_module.hash_password('pass2', 'salt')
 
-    def test_different_salts(self):
-        assert app_module.hash_password('password', 'salt1') != app_module.hash_password('password', 'salt2')
+    def test_verify_password(self):
+        h = app_module.hash_password('mypassword')
+        valid, needs_rehash = app_module.verify_password('mypassword', h, '')
+        assert valid is True
+        # Wrong password
+        valid2, _ = app_module.verify_password('wrongpassword', h, '')
+        assert valid2 is False
 
 
 class TestJWT:

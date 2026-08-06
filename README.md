@@ -106,9 +106,9 @@ La recherche principale interroge aussi la base CNF (5993 aliments) quand les r�
 
 ### Stack
 
-- **Frontend:** HTML/CSS/JS vanilla (16 modules avec lazy loading)
+- **Frontend:** HTML/CSS/JS vanilla (18 modules avec lazy loading)
 - **Backend:** Python Flask (API REST, architecture Blueprints modulaire)
-- **Auth:** JWT via PyJWT (HS256)
+- **Auth:** JWT via PyJWT (HS256) en cookie httpOnly + protection CSRF (double-submit cookie)
 - **DB:** SQLite (nutrifood.db) avec tables FTS5 pour la recherche
 - **Aliments:** 160 aliments du Guide alimentaire canadien (CNF + custom)
 - **Déploiement:** Docker Compose (2 conteneurs)
@@ -134,7 +134,14 @@ La recherche principale interroge aussi la base CNF (5993 aliments) quand les r�
 | `share.js` | Vue partagée en lecture seule (lien public) |
 | `cnf.js` | Recherche dans la base CNF (5993 aliments de Santé Canada) |
 | `profile.js` | Profil utilisateur (poids, taille, âge, sexe, activité, régime, allergies) |
-| `journal.js` | Journal nutritionnel |
+| `journal.js` | Journal nutritionnel avec graphiques de tendances (Chart.js 7d/30d) |
+
+### Dépendances frontend
+
+| Fichier | Rôle |
+|---------|------|
+| `nutrifood.css` | Styles extraits du HTML (CSS externe) |
+| `chart.umd.min.js` | Chart.js auto-hébergé (graphiques du journal) |
 
 ### Modules backend (Blueprints)
 
@@ -168,7 +175,7 @@ ghcr.io/slopvibe-org/nutrifood-backend:latest   (Flask/Gunicorn, port 5000 inter
 ghcr.io/slopvibe-org/nutrifood-web:latest        (Nginx, port 5011 hôte → proxy vers API)
 ```
 
-Le frontend est servi par le conteneur nginx (nutrifood-web) qui proxy les requêtes `/api/` vers le backend (nutrifood-api).
+Le conteneur backend inclut le script de sauvegarde SQLite (`backend/scripts/backup_db.py`) pour les backups automatisés via cron.
 
 Tags disponibles : `latest` (main), `v1.0.0` (releases), `sha-xxxxx` (par commit).
 
@@ -236,7 +243,8 @@ Volumes Docker :
 
 ### Authentification
 - `POST /api/register` — inscription
-- `POST /api/login` — connexion (retourne JWT)
+- `POST /api/login` — connexion (définit cookie httpOnly + cookie CSRF)
+- `POST /api/logout` — déconnexion (efface les cookies)
 - `GET /api/me` — profil utilisateur courant
 - `POST /api/change-password` — changement de mot de passe
 - `POST /api/forgot-password` — mot de passe oublié (envoi lien)
@@ -272,7 +280,8 @@ Volumes Docker :
 - `GET/POST /api/meal-plan` — plan de repas hebdomadaire
 - `GET/POST/DELETE /api/journal` — journal nutritionnel
 - `GET /api/journal/summary` — résumé du journal
-- `GET /api/health` — health check
+- `GET /api/health` — health check (inclut `deals_count`, `deals_stale`, `deals_last_refresh`)
+- `GET /api/health/backup` — vérification du dernier backup SQLite
 
 ### Profil utilisateur
 - `GET /api/profile` — récupérer le profil (poids, taille, âge, sexe, activité, régime, allergies)
@@ -292,41 +301,44 @@ Volumes Docker :
 
 ### Headers de sécurité (nginx)
 - `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: SAMEORIGIN`
+- `X-Frame-Options: DENY`
 - `Strict-Transport-Security` (HSTS)
-- `Content-Security-Policy` (CSP)
+- `Content-Security-Policy` : `script-src 'self'` + hash Cloudflare, `style-src 'self' 'unsafe-inline'`
 - `Referrer-Policy`
 - `Permissions-Policy`
 - `Cross-Origin-Embedder-Policy`
 - `Cross-Origin-Opener-Policy`
+- **Chart.js auto-hébergé** (plus de CDN — `script-src 'self'` uniquement)
 
 ### Authentification
-- JWT tokens (PyJWT, HS256) via header `Authorization: Bearer`
-- Password hashing: PBKDF2-SHA256
+- JWT tokens (PyJWT, HS256) stockés en cookie **httpOnly + Secure + SameSite** (plus dans localStorage)
+- **Protection CSRF** via double-submit cookie (`nf_csrf_token`) — header `X-CSRF-Token` sur les requêtes mutatives
+- **Password hashing:** argon2id (migration transparente depuis PBKDF2 au prochain login)
 - Token invalidation on password change (token_version)
 - Rate limiting: 10 req/min sur endpoints sensibles (login, register, forgot-password, reset-password) — utilise X-Forwarded-For
 - Reset tokens expirent après 1h
-- JWT en cookie httpOnly + header Bearer (migration progressive)
+- Endpoint `/api/logout` pour effacer les cookies
 
 ### CI et tests
 
-> 📖 Voir : [Guide de test complet](TESTING.md)
+> 📖 Voir : [Guide de test complet](docs/TESTING.md)
 
-- **64 tests** pytest (24 unitaires + 40 intégration API)
-- **CI local** : pre-push hook → Docker sur ai-docker-01 (~30s)
-- **GitHub Actions** : pytest + ruff + bandit sur chaque PR
+- **93 tests** pytest (couverture **74%**)
+- **CI GitHub Actions** : `pytest --cov --cov-fail-under=60` + ruff + bandit sur chaque PR
 - **Docker publishing** : images build sur ghcr.io à chaque push sur main
+- **requirements-dev.txt** : dépendances de développement (pytest, pytest-cov)
 
-### Résultats QA (2 août 2026)
+### Résultats QA (6 août 2026)
 
 📋 [Rapport QA complet](docs/QA_REPORT.md)
 
 | Outil | Résultat |
 |-------|----------|
-| **Lighthouse** | Performance 100 · Accessibility 100 · Best Practices 100 · SEO 100 |
-| **OWASP ZAP** | 0 FAIL · 5 WARN (CSP hardening) · 1 INFO |
-| **SonarQube** | 32 issues (8 BLOCKER faux positifs, 0 actionable dans le code récent) |
-| **Sécurité** | 8/8 security headers · JWT auth · rate limiting · CORP + COOP |
+| **Lighthouse** | Performance 100 · Accessibility 100 · Best Practices 92 · SEO 100 |
+| **OWASP ZAP** | 0 FAIL · 19 WARN (CSP `unsafe-inline` style) · 2 INFO |
+| **SonarQube** | 0 bugs · 1 vuln (faux positif CORS/CSRF) · 0 hotspots · 51 code smells (pré-existant) |
+| **Tests** | 93 passed · 74% coverage |
+| **Sécurité** | Cookie httpOnly · CSRF double-submit · argon2id · CSP stricte · rate limiting |
 | **Mobile** | ✅ Aucun overflow · toutes fonctionnalités opérationnelles |
 
 ---

@@ -87,8 +87,10 @@ docker ps | grep nutrifood
 # nutrifood-web   ...   Up   0.0.0.0:5011->80/tcp
 
 curl http://localhost:5011/api/health
-# {"status":"ok"}
+# {"status":"ok","deals_count":42,"deals_stale":false,"deals_last_refresh":"2026-08-06T12:00:00Z"}
 ```
+
+L'endpoint inclut désormais l'état des deals : `deals_count`, `deals_stale`, `deals_last_refresh`.
 
 ---
 

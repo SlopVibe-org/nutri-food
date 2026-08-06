@@ -122,7 +122,7 @@ Les tests frontend sont actuellement manuels. Une suite Vitest est planifiée.
 
 ### CSP et headers (#43)
 - [ ] Header `Content-Security-Policy` inclut `form-action 'self'`, `worker-src 'self'`, `manifest-src 'self'`
-- [ ] `cdn.jsdelivr.net` autorisé dans `script-src` (Chart.js)
+- [ ] `cdn.jsdelivr.net` n'est plus dans `script-src` (Chart.js auto-hébergé)
 - [ ] Aucun header CSP dupliqué (Cloudflare + nginx)
 - [ ] `X-Frame-Options: DENY`
 - [ ] `Strict-Transport-Security` actif
@@ -165,7 +165,7 @@ Les tests frontend sont actuellement manuels. Une suite Vitest est planifiée.
 |-----------|-------|--------|
 | Performance | 🟢 100 | ✅ |
 | Accessibility | 🟢 100 | ✅ |
-| Best Practices | 🟢 100 | ✅ |
+| Best Practices | 🟡 92 | ⚠️ CSP unsafe-inline (style) |
 | SEO | 🟢 100 | ✅ |
 | PWA | 🟢 Installable | ✅ Résolu (#3) |
 | Service Worker | 🟢 Actif | ✅ Résolu (#8 esbuild) |
@@ -173,16 +173,17 @@ Les tests frontend sont actuellement manuels. Une suite Vitest est planifiée.
 ### OWASP ZAP — Baseline Scan
 
 - 🔴 FAIL : **0**
-- 🟡 WARN : **16** (CSP hardening — `unsafe-inline` pour script/style, wildcard directives)
+- 🟡 WARN : **19** (CSP hardening — `unsafe-inline` pour style, directives wildcard)
   - Note: Les directives manquantes (`form-action`, `worker-src`, `manifest-src`) ont été ajoutées (#43)
-  - Le `unsafe-inline` reste nécessaire tant que l'app utilise du JS/CSS inline
+  - Le `unsafe-inline` reste pour `style-src` (nécessaire pour le rendu)
+  - `script-src` est maintenant `'self'` uniquement (Chart.js auto-hébergé, plus de CDN)
 - 🟢 INFO : **2** (cache-control, modern web app)
 
 ### SonarQube
 
 - **Bugs :** 0 ✅
 - **Vulnérabilités :** 1 (faux positif — CORS flagged comme CSRF disabled, mais CSRF est implémenté via double-submit cookie)
-- **Code Smells :** 41 (principalement `var` → `let/const` et littéraux dupliqués — pré-existant)
+- **Code Smells :** 51 (principalement `var` → `let/const` et littéraux dupliqués — pré-existant)
 - **Security Hotspots :** 0 ✅
 - **Duplication :** 0.3%
 

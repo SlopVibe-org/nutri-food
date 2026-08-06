@@ -274,20 +274,19 @@ def _build_grocery_from_selections(selections_data, foods_data):
 
 def load_foods():
     """Return foods dict from SQLite, same format as old foods.json."""
+    from contextlib import closing
     from extensions import get_nf_db
-    db = get_nf_db()
-    sections = db.execute('SELECT id, name, icon FROM nf_sections ORDER BY rowid').fetchall()
-    categories = db.execute('''
-        SELECT id, name, icon, section_id as section, type, weekly_min, weekly_max, daily,
-               absorption_tip, warning_tip
-        FROM nf_categories ORDER BY rowid
-    ''').fetchall()
-
-    result = {
-        'sections': [_build_section_dict(s) for s in sections],
-        'categories': [_build_category_dict(cat, db) for cat in categories]
-    }
-    db.close()
+    with closing(get_nf_db()) as db:
+        sections = db.execute('SELECT id, name, icon FROM nf_sections ORDER BY rowid').fetchall()
+        categories = db.execute('''
+            SELECT id, name, icon, section_id as section, type, weekly_min, weekly_max, daily,
+                   absorption_tip, warning_tip
+            FROM nf_categories ORDER BY rowid
+        ''').fetchall()
+        result = {
+            'sections': [_build_section_dict(s) for s in sections],
+            'categories': [_build_category_dict(cat, db) for cat in categories]
+        }
     return result
 
 
@@ -346,14 +345,14 @@ def _insert_food_nutrients_and_aliases(cur, new_id, cnf_nutrients, aliases, name
 
 def _save_season_and_deals(new_id, name):
     """Save season data and fetch deals for a new food. (S3776 helper)"""
+    from contextlib import closing
     from utils.season import lookup_quebec_season
     season_info = lookup_quebec_season(name or '')
     if season_info:
-        db2 = get_nf_db()
-        db2.execute('UPDATE nf_foods SET season = ?, import_season = ? WHERE id = ?',
-                    (json.dumps(season_info['season']), json.dumps(season_info['import']), new_id))
-        db2.commit()
-        db2.close()
+        with closing(get_nf_db()) as db2:
+            db2.execute('UPDATE nf_foods SET season = ?, import_season = ? WHERE id = ?',
+                        (json.dumps(season_info['season']), json.dumps(season_info['import']), new_id))
+            db2.commit()
     try:
         deals = _fetch_deals_for_food({'name': name, 'epiceries_query': name})
         if deals:

@@ -220,7 +220,7 @@ function wireProfileForm(overlay, currentProfile) {
         try {
           await fetchWithTimeout(API + '/goals', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json'2 },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ goals: rec }),
           }, 8000);
           showToast('Objectifs appliqués!', 'success');

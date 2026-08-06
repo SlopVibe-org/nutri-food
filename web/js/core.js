@@ -107,10 +107,10 @@ function fetchWithTimeout(url, options, timeoutMs = 10000) {
   options = options || {};
   if (!options.credentials) { options.credentials = 'same-origin'; }
   // Auto-inject CSRF token on mutating requests (double-submit cookie pattern)
-  var method = (options.method || 'GET').toUpperCase();
+  let method = (options.method || 'GET').toUpperCase();
   if (method !== 'GET' && method !== 'HEAD') {
     if (!options.headers) { options.headers = {}; }
-    var csrfToken = getCSRFToken();
+    let csrfToken = getCSRFToken();
     if (csrfToken && !options.headers['X-CSRF-Token']) {
       options.headers['X-CSRF-Token'] = csrfToken;
     }
@@ -125,7 +125,7 @@ function fetchWithTimeout(url, options, timeoutMs = 10000) {
 
 // ─── CSRF token helper (double-submit cookie) ───
 function getCSRFToken() {
-  var match = document.cookie.match(/(?:^|;\s*)nf_csrf_token=([^;]+)/);
+  let match = document.cookie.match(/(?:^|;\s*)nf_csrf_token=([^;]+)/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 

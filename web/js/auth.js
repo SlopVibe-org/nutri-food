@@ -47,7 +47,7 @@ function renderUserArea() {
  a.download = 'nutrifood-export.csv';
  document.body.appendChild(a);
  a.click();
- document.body.removeChild(a);
+ a.remove();
  URL.revokeObjectURL(url);
  showToast('Export t\u00e9l\u00e9charg\u00e9', 'success');
  } catch(e) { showToast('Erreur: ' + e.message, 'error'); }

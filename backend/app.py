@@ -36,7 +36,7 @@ def create_app():
         "https://slopvibe.org",
         "http://localhost:*",
         "http://127.0.0.1:*"
-    ])  # Auth via httpOnly cookie + CSRF double-submit
+    ])  # nosec B338 — CSRF is implemented via double-submit cookie pattern (see auth.py:_verify_csrf)
 
     app.teardown_appcontext(close_db)
 

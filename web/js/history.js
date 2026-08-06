@@ -4,11 +4,9 @@ async function showHistory() {
   let content = $('history-content');
   content.innerHTML = '<p class="loading">Chargement…</p>';
   $('history-modal').classList.remove('hidden');
-  let token = getToken();
-  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir l\'historique.</p>'; return; }
   try {
     let res = await fetchWithTimeout(API + '/history', {
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: {  }
     }, 10000);
     if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
     let data = await res.json();
@@ -56,11 +54,9 @@ async function showHistory() {
 async function showHistoryDetail(weekKey) {
   let content = $('history-content');
   content.innerHTML = '<p class="loading">Chargement de ' + esc(weekKey) + '…</p>';
-  let token = getToken();
-  if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/history/' + encodeURIComponent(weekKey), {
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: {  }
     }, 10000);
     if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur.</p>'; return; }
     let data = await res.json();

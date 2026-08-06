@@ -7,11 +7,9 @@ async function checkSuggestionsBadge() {
     if (suggestionsFab) { suggestionsFab.classList.remove('visible', 'pulsing'); }
     return;
   }
-  let token = getToken();
-  if (!token) { return; }
   try {
     let res = await fetchWithTimeout(API + '/suggestions', {
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: {  }
     }, 10000);
     if (!res.ok) { return; }
     let data = await res.json();
@@ -96,11 +94,9 @@ async function showSuggestions() {
   content.innerHTML = '<p class="loading">Chargement…</p>';
   $('suggestions-title').textContent = '💡 Suggestions nutritionnelles';
   $('suggestions-modal').classList.remove('hidden');
-  let token = getToken();
-  if (!token) { content.innerHTML = '<p style="color:var(--text-dim);">Connectez-vous pour voir les suggestions.</p>'; return; }
   try {
     let res = await fetchWithTimeout(API + '/suggestions', {
-      headers: { 'Authorization': 'Bearer ' + token }
+      headers: {  }
     }, 10000);
     if (!res.ok) { content.innerHTML = '<p style="color:var(--accent-red);">Erreur de chargement.</p>'; return; }
     let data = await res.json();

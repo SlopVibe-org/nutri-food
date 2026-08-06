@@ -36,7 +36,7 @@ def create_app():
         "https://slopvibe.org",
         "http://localhost:*",
         "http://127.0.0.1:*"
-    ])  # nosec: CSRF is handled via JWT Bearer tokens, not cookies
+    ])  # Auth via httpOnly cookie + CSRF double-submit
 
     app.teardown_appcontext(close_db)
 

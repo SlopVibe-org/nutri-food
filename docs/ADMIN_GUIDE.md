@@ -60,8 +60,9 @@ NutriFood contient **160 aliments** répartis dans 26 catégories :
 
 ```bash
 curl -X POST http://localhost:5011/api/admin/food/hide \
-  -H "Authorization: Bearer <TOKEN_JWT>" \
   -H "Content-Type: application/json" \
+  -b "nf_jwt=<JWT>" \
+  -H "X-CSRF-Token: <CSRF_TOKEN>" \
   -d '{"name": "Aliment à masquer"}'
 ```
 
@@ -69,8 +70,9 @@ curl -X POST http://localhost:5011/api/admin/food/hide \
 
 ```bash
 curl -X POST http://localhost:5011/api/admin/food/show \
-  -H "Authorization: Bearer <TOKEN_JWT>" \
   -H "Content-Type: application/json" \
+  -b "nf_jwt=<JWT>" \
+  -H "X-CSRF-Token: <CSRF_TOKEN>" \
   -d '{"name": "Aliment à afficher"}'
 ```
 
@@ -148,7 +150,8 @@ Dans le modal des spéciaux (🏷️), un bouton **🔄 Rafraîchir** est visibl
 
 ```bash
 curl -X POST http://localhost:5011/api/deals/refresh \
-  -H "Authorization: Bearer <TOKEN_JWT>"
+  -b "nf_jwt=<JWT>" \
+  -H "X-CSRF-Token: <CSRF_TOKEN>"
 ```
 
 ---
@@ -172,7 +175,16 @@ docker logs --tail 50 nutrifood-api
 
 ```bash
 curl -s http://localhost:5011/api/health
-# {"status":"ok"}
+# {"status":"ok","deals_count":42,"deals_stale":false,"deals_last_refresh":"2026-08-06T12:00:00Z"}
+```
+
+L'endpoint inclut l'état des deals : `deals_count`, `deals_stale`, `deals_last_refresh`.
+
+Vérifier le dernier backup :
+
+```bash
+curl -s http://localhost:5011/api/health/backup
+# {"status":"ok","last_backup":{"timestamp":"2026-08-06T07:00:00+00:00","file":"nutrifood-20260806.db","size_bytes":1048576}}
 ```
 
 ### Vérifier les données de tracking
@@ -193,7 +205,26 @@ db.close()
 
 ---
 
-## 💾 Sauvegarde manuelle
+## 💾 Sauvegarde
+
+### Script automatisé (recommandé)
+
+Le script `backend/scripts/backup_db.py` est inclus dans l'image Docker. Il utilise `VACUUM INTO` pour un instantané atomique et gère la rétention (7 quotidiens + 4 hebdomadaires).
+
+```bash
+# Sauvegarde manuelle
+docker exec nutrifood-api python3 /app/scripts/backup_db.py
+
+# Dry-run (simulation)
+docker exec nutrifood-api python3 /app/scripts/backup_db.py --dry-run
+
+# Cron — quotidien à 3h00
+# 0 3 * * * docker exec nutrifood-api python3 /app/scripts/backup_db.py >> /opt/nutrifood/data/backups/backup.log 2>&1
+```
+
+Voir aussi le [Guide de déploiement — Sauvegarde](DEPLOYMENT.md#💾-sauvegarde-et-restauration).
+
+### Sauvegarde manuelle (SQLite direct)
 
 ```bash
 # Méthode recommandée (gère le WAL)
@@ -298,7 +329,9 @@ curl -X POST "https://api.cloudflare.com/client/v4/zones/<ZONE_ID>/purge_cache" 
 
 - **Ne jamais supprimer** `/data/nutrifood.db` — c'est la seule source de données
 - **Toujours sauvegarder** avant une mise à jour
-- **Les tokens JWT** sont valides 90 jours (2160h) par défaut, transmis via cookie httpOnly (migration progressive, header Bearer toujours accepté)
+- **Les tokens JWT** sont valides 90 jours (2160h) par défaut, transmis via cookie **httpOnly + Secure + SameSite** (le header Bearer n'est plus utilisé côté frontend)
+- **Protection CSRF** via double-submit cookie (`nf_csrf_token`) sur toutes les requêtes mutatives
+- **Hachage des mots de passe :** argon2id (migration transparente depuis PBKDF2 au prochain login de l'utilisateur)
 - **Les reset tokens** expirent après 1 heure
 - **Le rate limiting** est de 10 requêtes/minute par IP (X-Forwarded-For respecté derrière proxy) sur register, login, forgot-password, reset-password
 - **L'architecture 2 conteneurs** (api + web/nginx) signifie que les fichiers frontend sont servis par nginx, pas par un serveur web externe

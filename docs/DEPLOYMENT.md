@@ -182,19 +182,54 @@ db.close()
 
 ## 💾 Sauvegarde et restauration
 
-### Sauvegarde manuelle
+### Sauvegarde automatique (recommandé)
 
-```bash
-docker exec nutrifood-api sqlite3 /data/nutrifood.db ".backup '/data/backup.db'"
-cp /opt/nutrifood/data/backup.db /opt/backups/nutrifood-$(date +%Y%m%d).db
-```
+Le script `backend/scripts/backup_db.py` est inclus dans l'image Docker. Il utilise `VACUUM INTO` pour un instantané atomique, gère la rétention (7 quotidien + 4 hebdomadaire), et peut envoyer vers Nextcloud via WebDAV.
 
-### Sauvegarde automatique (cron)
+#### Cron — sauvegarde quotidienne à 3h
 
 ```cron
-# Sauvegarde quotidienne à 3h, rétention 30 jours
-0 3 * * * docker exec nutrifood-api sqlite3 /data/nutrifood.db ".backup '/data/backup.db'" && cp /opt/nutrifood/data/backup.db /opt/backups/nutrifood-$(date +\%Y\%m\%d).db && find /opt/backups/ -name "nutrifood-*.db" -mtime +30 -delete
+# Sauvegarde automatique NutriFood — tous les jours à 3h00
+0 3 * * * docker exec nutrifood-api python3 /app/scripts/backup_db.py >> /opt/nutrifood/data/backups/backup.log 2>&1
 ```
+
+#### Sauvegarde manuelle
+
+```bash
+docker exec nutrifood-api python3 /app/scripts/backup_db.py
+```
+
+#### Simulation (dry-run)
+
+```bash
+docker exec nutrifood-api python3 /app/scripts/backup_db.py --dry-run
+```
+
+#### Upload vers Nextcloud (optionnel)
+
+Ajouter ces variables dans `.env` :
+
+```env
+NC_WEBDAV_URL=https://cloud.slopvibe.org/remote.php/webdav/nutrifood-backups
+NC_USER=utilisateur
+NC_PASS=mot_de_passe_app
+```
+
+#### Vérification via API
+
+```bash
+curl http://localhost:5011/api/health/backup
+# {"status":"ok","last_backup":{"timestamp":"2026-08-06T07:00:00+00:00","file":"nutrifood-20260806.db","size_bytes":1048576}}
+```
+
+#### Rétention
+
+| Type | Quantité | Période |
+|------|----------|---------|
+| Quotidien | 7 | Les 7 derniers jours |
+| Hebdomadaire | 4 | Une sauvegarde par semaine pendant 4 semaines |
+
+Les sauvegardes plus anciennes sont supprimées automatiquement.
 
 ### Restauration
 

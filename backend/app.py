@@ -51,6 +51,7 @@ def create_app():
     from blueprints.meal_plan import bp as meal_plan_bp
     from blueprints.export import bp as export_bp
     from blueprints.profile import bp as profile_bp
+    from blueprints.health import bp as health_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(foods_bp)
@@ -62,6 +63,7 @@ def create_app():
     app.register_blueprint(meal_plan_bp)
     app.register_blueprint(export_bp)
     app.register_blueprint(profile_bp)
+    app.register_blueprint(health_bp)
 
     return app
 

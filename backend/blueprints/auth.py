@@ -156,11 +156,6 @@ def get_auth_user():
 
 # ─── Routes ───
 
-@bp.route('/api/health', methods=['GET'])
-def health():
-    return jsonify({'status': 'ok', 'service': 'nutrifood-api'})
-
-
 @bp.route('/api/logout', methods=['POST'])
 def logout():
     """Clear auth and CSRF cookies on logout."""

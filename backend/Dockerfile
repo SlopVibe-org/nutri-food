@@ -15,6 +15,7 @@ ENV PATH="/usr/local/lib/python3.13/site-packages/bin:$PATH"
 COPY app.py extensions.py .
 COPY blueprints/ blueprints/
 COPY utils/ utils/
+COPY scripts/ scripts/
 
 RUN mkdir -p /data && \
     useradd -r -s /bin/false appuser && chown -R appuser /app /data

@@ -368,7 +368,9 @@ import threading
 
 DEALS_RAW_FILE = '/data/deals_raw.json'
 DEALS_LOCK_FILE = '/data/deals.lock'
+DEALS_META_FILE = '/data/deals_meta.json'
 DEALS_RAW_TTL = 7 * 24 * 3600  # 1 week
+DEALS_MIN_VALID_COUNT = 10  # Minimum expected deals from a healthy scrape
 
 # Thread-safe lock for deals_raw.json read-modify-write operations
 _deals_file_lock = threading.Lock()
@@ -400,8 +402,67 @@ def filter_deals(raw_deals, foods_data):
     return result
 
 
+def _load_deals_meta():
+    """Load deals metadata (consecutive failures, last success)."""
+    try:
+        if os.path.exists(DEALS_META_FILE):
+            with open(DEALS_META_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f'[NutriFood] Deals meta read error: {e}')
+    return {'consecutive_failures': 0, 'last_success': None}
+
+
+def _save_deals_meta(meta):
+    """Save deals metadata."""
+    try:
+        with open(DEALS_META_FILE, 'w') as f:
+            json.dump(meta, f, ensure_ascii=False)
+    except Exception as e:
+        print(f'[NutriFood] Deals meta write error: {e}')
+
+
+def _record_refresh_success(total_count, food_count):
+    """Record a successful refresh in metadata."""
+    from datetime import datetime, timezone
+    meta = _load_deals_meta()
+    meta['consecutive_failures'] = 0
+    meta['last_success'] = datetime.now(timezone.utc).isoformat()
+    meta['last_count'] = total_count
+    meta['last_food_count'] = food_count
+    _save_deals_meta(meta)
+
+
+def _record_refresh_failure(reason):
+    """Record a failed refresh in metadata. Returns new consecutive failure count."""
+    from datetime import datetime, timezone
+    meta = _load_deals_meta()
+    meta['consecutive_failures'] = meta.get('consecutive_failures', 0) + 1
+    meta['last_failure'] = datetime.now(timezone.utc).isoformat()
+    meta['last_failure_reason'] = reason
+    _save_deals_meta(meta)
+    return meta['consecutive_failures']
+
+
+def get_deals_health_info():
+    """Return deals health info for the /api/health endpoint."""
+    raw, updated = load_raw_deals()
+    deals_count = sum(len(v) for v in raw.values()) if raw else 0
+    meta = _load_deals_meta()
+    consecutive_failures = meta.get('consecutive_failures', 0)
+    return {
+        'deals_count': deals_count,
+        'deals_last_refresh': updated,
+        'deals_stale': consecutive_failures >= 2,
+    }
+
+
 def fetch_all_deals_raw():
-    """Fetch ALL deals from epiceries.ca. Store raw in deals_raw.json. NEVER filter here."""
+    """Fetch ALL deals from epiceries.ca. Store raw in deals_raw.json. NEVER filter here.
+
+    Validates results post-fetch: if < DEALS_MIN_VALID_COUNT items or unexpected
+    format, logs error and KEEPS the old file instead of overwriting with empty data.
+    """
     import time as _time
     foods_data = load_foods()
     all_raw = {}
@@ -416,6 +477,25 @@ def fetch_all_deals_raw():
                 all_raw[food_name] = raw_items
                 total += len(raw_items)
             _time.sleep(0.3)
+
+    # ── Validation post-fetch ──
+    if total < DEALS_MIN_VALID_COUNT:
+        reason = f'Low deal count: {total} (expected >={DEALS_MIN_VALID_COUNT}). Keeping old data.'
+        print(f'[NutriFood] WARNING: {reason}')
+        failures = _record_refresh_failure(reason)
+        print(f'[NutriFood] Consecutive refresh failures: {failures}')
+        return 0
+
+    # Validate format: ensure each entry has expected keys
+    for food_name, items in all_raw.items():
+        if not isinstance(items, list):
+            reason = f'Unexpected format for "{food_name}": not a list. Keeping old data.'
+            print(f'[NutriFood] WARNING: {reason}')
+            failures = _record_refresh_failure(reason)
+            print(f'[NutriFood] Consecutive refresh failures: {failures}')
+            return 0
+
+    # All good — write the new data
     from datetime import datetime, timezone
     cache_data = {
         'raw': all_raw,
@@ -428,6 +508,7 @@ def fetch_all_deals_raw():
                 json.dump(cache_data, f, ensure_ascii=False)
         except Exception as e:
             print(f'[NutriFood] Raw deals file write error: {e}')
+    _record_refresh_success(total, len(all_raw))
     print(f'[NutriFood] Raw deals fetched: {total} items across {len(all_raw)} foods')
     return total
 

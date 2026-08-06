@@ -70,7 +70,7 @@ function renderDealsContent() {
  if (!DATA) { content.innerHTML = '<p class="loading">Chargement…</p>'; return; }
  let allDeals = flattenDeals();
  if (allDeals.length === 0) {
- content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Aucun spécial disponible actuellement.</p>';
+ content.innerHTML = '<p style="text-align:center;padding:20px;color:var(--text-dim);">Spéciaux temporairement indisponibles.</p>';
  return;
  }
  let grouped = groupDealsByCategory(allDeals);

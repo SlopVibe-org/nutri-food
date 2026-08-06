@@ -20,6 +20,44 @@ COOKIE_NAME = 'nutrifood_token'
 COOKIE_MAX_AGE = 2160 * 3600  # 90 days, matches JWT_EXPIRY_HOURS
 
 
+import hmac
+
+CSRF_COOKIE_NAME = 'nf_csrf_token'
+
+
+def _generate_csrf_token():
+    """Generate a random CSRF token for the double-submit cookie pattern."""
+    return secrets.token_urlsafe(32)
+
+
+def _set_csrf_cookie(response, token=None):
+    """Set the CSRF cookie (readable by JS, sent on every request)."""
+    if token is None:
+        token = _generate_csrf_token()
+    response.set_cookie(
+        CSRF_COOKIE_NAME, token,
+        max_age=COOKIE_MAX_AGE,
+        httponly=False,  # JS must read this to send it back in header
+        secure=True,
+        samesite='Strict',
+        path='/'
+    )
+    return response
+
+
+def _verify_csrf():
+    """Verify CSRF token using double-submit cookie pattern.
+    Compares the X-CSRF-Token header against the nf_csrf_token cookie.
+    Only applied to mutating methods (POST, PUT, DELETE, PATCH)."""
+    method = request.method.upper()
+    if method in ('GET', 'HEAD', 'OPTIONS'):
+        return True
+    cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
+    header_token = request.headers.get('X-CSRF-Token')
+    if not cookie_token or not header_token:
+        return False
+    return hmac.compare_digest(cookie_token, header_token)
+
 def _set_auth_cookie(response, token):
     """Set httpOnly cookie for progressive JWT migration."""
     response.set_cookie(
@@ -173,7 +211,8 @@ def register():
         'user': {'id': cursor.lastrowid, 'email': email, 'name': name, 'is_admin': 0}
     }), 201)
     _set_csrf_cookie(resp)
-    return _set_auth_cookie(resp, token)
+    resp = _set_auth_cookie(resp, token)
+    return _set_csrf_cookie(resp)
 
 
 @bp.route('/api/login', methods=['POST'])
@@ -205,7 +244,8 @@ def login():
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     }))
     _set_csrf_cookie(resp)
-    return _set_auth_cookie(resp, token)
+    resp = _set_auth_cookie(resp, token)
+    return _set_csrf_cookie(resp)
 
 
 @bp.route('/api/me', methods=['GET'])
@@ -216,6 +256,9 @@ def me():
     return jsonify({
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name'], 'is_admin': user['is_admin']}
     })
+
+
+
 
 
 @bp.route('/api/forgot-password', methods=['POST'])
@@ -300,7 +343,8 @@ def reset_password():
         'user': {'id': user['id'], 'email': user['email'], 'name': user['name']}
     }))
     _set_csrf_cookie(resp)
-    return _set_auth_cookie(resp, token)
+    resp = _set_auth_cookie(resp, token)
+    return _set_csrf_cookie(resp)
 
 
 @bp.route('/api/change-password', methods=['POST'])
@@ -340,4 +384,5 @@ def change_password():
     token = make_token(user['id'], user['email'], new_version)
     resp = make_response(jsonify({'status': 'ok', 'token': token}))
     _set_csrf_cookie(resp)
-    return _set_auth_cookie(resp, token)
+    resp = _set_auth_cookie(resp, token)
+    return _set_csrf_cookie(resp)

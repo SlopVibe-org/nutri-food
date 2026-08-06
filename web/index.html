@@ -30,16 +30,16 @@
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
   .subtitle { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 16px; }
-  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  .header-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: nowrap; }
   .header-row > div { display: flex; align-items: center; }
   .header-row .header-left { flex: 0 0 auto; flex-direction: column; align-items: flex-start; }
-  .header-row .header-search { flex: 1 1 0; min-width: 150px; }
+  .header-row .header-search { flex: 1 1 0; min-width: 80px; }
   .header-row .header-right { flex: 0 0 auto; }
   .header-row .search-bar { width: 100%; margin: 0; }
   @media (max-width: 600px) {
     .header-row .header-left .subtitle { display: none; }
-    .header-row .header-search { flex: 1 1 100%; min-width: 100px; }
-    .header-row .header-left h1 { font-size: 1.1rem; }
+    .header-row .header-left h1 { font-size: 1rem; white-space: nowrap; }
+    .header-row .header-search { flex: 1 1 0; min-width: 60px; }
     .search-bar input { font-size: 0.8rem; padding: 6px 8px 6px 28px; }
     .search-icon { font-size: 0.75rem; }
   }
@@ -268,15 +268,15 @@
     display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #0f1117; flex-shrink: 0;
   }
   .user-menu-dropdown {
-    position: fixed; top: auto; right: 8px; margin-top: 6px;
+    position: absolute; top: 100%; right: 0; margin-top: 6px;
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-    min-width: 200px; max-width: calc(100vw - 16px); box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 150;
+    min-width: 200px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 150;
     display: none; overflow: hidden;
   }
   @media (max-width: 600px) {
-    .user-menu-btn { max-width: 90px; }
+    .user-menu-btn { max-width: 90px; padding: 6px 8px; }
     .user-menu-btn .uname { display: none; }
-    .user-menu-dropdown { right: 8px; left: 8px; min-width: 0; width: auto; }
+    .user-menu-dropdown { right: 0; left: auto; min-width: 180px; }
   }
   .user-menu-dropdown.visible { display: block; }
   .user-menu-item {

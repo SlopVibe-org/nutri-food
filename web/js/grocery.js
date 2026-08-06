@@ -82,13 +82,13 @@ function renderGroceryItemsHTML(items, dealCount, dealTotal) {
       // Move checked items to bottom (but before grocery-total if it exists)
       let total = container.querySelector('.grocery-total');
       if (this.checked) {
-        if (total) { container.insertBefore(item, total); }
+        if (total) { total.before(item); }
         else { container.appendChild(item); }
       } else {
         // Move unchecked back up (before first checked item)
         let firstChecked = container.querySelector('.grocery-item.checked');
         if (firstChecked) {
-          container.insertBefore(item, firstChecked);
+          firstChecked.before(item);
         }
       }
     });
@@ -177,7 +177,7 @@ function wireGroceryButtons() {
 
       iframe.onload = function() {
         iframe.contentWindow.onafterprint = function() {
-          document.body.removeChild(iframe);
+          iframe.remove();
         };
         iframe.contentWindow.focus();
         iframe.contentWindow.print();

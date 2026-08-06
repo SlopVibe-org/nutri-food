@@ -15,6 +15,8 @@ def _validate_date(d):
     except (ValueError, TypeError):
         return None
 
+ERR_DATE_FORMAT = 'Format de date invalide'
+
 bp = Blueprint('journal', __name__)
 
 
@@ -27,7 +29,7 @@ def get_journal():
     journal_date = request.args.get('date')
     if journal_date:
         if not _validate_date(journal_date):
-            return jsonify({'error': 'Format de date invalide'}), 400
+            return jsonify({'error': ERR_DATE_FORMAT}), 400
     else:
         journal_date = date.today().isoformat()
 
@@ -68,7 +70,7 @@ def save_journal_entry():
     if not journal_date or not food_name:
         return jsonify({'error': 'Date et nom d\'aliment requis'}), 400
     if not _validate_date(journal_date):
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
 
     try:
         qty = int(qty)
@@ -130,7 +132,7 @@ def delete_journal_entry():
     if not journal_date or not food_name:
         return jsonify({'error': 'Date et nom d\'aliment requis'}), 400
     if not _validate_date(journal_date):
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
 
     db = get_db()
     db.execute(

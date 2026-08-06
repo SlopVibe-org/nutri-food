@@ -19,6 +19,8 @@ from utils.nutrition import (
     get_user_targets, DEFAULT_TARGETS,
 )
 
+ERR_DATE_FORMAT = 'Format de date invalide'
+
 bp = Blueprint('tracking', __name__)
 
 
@@ -53,7 +55,7 @@ def get_tracking(date):
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
     if not _validate_date(date):
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
     db = get_db()
     row = db.execute('SELECT data FROM tracking WHERE user_id = ? AND date = ?', (user["id"], date)).fetchone()
     data = json.loads(row['data']) if row and row['data'] else {}
@@ -66,7 +68,7 @@ def save_tracking(date):
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
     if not _validate_date(date):
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
     data = request.get_json() or {}
     selections_data = data.get('selections', {})
     db = get_db()
@@ -103,7 +105,7 @@ def tracking_nutrition(date):
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
     day_date = _validate_date(date)
     if not day_date:
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
     foods_data = load_foods()
     categories = foods_data.get('categories', [])
 
@@ -137,7 +139,7 @@ def delete_tracking(date):
     if not user:
         return jsonify({'error': ERR_UNAUTHORIZED}), 401
     if not _validate_date(date):
-        return jsonify({'error': 'Format de date invalide'}), 400
+        return jsonify({'error': ERR_DATE_FORMAT}), 400
     db = get_db()
     db.execute('DELETE FROM tracking WHERE user_id = ? AND date = ?', (user['id'], date))
     db.commit()

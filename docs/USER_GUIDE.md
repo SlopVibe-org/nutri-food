@@ -320,6 +320,38 @@ Consultez vos **snapshots hebdomadaires** — NutriFood enregistre automatiqueme
 
 ---
 
+## 📓 Journal nutritionnel
+
+**Menu** → **📓 Journal**
+
+Le journal nutritionnel vous permet d'enregistrer ce que vous mangez et de visualiser vos tendances dans le temps.
+
+### Ajouter une entrée
+
+1. Sélectionnez une **date** (par défaut, aujourd'hui)
+2. **Recherchez un aliment** dans la barre de recherche
+3. Ajustez la **quantité**
+4. L'entrée est sauvegardée automatiquement
+
+### Supprimer une entrée
+
+- Cliquez sur l'icône 🗑️ à côté de l'entrée à supprimer
+
+### Graphiques de tendances (Chart.js)
+
+Le journal affiche des **graphiques interactifs** de vos apports nutritionnels :
+
+- **7 derniers jours** — vue détaillée de la semaine
+- **30 derniers jours** — vue mensuelle pour identifier les tendances
+- **Toggle des nutriments** — affichez/masquez les nutriments individuels (protéines, fibres, fer, vitamine C, calcium, oméga-3, calories)
+- Les graphiques sont rendus localement (Chart.js auto-hébergé, aucune donnée envoyée à un CDN)
+
+### Résumé du journal
+
+Le résumé affiche vos moyennes nutritionnelles sur la période sélectionnée.
+
+---
+
 ## 🔗 Doublons entre catégories (« aussi dans »)
 
 Certains aliments apparaissent dans **plusieurs catégories** (ex: les noix peuvent être dans « Viandes & Laitiers » et « Habitudes »).

@@ -15,8 +15,13 @@ async function showJournal() {
  if (!modal) { return; }
  _journalDate = getTodayISO();
  $('journal-date').value = _journalDate;
+ let addBtn = $('journal-add-btn');
+ if (addBtn) { addBtn.onclick = addJournalEntry; }
+ let dateInput = $('journal-date');
+ if (dateInput) { dateInput.onchange = function() { loadJournalDay(dateInput.value); }; }
+ initJournalAutocomplete();
  await loadJournalDay(_journalDate);
- await loadJournalSummary(7);
+ await loadJournalTrends(7);
  modal.classList.remove('hidden');
 }
 
@@ -198,4 +203,132 @@ function initJournalAutocomplete() {
  });
  }, 100);
  });
+}
+
+
+// ─── Trends visualization (issue #45) ───
+let _trendsChart = null;
+
+async function loadJournalTrends(days) {
+  days = days || 7;
+  try {
+    let res = await fetchWithTimeout(API + '/journal/summary?days=' + days, {}, 10000);
+    if (res.ok) {
+      _journalSummary = await res.json();
+      renderTrendsChart(days);
+    }
+  } catch(e) { console.error('[NutriFood] Trends load error:', e); }
+}
+
+function renderTrendsChart(days) {
+  let container = $('journal-trends');
+  if (!container || !_journalSummary) { return; }
+  let dayData = (_journalSummary.days || []).slice().reverse();
+  if (dayData.length === 0) {
+    container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:16px 0;">Pas encore de donn\u00e9es.</p>';
+    return;
+  }
+  let nutrients = [
+    { key: 'protein', label: 'Prot\u00e9ines (g)', color: '#4ade80' },
+    { key: 'fiber', label: 'Fibres (g)', color: '#38bdf8' },
+    { key: 'iron', label: 'Fer (mg)', color: '#fbbf24' },
+    { key: 'vitamin_c', label: 'Vit C (mg)', color: '#f87171' },
+    { key: 'calcium', label: 'Calcium (mg)', color: '#a78bfa' },
+    { key: 'omega3', label: 'Om\u00e9ga-3 (g)', color: '#fb923c' }
+  ];
+  let html = '<div class="trends-header"><div class="trends-toggle">';
+  html += '<button class="trends-btn' + (days === 7 ? ' active' : '') + '" data-trends-days="7">7 jours</button>';
+  html += '<button class="trends-btn' + (days === 30 ? ' active' : '') + '" data-trends-days="30">30 jours</button>';
+  html += '</div></div>';
+  html += '<div class="trends-chart-wrap"><canvas id="trends-canvas" width="600" height="280"></canvas></div>';
+  html += '<div class="trends-nutrients">';
+  nutrients.forEach(function(n) {
+    html += '<label class="trends-nutrient-chip"><input type="checkbox" data-nutrient="' + n.key + '" checked style="accent-color:' + n.color + ';"><span style="color:' + n.color + ';">\u25cf</span> ' + n.label + '</label>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+  container.querySelectorAll('.trends-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() { loadJournalTrends(parseInt(btn.dataset.trendsDays, 10)); });
+  });
+  container.querySelectorAll('.trends-nutrient-chip input').forEach(function(cb) {
+    cb.addEventListener('change', function() { _updateChart(days); });
+  });
+  _updateChart(days);
+}
+
+function _updateChart(days) {
+  let container = $('journal-trends');
+  if (!container || !_journalSummary) { return; }
+  let dayData = (_journalSummary.days || []).slice().reverse();
+  let labels = dayData.map(function(d) { let dt = new Date(d.date + 'T12:00:00'); return (dt.getMonth()+1) + '/' + dt.getDate(); });
+  let nutrients = [
+    { key: 'protein', label: 'Prot\u00e9ines (g)', color: '#4ade80' },
+    { key: 'fiber', label: 'Fibres (g)', color: '#38bdf8' },
+    { key: 'iron', label: 'Fer (mg)', color: '#fbbf24' },
+    { key: 'vitamin_c', label: 'Vit C (mg)', color: '#f87171' },
+    { key: 'calcium', label: 'Calcium (mg)', color: '#a78bfa' },
+    { key: 'omega3', label: 'Om\u00e9ga-3 (g)', color: '#fb923c' }
+  ];
+  let activeKeys = [];
+  container.querySelectorAll('.trends-nutrient-chip input:checked').forEach(function(cb) { activeKeys.push(cb.dataset.nutrient); });
+  let datasets = nutrients.filter(function(n) { return activeKeys.includes(n.key); }).map(function(n) {
+    return {
+      label: n.label,
+      data: dayData.map(function(d) { return Math.round(((d.totals || {})[n.key] || 0) * 10) / 10; }),
+      borderColor: n.color, backgroundColor: n.color + '20',
+      borderWidth: 2, tension: 0.3, fill: days === 30,
+      pointRadius: days === 30 ? 0 : 3, pointHoverRadius: 5
+    };
+  });
+  let canvas = $('trends-canvas');
+  if (!canvas) { return; }
+  let ctx = canvas.getContext('2d');
+  if (_trendsChart) { _trendsChart.destroy(); }
+  if (typeof Chart !== 'undefined') {
+    _trendsChart = new Chart(ctx, {
+      type: 'line',
+      data: { labels: labels, datasets: datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 11 }, boxWidth: 12, padding: 8 } },
+          tooltip: { backgroundColor: '#1a1d27', borderColor: '#2a2d3a', borderWidth: 1 }
+        },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1a1d27' } },
+          y: { beginAtZero: true, ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: '#1a1d27' } }
+        }
+      }
+    });
+  } else {
+    _renderSvgChart(container, labels, datasets, days);
+  }
+}
+
+function _renderSvgChart(container, labels, datasets, days) {
+  let wrap = container.querySelector('.trends-chart-wrap');
+  if (!wrap) { return; }
+  let w = 600, h = 280, pad = 40;
+  let maxVal = Math.max.apply(null, datasets.flatMap(function(ds) { return ds.data; }).concat([1]));
+  let xStep = (w - pad * 2) / Math.max(labels.length - 1, 1);
+  let yScale = (h - pad * 2) / maxVal;
+  let svg = '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;">';
+  for (let i = 0; i <= 4; i++) {
+    let y = pad + (h - pad * 2) * i / 4;
+    svg += '<line x1="' + pad + '" y1="' + y + '" x2="' + (w - pad) + '" y2="' + y + '" stroke="#1a1d27" stroke-width="1"/>';
+    svg += '<text x="' + (pad - 4) + '" y="' + (y + 3) + '" fill="#94a3b8" font-size="10" text-anchor="end">' + Math.round(maxVal * (1 - i/4)) + '</text>';
+  }
+  for (let i = 0; i < labels.length; i++) {
+    let x = pad + i * xStep;
+    if (days === 30 && i % 5 !== 0) continue;
+    svg += '<text x="' + x + '" y="' + (h - pad + 14) + '" fill="#94a3b8" font-size="10" text-anchor="middle">' + labels[i] + '</text>';
+  }
+  datasets.forEach(function(ds) {
+    let pts = ds.data.map(function(v, i) { return (pad + i * xStep) + ',' + (h - pad - v * yScale); });
+    svg += '<polyline points="' + pts.join(' ') + '" fill="none" stroke="' + ds.borderColor + '" stroke-width="2"/>';
+    if (days === 7) { ds.data.forEach(function(v, i) { let cx = pad + i * xStep, cy = h - pad - v * yScale; svg += '<circle cx="' + cx + '" cy="' + cy + '" r="3" fill="' + ds.borderColor + '"/>'; }); }
+  });
+  svg += '</svg>';
+  wrap.innerHTML = svg;
 }

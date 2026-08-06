@@ -10,6 +10,7 @@ function renderUserArea() {
  let menuItems = '';
  menuItems += '<button class="user-menu-item" id="menu-grocery"><span class="icon">🛒</span> Liste d\'épicerie</button>';
  menuItems += '<button class="user-menu-item" id="menu-goals"><span class="icon">🎯</span> Mes objectifs</button>';
+ menuItems += '<button class="user-menu-item" id="menu-journal"><span class="icon">📔</span> Journal</button>';
  menuItems += '<button class="user-menu-item" id="menu-history"><span class="icon">📊</span> Historique</button>';
  menuItems += '<button class="user-menu-item" id="menu-export"><span class="icon">💾</span> Exporter (CSV)</button>';
  if (currentUser.is_admin) { menuItems += '<button class="user-menu-item" id="menu-manage-products"><span class="icon">📦</span> Gérer les produits</button>'; }
@@ -30,6 +31,7 @@ function renderUserArea() {
  });
  $('menu-grocery').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/grocery.js', function() { showGroceryList(); }); });
  $('menu-goals').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); showGoals(); });
+ $('menu-journal').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/journal.js', function() { showJournal(); }); });
  $('menu-history').addEventListener('click', function() { $('user-menu-dropdown').classList.remove('visible'); loadScript('js/history.js', function() { showHistory(); }); });
  $('menu-export').addEventListener('click', async function() {
  $('user-menu-dropdown').classList.remove('visible');
@@ -292,6 +294,8 @@ function initAuthEvents() {
  $('goals-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
  // Feature 4: History modal
  $('history-close').addEventListener('click', function() { $('history-modal').classList.add('hidden'); });
+ $('journal-close').addEventListener('click', function() { $('journal-modal').classList.add('hidden'); });
+ $('journal-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
  $('history-modal').addEventListener('click', function(e) { if (e.target === e.currentTarget) { e.currentTarget.classList.add('hidden'); } });
  // Deals modal
  $('deals-close').addEventListener('click', function() { $('deals-modal').classList.add('hidden'); });

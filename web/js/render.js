@@ -555,8 +555,8 @@ function renderSimple() {
  // Hide tracking day selector in simple view
  let tbar = $('tracking-bar');
  if (tbar) { tbar.style.display = 'none'; }
- // Mini nutrition dashboard (#23) — includes reset button inside
- html += '<div id="simple-nutri-summary" style="margin-bottom:12px;"></div>';
+ // Reset button
+ html += '<div class="simple-header"><button class="simple-reset-btn" id="simple-reset-btn">🔄 Reset</button></div>';
 
  DATA.sections.forEach(function(sec) {
  let cats = DATA.categories.filter(function(c) { return c.section === sec.id; });
@@ -570,8 +570,9 @@ function renderSimple() {
  });
  app.innerHTML = html;
 
- // Fetch and render mini nutrition dashboard (includes reset button)
- _renderSimpleNutriSummary(function() { openResetConfirm(); });
+ // Wire reset button
+ let resetBtn = $('simple-reset-btn');
+ if (resetBtn) { resetBtn.addEventListener('click', openResetConfirm); }
 
  // Wire up empty square clicks to open the dropdown
  app.querySelectorAll('[data-simple-add]').forEach(function(box) {
@@ -651,54 +652,6 @@ function renderSimple() {
 // ─── Mutex for addSimpleFood (#27 — prevent race condition on rapid clicks) ───
 let _addSimpleFoodLock = Promise.resolve();
 
-// ─── Mini nutrition dashboard for simple view (#23) ───
-async function _renderSimpleNutriSummary(resetCallback) {
- let container = $('simple-nutri-summary');
- if (!container) return;
- try {
- let todayISO = getTodayISO();
- let res = await fetchWithTimeout(API + '/tracking/nutrition/' + todayISO + '?t=' + Date.now(), {
- headers: { }
- }, 8000);
- if (!res.ok) return;
- let data = await res.json();
- let dayTotals = data.day_totals || {};
- let targets = data.targets || {};
- let labels = { protein: 'Prot.', fiber: 'Fib.', iron: 'Fer', vitamin_c: 'Vit.C', calcium: 'Calc.', omega3: 'Ω-3' };
- let keys = ['protein', 'fiber', 'iron', 'vitamin_c', 'calcium', 'omega3'];
-
- // Targets are weekly — divide by 7 for daily comparison
- let dailyTargets = {};
- keys.forEach(function(k) { dailyTargets[k] = (targets[k] || 1) / 7; });
-
- let bars = keys.map(function(key) {
- let val = dayTotals[key] || 0;
- let tgt = dailyTargets[key] || 1;
- let pct = Math.min(Math.round((val / tgt) * 100), 100);
- let color = pct >= 100 ? 'var(--accent)' : (pct >= 50 ? '#fbbf24' : 'var(--accent-red)');
- return '<div style="flex:1;min-width:60px;">' +
- '<div style="display:flex;justify-content:space-between;font-size:0.7rem;color:var(--text-dim);margin-bottom:2px;">' +
- '<span>' + labels[key] + '</span>' +
- '<span style="color:' + color + ';font-weight:600;">' + pct + '%</span>' +
- '</div>' +
- '<div style="height:5px;background:#12141c;border-radius:3px;overflow:hidden;">' +
- '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:3px;transition:width 0.3s;"></div>' +
- '</div></div>';
- }).join('');
-
- container.innerHTML = '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;">' +
- '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">' +
- '<span style="font-size:0.75rem;color:var(--text-dim);">📊 Objectifs nutritionnels (aujourd\'hui)</span>' +
- '<button class="simple-reset-btn" id="simple-reset-btn" style="font-size:0.7rem;padding:2px 8px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-dim);cursor:pointer;">🔄 Reset</button>' +
- '</div>' +
- '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + bars + '</div>' +
- '</div>';
-
- // Wire reset button
- let resetBtn = $('simple-reset-btn');
- if (resetBtn && resetCallback) { resetBtn.addEventListener('click', resetCallback); }
- } catch(e) { /* best-effort, silent fail */ }
-}
 
 function _renderSbox(slot, cat, dayTag, optional, dayDate) {
  if (slot) {

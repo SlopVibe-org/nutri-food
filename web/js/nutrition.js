@@ -217,21 +217,13 @@ async function renderTrackingNutrition() {
  let container = $('tracking-nutrition');
  if (!container || !DATA) { return; }
  let targets = userGoals || {};
- let dt = computeDayTotals();
- // Render day section immediately
- let html = '';
- html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📊 <strong>' + formatDayLabel(trackingDate) + '</strong></span><span class="reset-badge" style="cursor:pointer;" onclick="openResetConfirm()">🔄 Reset</span></div>';
- html += '<div class="nutri-stats-row">';
- TRACKING_NUTRIENTS.forEach(function(n) {
- html += buildNutrientRow(n, dt[n.key] || 0, targets[n.goalKey || n.key], true);
- });
- html += '</div>';
- // Week section placeholder
  let weekNum = getISOWeek();
- html += '<div class="nutri-summary-header" style="margin-top:12px;"><span class="nutri-summary-title">📅 Semaine ' + weekNum + ' (cumul)</span></div>';
+ // Week section only — objectives are weekly
+ let html = '';
+ html += '<div class="nutri-summary-header"><span class="nutri-summary-title">📅 Semaine ' + weekNum + '</span><span class="reset-badge" style="cursor:pointer;" onclick="openResetConfirm()">🔄 Reset</span></div>';
  html += '<div id="tracking-week-stats" class="nutri-stats-row"><p class="loading">Chargement…</p></div>';
  container.innerHTML = html;
- // Fetch week totals async
+ // Fetch week totals
  try {
  let res = await fetchWithTimeout(API + '/tracking/nutrition/' + trackingDate, { headers: { } }, 10000);
  if (!res.ok) { let wc1 = $('tracking-week-stats'); if (wc1) { wc1.innerHTML = ''; } return; }
@@ -245,7 +237,7 @@ async function renderTrackingNutrition() {
  wh += buildNutrientRow(n, wt[n.key] || 0, targets[n.goalKey || n.key], false);
  });
  wc2.innerHTML = wh;
- } catch(e) { /* Network or tracking data error */ console.error('[NutriFood] Tracking week fetch error:', e); }
+ } catch(e) { console.error('[NutriFood] Tracking week fetch error:', e); }
 }
 
 function renderDailyNutrition(totals) {

@@ -206,8 +206,15 @@ function updateSaveBar() {
  info.textContent = total + ' aliment(s) — non sauvegardé';
  } else {
  btn.classList.remove('dirty'); btn.disabled = true;
- // In simplified/tracking mode, hide bar entirely when saved (less clutter)
+ btn.textContent = '✓';
+ // In tracking mode, auto-save handles everything — hide the bar when clean
+ if (currentMode === 'tracking') {
  bar.classList.remove('visible');
+ } else {
+ // In selection mode, show compact saved state
+ bar.classList.add('visible');
+ info.textContent = total + ' aliment(s)';
+ }
  }
 }
 
@@ -650,7 +657,7 @@ async function _renderSimpleNutriSummary(resetCallback) {
  if (!container) return;
  try {
  let todayISO = getTodayISO();
- let res = await fetchWithTimeout(API + '/tracking/nutrition/' + todayISO, {
+ let res = await fetchWithTimeout(API + '/tracking/nutrition/' + todayISO + '?t=' + Date.now(), {
  headers: { }
  }, 8000);
  if (!res.ok) return;

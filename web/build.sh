@@ -32,7 +32,10 @@ for f in tracking deals suggestions grocery history cnf food-modal share journal
   fi
 done
 
-# 3. Copy static assets
+# 3. Copy Chart.js (vendored, kept separate from app bundle)
+cp "$SRC/js/chart.umd.min.js" "$DIST/js/chart.umd.min.js"
+
+# 4. Copy static assets
 cp "$SRC/index.html" "$DIST/"
 cp "$SRC/foods.json" "$DIST/"
 cp "$SRC/manifest.json" "$DIST/"
@@ -41,7 +44,7 @@ cp "$SRC/nutrifood.css" "$DIST/"
 cp "$SRC/defaults/favicon.svg" "$DIST/favicon.svg"
 cp "$SRC"/favicon-*.png "$DIST/" 2>/dev/null || true
 
-# 4. Copy defaults directory
+# 5. Copy defaults directory
 cp -r "$SRC/defaults" "$DIST/"
 
 echo "✅ Build complete"

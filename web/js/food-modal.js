@@ -222,7 +222,7 @@ function _removeFoodFromDayData(dayData, catId, name, decrement) {
   if (dayData[catId].length === 0) { delete dayData[catId]; }
 }
 
-async function _saveDayToServer(date, dayData, token) {
+async function _saveDayToServer(date, dayData) {
   try {
     await fetchWithTimeout(API + '/tracking/' + date, {
       method: 'POST',
@@ -257,12 +257,12 @@ async function removeSimpleFood(catId, name, scope) {
     for (let d of dates) {
       let dayData = trackingWeek?.[d] || {};
       _removeFoodFromDayData(dayData, catId, name, false);
-      await _saveDayToServer(d, dayData, token);
+      await _saveDayToServer(d, dayData);
     }
   } else {
     let dayData = trackingWeek?.[scope] || {};
     _removeFoodFromDayData(dayData, catId, name, true);
-    await _saveDayToServer(scope, dayData, token);
+    await _saveDayToServer(scope, dayData);
   }
 
   _decrementLocalSelections(catId, name, removeAll);
